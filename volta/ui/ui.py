@@ -20,19 +20,32 @@ logging.basicConfig(level=logging.DEBUG)
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         """ index page w/ buttons """
-        self.render("templates/index.html", title="YT tesla")
+        self.render(
+            "{cwd}templates/index.html".format(
+                cwd=os.path.dirname(os.path.abspath(__file__))
+            ),
+            title="Volta UI"
+        )
 
 
 class BarplotBuilder(tornado.web.RequestHandler):
     def get(self):
         """ return available logs if exists """
         dir_files = os.listdir('./logs')
-        items = ['./logs/{filename}'.format(filename=filename) for filename in dir_files if filename.endswith('log')]
-        self.render("templates/barplot.html", title="Barplot builder", items=items)
+        cwd = os.path.dirname(os.path.abspath(__file__))
+        items = ['{cwd}/logs/{filename}'.format(cwd=cwd, filename=filename) for filename in dir_files if filename.endswith('log')]
+        self.render(
+            "{cwd}templates/barplot.html".format(
+                cwd=cwd
+            ), 
+            title="Barplot builder", 
+            items=items
+        )
 
     def post(self):
         """ make barplot for specified log, save it and return plot """
         input_filenames = self.get_body_arguments('log')
+        cwd = os.path.dirname(os.path.abspath(__file__))
 
         if not input_filenames:
             self.send_error(status_code=404)
@@ -40,7 +53,7 @@ class BarplotBuilder(tornado.web.RequestHandler):
         df = input_files_to_df(input_filenames, ' ')
         for key, grouped_df in df.groupby('label'):
             logging.info('File: %s. Mean current: %s', key, grouped_df['curr'].mean())
-        plot = render_barplot(df, './plots/', None)
+        plot = render_barplot(df, '{cwd}/plots/'.format(cwd=cwd), None)
 
         self.set_header("Content-Type", "image/jpeg")
         with open(plot) as img:
@@ -51,21 +64,26 @@ class BarplotBuilder(tornado.web.RequestHandler):
 class LmplotBuilder(tornado.web.RequestHandler):
     def get(self):
         """ return available logs if exists """
-        dir_files = os.listdir('./logs')
-        items = ['./logs/{filename}'.format(filename=filename) for filename in dir_files if filename.endswith('log')]
-        self.render("templates/lmplot.html", title="Lmplot builder", items=items)
+        cwd = os.path.dirname(os.path.abspath(__file__))
+        dir_files = os.listdir('{cwd}/logs'.format(cwd=cwd))
+        items = ['{cwd}/logs/{filename}'.format(cwd=cwd, filename=filename) for filename in dir_files if filename.endswith('log')]
+        self.render(
+            "{cwd}templates/lmplot.html".format(cwd=cwd), 
+            title="Lmplot builder", 
+            items=items
+        )
 
     def post(self):
         """ make lmplot for specified log, save it to dir and return the plot """
         input_filenames = self.get_body_arguments('log')
-
+        cwd = os.path.dirname(os.path.abspath(__file__))
         if not input_filenames:
             self.send_error(status_code=404)
 
         df = input_files_to_df(input_filenames, ' ')
         for key, grouped_df in df.groupby('label'):
             logging.info('File: %s. Mean current: %s', key, grouped_df['curr'].mean())
-        plot = render_lmplot(df, './plots/', None)
+        plot = render_lmplot(df, '{cwd}/plots/'.format(cwd=cwd), None)
 
         self.set_header("Content-Type", "image/jpeg")
         with open(plot) as img:
@@ -77,9 +95,14 @@ class Recorder(tornado.web.RequestHandler):
     """ return available usb devices and form w/ options for log recording """
     def get(self):
         devices = os.listdir('/dev')
+        cwd = os.path.dirname(os.path.abspath(__file__))
         arduino_devs = ['/dev/{device}'.format(device=device) for device in devices if device.startswith('cu')]
 
-        self.render("templates/record.html", title="Recorder", devices=arduino_devs)
+        self.render(
+            "{cwd}templates/record.html".format(cwd=cwd), 
+            title="Recorder", 
+            devices=arduino_devs
+        )
 
     def post(self):
         """ returns 'ok' and logfile name if log successfully recorded log from arduino
@@ -88,8 +111,10 @@ class Recorder(tornado.web.RequestHandler):
         samples = self.get_body_argument('samples')
         device = self.get_body_argument('device')
         prefix = self.get_body_argument('prefix')
+        cwd = os.path.dirname(os.path.abspath(__file__))
         cmd = "serial-reader -device=%s -samples=%s" % (device, samples)
-        logfile = './logs/%s%s.log' % (
+        logfile = '%s/logs/%s%s.log' % (
+                cwd,
                 prefix,
                 datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
             )
@@ -197,7 +222,7 @@ def make_app():
         (r"/record", Recorder),
     ])
 
-if __name__ == "__main__":
+def main():
     work_dirs = {
         'plots' : './plots',
         'logs' : './logs',
@@ -211,3 +236,6 @@ if __name__ == "__main__":
     app = make_app()
     app.listen(8888)
     tornado.ioloop.IOLoop.current().start()
+
+if __name__ == "__main__":
+    main()

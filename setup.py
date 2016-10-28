@@ -5,6 +5,7 @@ setup(
     version='0.0.1',
     description='',
     longer_description='''
+test
 ''',
     maintainer='Alexey Lavrenuke (load testing)',
     maintainer_email='direvius@yandex-team.ru',
@@ -23,6 +24,11 @@ setup(
     tests_require=[
         'pytest',
     ],
+    entry_points={
+        'console_scripts': [
+            'volta-ui = volta.ui.ui:main',
+        ],
+    },
     license='MPLv2',
     classifiers=[
         'Environment :: Web Environment',
