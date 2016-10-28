@@ -12,6 +12,7 @@ import argparse
 import datetime
 import subprocess
 import shlex
+import webbrowser
 
 from pkg_resources import resource_filename
 
@@ -232,6 +233,8 @@ def main():
             os.mkdir(dirname)
     app = make_app()
     app.listen(8888)
+    url = "http://localhost:8888"
+    webbrowser.open(url,new=2) #new=2 means open in new tab if possible
     tornado.ioloop.IOLoop.current().start()
 
 if __name__ == "__main__":
