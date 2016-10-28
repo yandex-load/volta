@@ -30,6 +30,9 @@ test
         ],
     },
     license='MPLv2',
+    package_data={
+        'volta.ui': ['templates/*.html'],
+    },
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: End Users/Desktop',

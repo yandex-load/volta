@@ -13,17 +13,14 @@ import datetime
 import subprocess
 import shlex
 
-logging.basicConfig(level=logging.DEBUG)
-
+from pkg_resources import resource_filename
 
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         """ index page w/ buttons """
         self.render(
-            "{cwd}templates/index.html".format(
-                cwd=os.path.dirname(os.path.abspath(__file__))
-            ),
+            resource_filename(__name__, 'templates/index.html'),
             title="Volta UI"
         )
 
@@ -35,9 +32,7 @@ class BarplotBuilder(tornado.web.RequestHandler):
         cwd = os.path.dirname(os.path.abspath(__file__))
         items = ['{cwd}/logs/{filename}'.format(cwd=cwd, filename=filename) for filename in dir_files if filename.endswith('log')]
         self.render(
-            "{cwd}templates/barplot.html".format(
-                cwd=cwd
-            ), 
+            resource_filename(__name__, 'templates/barplot.html'),
             title="Barplot builder", 
             items=items
         )
@@ -68,7 +63,7 @@ class LmplotBuilder(tornado.web.RequestHandler):
         dir_files = os.listdir('{cwd}/logs'.format(cwd=cwd))
         items = ['{cwd}/logs/{filename}'.format(cwd=cwd, filename=filename) for filename in dir_files if filename.endswith('log')]
         self.render(
-            "{cwd}templates/lmplot.html".format(cwd=cwd), 
+            resource_filename(__name__, 'templates/lmplot.html'),
             title="Lmplot builder", 
             items=items
         )
@@ -99,7 +94,7 @@ class Recorder(tornado.web.RequestHandler):
         arduino_devs = ['/dev/{device}'.format(device=device) for device in devices if device.startswith('cu')]
 
         self.render(
-            "{cwd}templates/record.html".format(cwd=cwd), 
+            resource_filename(__name__, 'templates/record.html'),
             title="Recorder", 
             devices=arduino_devs
         )
@@ -223,6 +218,8 @@ def make_app():
     ])
 
 def main():
+    logging.basicConfig(level=logging.DEBUG)
+
     work_dirs = {
         'plots' : './plots',
         'logs' : './logs',
