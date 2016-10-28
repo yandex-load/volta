@@ -1,0 +1,45 @@
+<html>
+    <head>
+        <style type="text/css">
+            input
+            {
+                width: 20px;
+                height: 20px;
+            }
+            .select
+            {
+                width: 30%;
+                height: 100px;
+                margin: 2px;
+            }
+            .input
+            {
+                width:20%;
+                height:50px;
+                margin: 2px;
+            }
+        </style>
+        <title>{{ title }}</title>
+    </head>
+    <body>
+        Выберите конфигурацию записи / Select an options:
+        <form action="/record" method="post">
+            <div>
+                Доступные девайсы, подключенные к компьютеру:
+                {% for device in devices %}
+                    <br><label><input type="radio" name="device" value="{{ escape(device) }}">{{ escape(device) }}</label>
+                {% end %}
+                <br><label><input type="text" name="samples" class="input">Сколько метрик записывать. 500 в секунду. 30000 - 1 минута. 150000 - 5 минут</label>
+            </div>
+            <br>
+            <div>
+                Дополнительные опции:
+                <br><label><input type="text" name="prefix" class="input" placeholder="">Префикс лога, строка будет добавлена к начало к имени каждого лога. По-умолчанию Дата_Время.</label>
+                <!--<br><label><input type="text" name="device" class="input" placeholder="/dev/cu.wchusbserial1410">Адрес устройства коробки, подключенной к вашему компьютеру</label>-->
+            </div>
+            <br>
+            <input type="submit" class="select" value="Go!">
+        </form>
+        <br>
+    </body>
+ </html>

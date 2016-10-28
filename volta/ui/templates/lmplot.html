@@ -1,0 +1,28 @@
+<html>
+    <head>
+        <style type="text/css">
+            input
+            {
+                width: 20px;
+                height: 20px;
+            }
+            .select
+            {
+                width: 30%;
+                height: 100px;
+                margin: 2px;
+            }
+        </style>
+        <title>{{ title }}</title>
+    </head>
+    <body>
+        Выберите лог / Select a log:
+        <form action="/lmplot" method="post">
+            {% for item in items %}
+                <br><label><input type="radio" name="log" value="{{ escape(item) }}">{{ escape(item.split('/')[-1]) }}</label>
+            {% end %}
+            <br>
+            <input type="submit" class="select" value="Go!">
+        </form>
+    </body>
+ </html>

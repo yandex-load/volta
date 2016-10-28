@@ -1,0 +1,26 @@
+<html>
+    <head>
+        <style type="text/css">
+            input
+            {
+                width: 20px;
+                height: 20px;
+            }
+            .select
+            {
+                width: 30%;
+                height: 100px;
+                margin: 2px;
+            }
+        </style> 
+        <title>{{ title }}</title>
+    </head>
+    <body>
+        Выберите действие / Select an action:
+        <br>
+        <input type="button" class="select" onclick="location.href='lmplot';" value="Построить график ток->время по логу / Render lmplot"><br>
+        <input type="button" class="select" onclick="location.href='barplot';" value="Построить barplot по логам / Render barplot"><br>
+        <input type="button" class="select" onclick="location.href='record';" value="Снять показания с коробки / Record box data"><br>
+       <br><br>
+    </body>
+ </html>

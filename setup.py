@@ -11,6 +11,11 @@ setup(
     url='https://github.com/yandex-load/volta',
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
+        'tornado',
+        'pandas',
+        'seaborn',
+        'numpy',
+        'matplotlib'
     ],
     setup_requires=[
         'pytest-runner',
