@@ -40,6 +40,7 @@ class BarplotBuilder(tornado.web.RequestHandler):
 
     def post(self):
         """ make barplot for specified log, save it and return plot """
+        logging.info(self.get_body_arguments('log'))
         input_filenames = self.get_body_arguments('log')
         #cwd = os.path.dirname(os.path.abspath(__file__))
 
