@@ -29,7 +29,7 @@ class MainHandler(tornado.web.RequestHandler):
 class BarplotBuilder(tornado.web.RequestHandler):
     def get(self):
         """ return available logs if exists """
-        dir_files = os.listdir('./logs')
+        dir_files = os.listdir('logs')
         #cwd = os.path.dirname(os.path.abspath(__file__))
         items = ['./logs/{filename}'.format(filename=filename) for filename in dir_files if filename.endswith('log')]
         self.render(
@@ -49,7 +49,7 @@ class BarplotBuilder(tornado.web.RequestHandler):
         df = input_files_to_df(input_filenames, ' ')
         for key, grouped_df in df.groupby('label'):
             logging.info('File: %s. Mean current: %s', key, grouped_df['curr'].mean())
-        plot = render_barplot(df, './plots/', None)
+        plot = render_barplot(df, 'plots', None)
 
         self.set_header("Content-Type", "image/jpeg")
         with open(plot) as img:
@@ -61,8 +61,8 @@ class LmplotBuilder(tornado.web.RequestHandler):
     def get(self):
         """ return available logs if exists """
         #cwd = os.path.dirname(os.path.abspath(__file__))
-        dir_files = os.listdir('./logs')
-        items = ['./logs/{filename}'.format(filename=filename) for filename in dir_files if filename.endswith('log')]
+        dir_files = os.listdir('logs')
+        items = ['logs/{filename}'.format(filename=filename) for filename in dir_files if filename.endswith('log')]
         self.render(
             resource_filename(__name__, 'templates/lmplot.html'),
             title="Lmplot builder", 
@@ -79,7 +79,7 @@ class LmplotBuilder(tornado.web.RequestHandler):
         df = input_files_to_df(input_filenames, ' ')
         for key, grouped_df in df.groupby('label'):
             logging.info('File: %s. Mean current: %s', key, grouped_df['curr'].mean())
-        plot = render_lmplot(df, './plots/', None)
+        plot = render_lmplot(df, 'plots', None)
 
         self.set_header("Content-Type", "image/jpeg")
         with open(plot) as img:
@@ -109,7 +109,7 @@ class Recorder(tornado.web.RequestHandler):
         prefix = self.get_body_argument('prefix')
         #cwd = os.path.dirname(os.path.abspath(__file__))
         cmd = "serial-reader -device=%s -samples=%s" % (device, samples)
-        logfile = './logs/%s%s.log' % (
+        logfile = 'logs/%s%s.log' % (
                 prefix,
                 datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
             )
@@ -210,11 +210,13 @@ def render_lmplot(df, path, suffix):
 
 
 def make_app():
+    static_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'static')
     return tornado.web.Application([
         (r"/", MainHandler),
         (r"/barplot", BarplotBuilder),
         (r"/lmplot", LmplotBuilder),
         (r"/record", Recorder),
+        (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": static_path}),
     ])
 
 def main():

@@ -3,9 +3,9 @@ from setuptools import setup, find_packages
 setup(
     name='volta',
     version='0.0.2',
-    description='',
+    description='yandex package for mobile energy consumption measurements',
     longer_description='''
-test
+yandex package for mobile energy consumption measurements
 ''',
     maintainer='Alexey Lavrenuke (load testing)',
     maintainer_email='direvius@yandex-team.ru',
@@ -34,7 +34,10 @@ test
     },
     license='MPLv2',
     package_data={
-        'volta.ui': ['templates/*'],
+        'volta.ui': [
+            'templates/*', 
+            'static/*',
+        ],
     },
     classifiers=[
         'Environment :: Web Environment',
