@@ -24,6 +24,9 @@ test
     tests_require=[
         'pytest',
     ],
+    scripts=[
+        'volta/reader/serial-reader'
+    ],
     entry_points={
         'console_scripts': [
             'volta-ui = volta.ui.ui:main',
