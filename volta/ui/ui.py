@@ -30,8 +30,8 @@ class BarplotBuilder(tornado.web.RequestHandler):
     def get(self):
         """ return available logs if exists """
         dir_files = os.listdir('./logs')
-        cwd = os.path.dirname(os.path.abspath(__file__))
-        items = ['{cwd}/logs/{filename}'.format(cwd=cwd, filename=filename) for filename in dir_files if filename.endswith('log')]
+        #cwd = os.path.dirname(os.path.abspath(__file__))
+        items = ['./logs/{filename}'.format(filename=filename) for filename in dir_files if filename.endswith('log')]
         self.render(
             resource_filename(__name__, 'templates/barplot.html'),
             title="Barplot builder", 
@@ -41,7 +41,7 @@ class BarplotBuilder(tornado.web.RequestHandler):
     def post(self):
         """ make barplot for specified log, save it and return plot """
         input_filenames = self.get_body_arguments('log')
-        cwd = os.path.dirname(os.path.abspath(__file__))
+        #cwd = os.path.dirname(os.path.abspath(__file__))
 
         if not input_filenames:
             self.send_error(status_code=404)
@@ -49,7 +49,7 @@ class BarplotBuilder(tornado.web.RequestHandler):
         df = input_files_to_df(input_filenames, ' ')
         for key, grouped_df in df.groupby('label'):
             logging.info('File: %s. Mean current: %s', key, grouped_df['curr'].mean())
-        plot = render_barplot(df, '{cwd}/plots/'.format(cwd=cwd), None)
+        plot = render_barplot(df, './plots/', None)
 
         self.set_header("Content-Type", "image/jpeg")
         with open(plot) as img:
@@ -60,9 +60,9 @@ class BarplotBuilder(tornado.web.RequestHandler):
 class LmplotBuilder(tornado.web.RequestHandler):
     def get(self):
         """ return available logs if exists """
-        cwd = os.path.dirname(os.path.abspath(__file__))
-        dir_files = os.listdir('{cwd}/logs'.format(cwd=cwd))
-        items = ['{cwd}/logs/{filename}'.format(cwd=cwd, filename=filename) for filename in dir_files if filename.endswith('log')]
+        #cwd = os.path.dirname(os.path.abspath(__file__))
+        dir_files = os.listdir('./logs')
+        items = ['./logs/{filename}'.format(filename=filename) for filename in dir_files if filename.endswith('log')]
         self.render(
             resource_filename(__name__, 'templates/lmplot.html'),
             title="Lmplot builder", 
@@ -72,14 +72,14 @@ class LmplotBuilder(tornado.web.RequestHandler):
     def post(self):
         """ make lmplot for specified log, save it to dir and return the plot """
         input_filenames = self.get_body_arguments('log')
-        cwd = os.path.dirname(os.path.abspath(__file__))
+        #cwd = os.path.dirname(os.path.abspath(__file__))
         if not input_filenames:
             self.send_error(status_code=404)
 
         df = input_files_to_df(input_filenames, ' ')
         for key, grouped_df in df.groupby('label'):
             logging.info('File: %s. Mean current: %s', key, grouped_df['curr'].mean())
-        plot = render_lmplot(df, '{cwd}/plots/'.format(cwd=cwd), None)
+        plot = render_lmplot(df, './plots/', None)
 
         self.set_header("Content-Type", "image/jpeg")
         with open(plot) as img:
@@ -91,7 +91,7 @@ class Recorder(tornado.web.RequestHandler):
     """ return available usb devices and form w/ options for log recording """
     def get(self):
         devices = os.listdir('/dev')
-        cwd = os.path.dirname(os.path.abspath(__file__))
+        #cwd = os.path.dirname(os.path.abspath(__file__))
         arduino_devs = ['/dev/{device}'.format(device=device) for device in devices if device.startswith('cu')]
 
         self.render(
@@ -107,10 +107,9 @@ class Recorder(tornado.web.RequestHandler):
         samples = self.get_body_argument('samples')
         device = self.get_body_argument('device')
         prefix = self.get_body_argument('prefix')
-        cwd = os.path.dirname(os.path.abspath(__file__))
+        #cwd = os.path.dirname(os.path.abspath(__file__))
         cmd = "serial-reader -device=%s -samples=%s" % (device, samples)
-        logfile = '%s/logs/%s%s.log' % (
-                cwd,
+        logfile = './logs/%s%s.log' % (
                 prefix,
                 datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
             )

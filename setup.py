@@ -31,7 +31,7 @@ test
     },
     license='MPLv2',
     package_data={
-        'volta.ui': ['templates/*.html'],
+        'volta.ui': ['templates/*'],
     },
     classifiers=[
         'Environment :: Web Environment',
