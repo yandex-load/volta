@@ -253,6 +253,9 @@ def make_app():
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
+    parser = argparse.ArgumentParser(description='Configures ui tornado server.')
+    parser.add_argument('--port', dest='port', default=8888, help='port for webserver (default: 8888)')
+    args = parser.parse_args()
 
     work_dirs = {
         'plots' : './plots',
@@ -265,8 +268,8 @@ def main():
             logging.debug('Directory %s not found, trying to create it', dirname)
             os.mkdir(dirname)
     app = make_app()
-    app.listen(8888)
-    url = "http://localhost:8888"
+    app.listen(args.port)
+    url = "http://localhost:{port}".format(port=args.port)
     webbrowser.open(url,new=2) #new=2 means open in new tab if possible
     tornado.ioloop.IOLoop.current().start()
 
