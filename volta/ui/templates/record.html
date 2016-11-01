@@ -1,4 +1,5 @@
 <html>
+    {% include "templates/navbar.html" %}
     <head>
         <link rel="stylesheet" href="/static/style.css">
         <link rel="stylesheet" href="/static/bootstrap.min.css">
@@ -10,9 +11,9 @@
         <div class="container bgcont center-block">
             <div class="row">
                 <h1 class="bg-info">Выберите конфигурацию записи</h1>
-                <form action="record" method="POST" role="form" class="form-horizontal">
+                <form action="record" method="POST" role="form">
+                    <p class="bg-warning">Найдены девайсы, подключенные к компьютеру:</p>
                     {% for device in devices %}
-                    <h2 class="bg-warning">Доступные девайсы, подключенные к компьютеру:</h2>
                     <div class="col-sm-12">
                         <div class="radio">
                             <label style="font-size: 2.5em">
@@ -23,18 +24,15 @@
                         </div>
                     </div>
                     {% end %}
-                    <br><br><br>
                     <div class="form-group">
                         <label for="samples">Сколько метрик записывать</label>
                         <input type="text" class="form-control" id="samples" name="samples" placeholder="Samples" aria-describedby="samples-helpblock">
                         <span id="samples-helpblock" class="help-block">500 в секунду. 30000 - 1 минута. 150000 - 5 минут</span>
                     </div>
-                    <br><br>
-                    <h2 class="bg-success">Дополнительные опции</h2>
                     <div class="form-group">
                         <label for="prefix">Префикс лога</label>
                         <input type="text" class="form-control" id="prefix" name="prefix" placeholder="Prefix" aria-describedby="prefix-helpblock">
-                        <span id="prefix-helpblock" class="help-block">Строка будет добавлена к начало к имени каждого лога. По-умолчанию Дата_Время</span>
+                        <span id="prefix-helpblock" class="help-block">Строка-префикс будет добавлена в начало к имени каждого лога. По-умолчанию формат: "Дата_Время"</span>
                     </div>
                     <div class="form-group">
                         <div class="col-sm-offset-2 col-sm-10">

@@ -1,4 +1,5 @@
 <html>
+    {% include "templates/navbar.html" %}
     <head>
         <link rel="stylesheet" href="/static/style.css">
         <link rel="stylesheet" href="/static/bootstrap.min.css">
@@ -9,7 +10,13 @@
     <body>
         <div class="container bgcont center-block">
             <div class="row">
-                <h1 class="bg-info">Выберите лог</h1>
+                <h1 class="bg-info">Выберите лог, всего найдено логов: {{ len(items) }}</h1>
+                {% if len(items) == 0 %}
+                <p class="bg-warning">
+                    Не найдены логи! <br>
+                    Логи должны быть в директории logs относительно того места, откуда запускается volta-ui
+                </p>
+                {% end %}
                 <form action="lmplot" method="POST" role="form" class="form-horizontal">
                     {% for item in items %}
                     <div class="col-sm-12">

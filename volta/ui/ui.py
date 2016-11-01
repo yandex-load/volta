@@ -128,6 +128,36 @@ class Recorder(tornado.web.RequestHandler):
                 stdout = exc
         self.write('Ok. Logfile: %s' % logfile)
         
+class PlotDisplayer(tornado.web.RequestHandler):
+    """ returns a template w/ list of available plots """
+    def get(self):
+        plots = os.listdir('plots')
+        self.render(
+            resource_filename(__name__, 'templates/plots.html'),
+            title="Plots",
+            plots=plots
+        )
+
+    def post(self):
+        """ read specified plot from disk and return as an image """
+        plot = self.get_body_argument('plot')
+        if not plot:
+            self.send_error(status_code=404)
+
+        self.set_header("Content-Type", "image/jpeg")
+        plot_fpath = os.path.join('plots', plot)
+        #.encode('ascii','ignore')
+        with open(plot_fpath) as img:
+            data = img.read()
+        self.write(data)
+
+
+
+
+
+
+
+
 
 
 #============================================================
@@ -217,6 +247,7 @@ def make_app():
         (r"/barplot", BarplotBuilder),
         (r"/lmplot", LmplotBuilder),
         (r"/record", Recorder),
+        (r"/plot", PlotDisplayer),
         (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": static_path}),
     ])
 
