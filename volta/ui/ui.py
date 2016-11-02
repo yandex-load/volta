@@ -13,6 +13,7 @@ import datetime
 import subprocess
 import shlex
 import webbrowser
+#%matplotlib inline
 
 from pkg_resources import resource_filename
 
@@ -48,12 +49,32 @@ class BarplotBuilder(tornado.web.RequestHandler):
             self.send_error(status_code=404)
 
         df = input_files_to_df(input_filenames, ' ')
-        for key, grouped_df in df.groupby('label'):
-            logging.info('File: %s. Mean current: %s', key, grouped_df['curr'].mean())
-        plot = render_barplot(df, 'plots', None)
+
+        logging.info("Started rendering barplot")
+        sns.set(font_scale=1, rc={"figure.figsize": (12, 8)})
+        ax = sns.barplot(x=df.label, y=df.curr, ci=None)
+        for t in ax.get_xticklabels():
+            t.set(rotation=60)
+    
+        for p in ax.patches:
+            height = p.get_height()
+            ax.text(p.get_x(), height+2, '%1.2f' % (height) )
+    
+        plt.ylabel('mean(current), mA')
+        plt.xlabel('log names')
+        plt.subplots_adjust(bottom=0.40)
+        suffix = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
+        path = 'plots'
+
+        try:
+            logging.info('Saving plot to %s/barplot%s.png', path, suffix)
+            filename = '%s/barplot%s.png' % (path, suffix)
+            plt.savefig(filename)
+        except:
+            logging.info("Unable to save plot to file", exc_info=True)
 
         self.set_header("Content-Type", "image/jpeg")
-        with open(plot) as img:
+        with open(filename) as img:
             data = img.read()
         self.write(data)
 
@@ -72,18 +93,50 @@ class LmplotBuilder(tornado.web.RequestHandler):
 
     def post(self):
         """ make lmplot for specified log, save it to dir and return the plot """
-        input_filenames = self.get_body_arguments('log')
-        #cwd = os.path.dirname(os.path.abspath(__file__))
-        if not input_filenames:
+        input_filename = self.get_body_argument('log')
+        graph_type = self.get_body_argument('type', default='mean')
+        if not input_filename:
             self.send_error(status_code=404)
 
-        df = input_files_to_df(input_filenames, ' ')
-        for key, grouped_df in df.groupby('label'):
-            logging.info('File: %s. Mean current: %s', key, grouped_df['curr'].mean())
-        plot = render_lmplot(df, 'plots', None)
+        df = pd.read_csv(input_filename, delimiter=' ', names="ts curr".split())
+        df.set_index(['ts'], inplace=True)
+
+        fig, ax = sns.plt.subplots()
+
+        if graph_type == 'mean':
+            data = df.groupby(level=0).mean()
+            plt.plot(data.index, data.curr)
+        elif graph_type == 'qplot':
+            def percentile(n):
+                def percentile_(x):
+                    return np.percentile(x, n)
+                percentile_.__name__ = 'percentile_%s' % n
+                return percentile_
+
+            percentiles = [percentile(n) for n in [100, 75, 50, 25, 0]]
+    
+            data = df.groupby(level=0).curr.agg(percentiles)
+            #    title='Percentiles by second', kind='area', stacked=False, figsize=(12, 10), linewidth=0
+            plt.plot(data)
+
+        #make lmplot, save it to file, return filename
+        #plot settings
+        fig.set_size_inches(12,8)
+        sns.set_style("darkgrid", {"axes.facecolor": ".9"})
+
+        plt.ylabel('current, mA')
+        plt.xlabel('time')
+        suffix = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
+        path = 'plots'
+        try:
+            logging.info('Saving plot to %s/lmplot%s.png', path, suffix)
+            filename = '%s/lmplot%s.png' % (path, suffix)
+            plt.savefig(filename)
+        except:
+            logging.error('Unable to save plot to file', exc_info=True)
 
         self.set_header("Content-Type", "image/jpeg")
-        with open(plot) as img:
+        with open(filename) as img:
             data = img.read()
         self.write(data)
 
@@ -151,10 +204,55 @@ class PlotDisplayer(tornado.web.RequestHandler):
             data = img.read()
         self.write(data)
 
+class QPlot(tornado.web.RequestHandler):
+    """ returns a template w/ list of available plots """
+    def get(self):
+        dir_files = os.listdir('logs')
+        items = ['logs/{filename}'.format(filename=filename) for filename in dir_files if filename.endswith('log')]
+        self.render(
+#            resource_filename(__name__, 'templates/plots.html'),
+            resource_filename(__name__, 'qplots.html'),
+            title="Plots",
+            logs=items
+        )
 
+    def post(self):
+        """ make lmplot for specified log, save it to dir and return the plot """
+        input_filename = self.get_body_arguments('log')
+        logging.info('Input file: %s', input_filename)
+        if not input_filename:
+            self.send_error(status_code=404)
+        plt.figure()
+        df = input_files_to_df(input_filename, ' ')
+        df.set_index(['ts'], inplace=True)
+        df.groupby(level=0).curr.plot()
+        #logging.info(df[:10]) 
+        def percentile(n):
+            def percentile_(x):
+                return np.percentile(x, n)
+            percentile_.__name__ = 'percentile_%s' % n
+            return percentile_
+        percentiles = [percentile(n) for n in [1, .50, .25, 0]]
+        #df.groupby(level=0).curr.agg([np.mean, np.std, np.median]).plot()
+        #df.groupby(level=0).curr.agg(percentiles).plot(
+        #    title='Percentiles by second', kind='area', stacked=False, figsize=(12, 10), linewidth=0
+        #)
+        plt.ylabel('mean(current), mA')
+        plt.xlabel('log names')
 
-
-
+        plt.subplots_adjust(bottom=0.40)
+        suffix = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
+        try:
+            logging.info('Saving plot to qplot%s.png', suffix)
+            filename = 'qplot%s.png' % (suffix)
+            plt.savefig(filename)
+        except:
+            logging.info("Unable to save plot to file", exc_info=True)
+    
+        self.set_header("Content-Type", "image/jpeg")
+        with open(filename) as img:
+            data = img.read()
+        self.write(data)
 
 
 
@@ -179,6 +277,7 @@ def input_files_to_df(files, delimiter):
     #convert unixtimestamp to datetime/s
     work_df['ts'] = pd.to_datetime(work_df['ts'],unit='s')
     return work_df
+
 
 def render_barplot(df, path, suffix):
     """ make barplot, save to file and return filename  """
@@ -205,39 +304,8 @@ def render_barplot(df, path, suffix):
         logging.info("Unable to save plot to file", exc_info=True)
     return filename
 
-def render_lmplot(df, path, suffix):
-    """ make lmplot, save it to file, return filename """
-    logging.info("Started rendering lmplot")
 
-    #plot settings
-    fig, ax = sns.plt.subplots()
-    fig.set_size_inches(12,8)
-    sns.set_style("darkgrid", {"axes.facecolor": ".9"})
 
-    logging.info('Calculating plot data')
-    mean = df.groupby("ts").mean()
-    #rolling = df.groupby("ts")[["curr"]].rolling(window=50).mean().dropna()
-    cummulative = mean.sum()
-    logging.info('Cummulative summ for test: %s', cummulative['curr'])
-    logging.info('Rendering plots')
-    mean.plot(ax=ax)
-    #cummulative.plot(ax=ax, c="b")
-    #rolling.plot(ax=ax)
-
-    plt.ylabel('current, mA')
-    plt.xlabel('time')
-    plt.legend(
-        (cummulative),scatterpoints=1, loc='upper right',
-    )
-    if not suffix:
-        suffix = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
-    try:
-        logging.info('Saving plot to %s/lmplot%s.png', path, suffix)
-        filename = '%s/lmplot%s.png' % (path, suffix)
-        plt.savefig(filename)
-    except:
-        logging.error('Unable to save plot to file', exc_info=True)
-    return filename
 
 
 def make_app():
@@ -248,6 +316,7 @@ def make_app():
         (r"/lmplot", LmplotBuilder),
         (r"/record", Recorder),
         (r"/plot", PlotDisplayer),
+        (r"/qplot", QPlot),
         (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": static_path}),
     ])
 
