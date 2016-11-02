@@ -50,7 +50,6 @@ class BarplotBuilder(tornado.web.RequestHandler):
 
         df = input_files_to_df(input_filenames, ' ')
 
-        logging.info("Started rendering barplot")
         sns.set(font_scale=1, rc={"figure.figsize": (12, 8)})
         ax = sns.barplot(x=df.label, y=df.curr, ci=None)
         for t in ax.get_xticklabels():
@@ -99,13 +98,16 @@ class LmplotBuilder(tornado.web.RequestHandler):
             self.send_error(status_code=404)
 
         df = pd.read_csv(input_filename, delimiter=' ', names="ts curr".split())
+        df['ts'] = df.ts.astype(int)
+        df['ts'] = pd.to_datetime(df['ts'],unit='s')
         df.set_index(['ts'], inplace=True)
+
+        #convert timestamps to datetime
 
         fig, ax = sns.plt.subplots()
 
         if graph_type == 'mean':
-            data = df.groupby(level=0).mean()
-            plt.plot(data.index, data.curr)
+            df.groupby(level=0).mean().plot()
         elif graph_type == 'qplot':
             def percentile(n):
                 def percentile_(x):
@@ -115,9 +117,7 @@ class LmplotBuilder(tornado.web.RequestHandler):
 
             percentiles = [percentile(n) for n in [100, 75, 50, 25, 0]]
     
-            data = df.groupby(level=0).curr.agg(percentiles)
-            #    title='Percentiles by second', kind='area', stacked=False, figsize=(12, 10), linewidth=0
-            plt.plot(data)
+            df.groupby(level=0).curr.agg(percentiles).plot(title='Percentiles by second', kind='area', stacked=False, figsize=(12, 10), linewidth=0)
 
         #make lmplot, save it to file, return filename
         #plot settings
@@ -204,57 +204,6 @@ class PlotDisplayer(tornado.web.RequestHandler):
             data = img.read()
         self.write(data)
 
-class QPlot(tornado.web.RequestHandler):
-    """ returns a template w/ list of available plots """
-    def get(self):
-        dir_files = os.listdir('logs')
-        items = ['logs/{filename}'.format(filename=filename) for filename in dir_files if filename.endswith('log')]
-        self.render(
-#            resource_filename(__name__, 'templates/plots.html'),
-            resource_filename(__name__, 'qplots.html'),
-            title="Plots",
-            logs=items
-        )
-
-    def post(self):
-        """ make lmplot for specified log, save it to dir and return the plot """
-        input_filename = self.get_body_arguments('log')
-        logging.info('Input file: %s', input_filename)
-        if not input_filename:
-            self.send_error(status_code=404)
-        plt.figure()
-        df = input_files_to_df(input_filename, ' ')
-        df.set_index(['ts'], inplace=True)
-        df.groupby(level=0).curr.plot()
-        #logging.info(df[:10]) 
-        def percentile(n):
-            def percentile_(x):
-                return np.percentile(x, n)
-            percentile_.__name__ = 'percentile_%s' % n
-            return percentile_
-        percentiles = [percentile(n) for n in [1, .50, .25, 0]]
-        #df.groupby(level=0).curr.agg([np.mean, np.std, np.median]).plot()
-        #df.groupby(level=0).curr.agg(percentiles).plot(
-        #    title='Percentiles by second', kind='area', stacked=False, figsize=(12, 10), linewidth=0
-        #)
-        plt.ylabel('mean(current), mA')
-        plt.xlabel('log names')
-
-        plt.subplots_adjust(bottom=0.40)
-        suffix = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
-        try:
-            logging.info('Saving plot to qplot%s.png', suffix)
-            filename = 'qplot%s.png' % (suffix)
-            plt.savefig(filename)
-        except:
-            logging.info("Unable to save plot to file", exc_info=True)
-    
-        self.set_header("Content-Type", "image/jpeg")
-        with open(filename) as img:
-            data = img.read()
-        self.write(data)
-
-
 
 
 
@@ -279,30 +228,8 @@ def input_files_to_df(files, delimiter):
     return work_df
 
 
-def render_barplot(df, path, suffix):
-    """ make barplot, save to file and return filename  """
-    logging.info("Started rendering barplot")
-    sns.set(font_scale=1, rc={"figure.figsize": (12, 8)})
-    ax = sns.barplot(x=df.label, y=df.curr, ci=None)
-    for t in ax.get_xticklabels():
-        t.set(rotation=60)
 
-    for p in ax.patches:
-        height = p.get_height()
-        ax.text(p.get_x(), height+2, '%1.2f' % (height) )
 
-    plt.ylabel('mean(current), mA')
-    plt.xlabel('log names')
-    plt.subplots_adjust(bottom=0.40)
-    if not suffix:
-        suffix = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
-    try:
-        logging.info('Saving plot to %s/barplot%s.png', path, suffix)
-        filename = '%s/barplot%s.png' % (path, suffix)
-        plt.savefig(filename)
-    except:
-        logging.info("Unable to save plot to file", exc_info=True)
-    return filename
 
 
 
@@ -316,7 +243,6 @@ def make_app():
         (r"/lmplot", LmplotBuilder),
         (r"/record", Recorder),
         (r"/plot", PlotDisplayer),
-        (r"/qplot", QPlot),
         (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": static_path}),
     ])
 
