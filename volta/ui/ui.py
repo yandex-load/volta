@@ -212,124 +212,6 @@ class PlotDisplayer(tornado.web.RequestHandler):
 
 
 
-
-
-
-
-#==============================================
-
-class LogcatMeta(tornado.web.RequestHandler):
-    """ return metadata for front """
-    def get(self):
-        #добавил к датам год, потому что в логах его нет и почистил логи от мусора, когда при запуске даты были кривые
-        logcat_start = datetime.datetime.strptime("10-19 18:17:49.204", "%m-%d %H:%M:%S.%f").replace(year=2016)
-        logcat_start_epoch = (logcat_start - datetime.datetime(1970,1,1)).total_seconds()
-        logcat_syncflash = datetime.datetime.strptime("10-19 18:24:11.630", "%m-%d %H:%M:%S.%f").replace(year=2016)
-        logcat_syncflash_epoch = (logcat_syncflash - datetime.datetime(1970,1,1)).total_seconds()
-        logcat_end = datetime.datetime.strptime("10-19 18:28:11.531", "%m-%d %H:%M:%S.%f").replace(year=2016)
-        logcat_end_epoch = (logcat_end - datetime.datetime(1970,1,1)).total_seconds()
-        
-        #id события в логе коробки с 2 включением фонарика
-        sync = 12170
-        #считаем timestamp конца лога - количество событий после sync'а, учитывая rate 1000000
-        end = 164381619
-        volta_start = logcat_syncflash_epoch - sync/1000 
-        volta_end = logcat_syncflash_epoch + end/1000000
-
-        #dump to json
-        js_temp = {}
-        js_temp['logcat'] = {
-            'start': logcat_start_epoch,
-            'end': logcat_end_epoch
-        }
-        js_temp['volta'] = {
-            'rate': 1000000,
-            'start': volta_start,
-            'end': volta_end
-        }
-        self.set_header("Content-Type", "application/json")
-        self.write(json.dumps(js_temp))
-
-
-class Logcat(tornado.web.RequestHandler):
-    """ returns data for front """
-    def post(self):
-        pass
-
-    def get(self):
-        data = os.listdir('data')
-
-        #читаем лог с сырыми данными
-        df = pd.DataFrame(
-            np.fromfile(
-                "data/browser_download_lte.bin",
-                dtype=np.uint16
-            ).astype(np.float32) * (3300 / 2**12)
-        )
-        logging.info('readed')
-        #усредняем по миллисекунды
-        logging.info('mean')
-        df_r1000 = df.groupby(df.index//1000).mean()
-        logging.info(df_r1000)
-        #сходим в самого себя, почитаем meta информацию
-        try:
-            with open('data/meta.json') as meta:
-                meta_json = json.loads(meta.read())
-        except:
-            self.write('There is no metafile. Call <a href="/logcatmeta">meta</a> method first')
-            self.send_error(status_code=404)
-
-        logging.info(meta_json)
-
-        #смотрим старт лога из мета информации
-        start = datetime.datetime.fromtimestamp(meta_json['volta']['start'])
-        logging.info(start)
-        #строим индекс по старту с частотой в миллисекунду
-        index = pd.date_range(start, periods=len(df_r1000), freq='ms')
-        logging.info('done index')
-        #строим series по построенному индексу и значениям, прочитанным из лога
-        series = pd.Series(df_r1000.ix[:,0].values, index=index)
-        logging.info(series)
-        logging.info('done series')
-        #приходит фронт за нужным slice
-        s2 = series['2016-10-19 21:23':'2016-10-19 21:24']
-       
-        #считаем количество данных в slice
-        nsamples_origin = s2.count()
-        #print ('Origin samples count: %s' % nsamples_origin)
-        
-        #фронт говорит сколько сэмлов ему нужно
-        nsamples = 5000
-        
-        #в случае, если данных за slice больше, чем запрошенных,
-        #считаем коэффициент resampling'а и делаем resample.
-        if nsamples < nsamples_origin:
-            k = str(int(nsamples_origin/nsamples))+'L'
-            #print ('Coeff: %s' % k)
-            #делаем resample
-            logging.info('started resampling')
-            resampled = s2.resample(k).mean()
-            logging.info(resampled)
-            logging.info('end resampling')
-            #print ('Resampled count: %s' % resampled.count())
-            #print ('Resampled slice: \n \n%s' % resampled[:10])
-        #в случае, если данных меньше, resample делать можно, но нужно понять как правильно интерполировать
-        else:
-            #print ('nsamples %s more than origin %s' % (nsamples, nsamples_origin))
-            resampled = s2
-        
-        
-        #теперь сформатируем данные так, как это нужно фронту (БОЛЬ)
-        resampled_dict = resampled.to_dict()
-        res = []
-        for ts, value in resampled_json.items():
-            work = {}
-            work['x'] = ts.timestamp()
-            work['y'] = value
-            res.append(work)
-        self.set_header("Content-Type", "application/json") 
-        self.write(res)
-                
 #============================================================
 
 def input_files_to_df(files, delimiter):
@@ -365,8 +247,6 @@ def make_app():
         (r"/lmplot", LmplotBuilder),
         (r"/record", Recorder),
         (r"/plot", PlotDisplayer),
-        (r"/logcat", Logcat),
-        (r"/logcatmeta", LogcatMeta),
         (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": static_path}),
     ])
 
