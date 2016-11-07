@@ -75,6 +75,7 @@ class BarplotBuilder(tornado.web.RequestHandler):
         self.set_header("Content-Type", "image/jpeg")
         with open(filename) as img:
             data = img.read()
+        plt.close()
         self.write(data)
 
 
@@ -135,6 +136,7 @@ class LmplotBuilder(tornado.web.RequestHandler):
         except:
             logging.error('Unable to save plot to file', exc_info=True)
 
+        plt.close()
         self.set_header("Content-Type", "image/jpeg")
         with open(filename) as img:
             data = img.read()
