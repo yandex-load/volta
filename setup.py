@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='volta',
-    version='0.0.11',
+    version='0.0.12',
     description='yandex package for mobile energy consumption measurements',
     longer_description='''
 yandex package for mobile energy consumption measurements
@@ -36,9 +36,11 @@ yandex package for mobile energy consumption measurements
     license='MPLv2',
     package_data={
         'volta.ui': [
-            'templates/*', 
             'static/*',
         ],
+        'volta.ui.handlers': [
+            'templates/*',
+        ], 
     },
     classifiers=[
         'Environment :: Web Environment',
