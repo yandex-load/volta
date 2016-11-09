@@ -11,25 +11,18 @@ import webbrowser
 
 from pkg_resources import resource_filename
 
+from volta.ui.handlers.index import IndexPage
 from volta.ui.handlers.barplot import BarplotBuilder
 from volta.ui.handlers.lmplot import LmplotBuilder
 from volta.ui.handlers.record  import Recorder
 from volta.ui.handlers.plot import PlotDisplayer
 
 
-class MainHandler(tornado.web.RequestHandler):
-    def get(self):
-        """ index page w/ buttons """
-        self.render(
-            resource_filename(__name__, 'handlers/templates/index.html'),
-            title="Volta UI"
-        )
-
 
 def make_app():
     static_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'static')
     return tornado.web.Application([
-        (r"/", MainHandler),
+        (r"/", IndexPage),
         (r"/barplot", BarplotBuilder),
         (r"/lmplot", LmplotBuilder),
         (r"/record", Recorder),
