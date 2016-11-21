@@ -3,8 +3,12 @@ import subprocess
 import datetime
 import logging
 import os
+import serial
+import sys
+import glob
 
 from pkg_resources import resource_filename
+
 
 
 class Recorder(tornado.web.RequestHandler):
@@ -14,12 +18,26 @@ class Recorder(tornado.web.RequestHandler):
         Returns:
             record template w/ list of available devices
         """
-        devices = os.listdir('/dev')
-        # any device endswith 'cu'
-        # FIXME : find a better way to detect devices
+        arduino_devs = []
+        if sys.platform.startswith('win'):
+            ports = ['COM%s' % (i + 1) for i in range(256)]
+            for port in ports:
+                try:
+                    s = serial.Serial(port)
+                    s.close()
+                    arduino_devs.append(port)
+                except (OSError, serial.SerialException):
+                    pass
+        elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin') or sys.platform.startswith('darwin'):
+            ports = glob.glob('/dev/cu.[A-Za-z]*')
+            # FIXME : maybe some intelligent logic here?
+            for port in ports:
+                arduino_devs.append(port)
+        else:
+            raise EnvironmentError('Unsupported platform')
         # FIXME : exclude bluetooth!
         # FIXME : enter total seconds, not total amount of samples
-        arduino_devs = ['/dev/{device}'.format(device=device) for device in devices if device.startswith('cu')]
+        #arduino_devs = ['/dev/{device}'.format(device=device) for device in devices if device.startswith('cu')]
         self.render(
             resource_filename(__name__, 'record.html'),
             title="Recorder",

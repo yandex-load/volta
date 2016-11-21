@@ -17,7 +17,8 @@ yandex package for mobile energy consumption measurements
         'seaborn',
         'numpy',
         'matplotlib',
-        'requests'
+        'requests',
+        'pyserial'
     ],
     setup_requires=[
         'pytest-runner',
