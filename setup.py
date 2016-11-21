@@ -37,10 +37,8 @@ yandex package for mobile energy consumption measurements
     package_data={
         'volta.ui': [
             'static/*',
+            'handlers/*',
         ],
-        'volta.ui.handlers': [
-            'templates/*',
-        ], 
     },
     classifiers=[
         'Environment :: Web Environment',

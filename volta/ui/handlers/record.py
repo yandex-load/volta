@@ -21,7 +21,7 @@ class Recorder(tornado.web.RequestHandler):
         # FIXME : enter total seconds, not total amount of samples
         arduino_devs = ['/dev/{device}'.format(device=device) for device in devices if device.startswith('cu')]
         self.render(
-            resource_filename(__name__, 'templates/record.html'),
+            resource_filename(__name__, 'record.html'),
             title="Recorder",
             devices=arduino_devs
         )

@@ -20,7 +20,7 @@ class BarplotBuilder(tornado.web.RequestHandler):
         # use any files in './logs' that endswith 'log'
         items = ['./logs/{filename}'.format(filename=filename) for filename in dir_files if filename.endswith('log')]
         self.render(
-            resource_filename(__name__, 'templates/barplot.html'),
+            resource_filename(__name__, 'barplot.html'),
             title="Barplot builder",
             items=items
         )

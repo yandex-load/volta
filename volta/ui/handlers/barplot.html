@@ -1,5 +1,5 @@
 <html>
-    {% include "templates/navbar.html" %}
+    {% include "navbar.html" %}
     <head>
         <link rel="stylesheet" href="/static/style.css">
         <link rel="stylesheet" href="/static/bootstrap.min.css">
@@ -10,21 +10,21 @@
     <body>
         <div class="container bgcont center-block">
             <div class="row">
-                <h1 class="bg-info">Выберите график, всего найдено графиков: {{ len(plots) }}</h1>
-                {% if len(plots) == 0 %}
+                <h1 class="bg-info">Выберите лог, всего найдено логов: {{ len(items) }}</h1>
+                {% if len(items) == 0 %}
                 <p class="bg-warning">
-                    Не найдены графики! <br>
-                    Графики должны быть в директории plots относительно того места, откуда запускается volta-ui
+                    Не найдены логи! <br>
+                    Логи должны быть в директории logs относительно того места, откуда запускается volta-ui
                 </p>
                 {% end %}
-                <form action="plot" method="POST" role="form" class="form-horizontal">
-                    {% for plot in plots %}
+                <form action="barplot" method="POST" role="form" class="form-horizontal">
+                    {% for item in items %}
                     <div class="col-sm-12">
-                        <div class="radio">
+                        <div class="checkbox">
                             <label style="font-size: 2.5em">
-                                <input type="radio" class="form-control" id="plot" name="plot" value="{{ escape(plot) }}">
-                                <span class="cr"><i class="cr-icon fa fa-circle"></i></span>
-                                {{ escape(plot) }}
+                                <input type="checkbox" class="form-control" id="log" name="log" value="{{ escape(item) }}">
+                                <span class="cr"><i class="cr-icon fa fa-check"></i></span>
+                                {{ escape(item.split('/')[-1]) }}
                             </label>
                         </div>
                     </div>
@@ -37,6 +37,6 @@
                 </form>
             </div>
         </div>
-    {% include "templates/counter.html" %}
+    {% include "counter.html" %}
     </body>
  </html>

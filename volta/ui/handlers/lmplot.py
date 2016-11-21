@@ -21,7 +21,7 @@ class LmplotBuilder(tornado.web.RequestHandler):
         # use any files in './logs' that endswith 'log'
         items = ['logs/{filename}'.format(filename=filename) for filename in dir_files if filename.endswith('log')]
         self.render(
-            resource_filename(__name__, 'templates/lmplot.html'),
+            resource_filename(__name__, 'lmplot.html'),
             title="Lmplot builder",
             items=items
         )

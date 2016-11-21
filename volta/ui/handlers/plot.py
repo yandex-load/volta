@@ -13,7 +13,7 @@ class PlotDisplayer(tornado.web.RequestHandler):
         """
         plots = os.listdir('plots')
         self.render(
-            resource_filename(__name__, 'templates/plots.html'),
+            resource_filename(__name__, 'plots.html'),
             title="Plots",
             plots=plots
         )
