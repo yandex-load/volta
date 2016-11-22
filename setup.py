@@ -32,6 +32,7 @@ yandex package for mobile energy consumption measurements
     entry_points={
         'console_scripts': [
             'volta-ui = volta.ui.ui:main',
+            'volta-sync = volta.analysis.sync:main',
         ],
     },
     license='MPLv2',
