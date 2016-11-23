@@ -16,6 +16,7 @@ from volta.ui.handlers.barplot import BarplotBuilder
 from volta.ui.handlers.lmplot import LmplotBuilder
 from volta.ui.handlers.record  import Recorder
 from volta.ui.handlers.plot import PlotDisplayer
+from volta.ui.handlers.merger import LogcatMerger
 
 
 
@@ -27,6 +28,7 @@ def make_app():
         (r"/lmplot", LmplotBuilder),
         (r"/record", Recorder),
         (r"/plot", PlotDisplayer),
+        (r"/merger", LogcatMerger),
         (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": static_path}),
     ])
 
@@ -41,6 +43,7 @@ def main():
     work_dirs = {
         'plots' : 'plots',
         'logs' : 'logs',
+        'events': 'events',
     }
     for key, dirname in work_dirs.iteritems():
         try:

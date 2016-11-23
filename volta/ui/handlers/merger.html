@@ -1,0 +1,60 @@
+<html>
+    {% include "navbar.html" %}
+    <head>
+        <link rel="stylesheet" href="/static/style.css">
+        <link rel="stylesheet" href="/static/bootstrap.min.css">
+        <link rel="stylesheet" href="/static/checkboxes.css">
+        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+        <title>{{ title }}</title>
+    </head>
+    <body>
+        <div class="container bgcont center-block">
+            <div class="row">
+                <h1 class="bg-info">Выберите данные. Всего найдено логов: {{ len(logs) }}, всего найдено логов с эвентами: {{ len(events) }}</h1>
+                {% if len(logs) == 0 %}
+                <p class="bg-warning">
+                    Не найдены логи! <br>
+                    Логи должны быть в директории logs относительно того места, откуда запускается volta-ui
+                </p>
+                {% end %}
+                <p> --------------------------------------- </p>
+                {% if len(events) == 0 %}
+                <p class="bg-warning">
+                    Не найдены логи эвентов! <br>
+                    Логи должны быть в директории events относительно того места, откуда запускается volta-ui
+                </p>
+                {% end %}
+                <form action="merger" method="POST" role="form" class="form-horizontal">
+                    {% for log in logs %}
+                    <div class="col-sm-12">
+                        <div class="radio">
+                            <label style="font-size: 2.5em">
+                                <input type="radio" class="form-control" id="log" name="log" value="{{ escape(log) }}">
+                                <span class="cr"><i class="cr-icon fa fa-circle"></i></span>
+                                {{ escape(log) }}
+                            </label>
+                        </div>
+                    </div>
+                    {% end %}
+                    {% for event in events %}
+                    <div class="col-sm-12">
+                        <div class="radio">
+                            <label style="font-size: 2.5em">
+                                <input type="radio" class="form-control" id="events" name="events" value="{{ escape(event) }}">
+                                <span class="cr"><i class="cr-icon fa fa-circle"></i></span>
+                                {{ escape(event) }}
+                            </label>
+                        </div>
+                    </div>
+                    {% end %}
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                            <button type="submit" class="btn btn-default btn-lg">Go!</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% include "counter.html" %}
+    </body>
+ </html>
