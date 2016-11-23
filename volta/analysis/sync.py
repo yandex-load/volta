@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from scipy import signal
 from scipy import interpolate
 from scipy.stats import pearsonr
 from datetime import datetime
@@ -64,10 +63,23 @@ def cross_correlate(sig, ref, first=30000):
 
 
 def sync(sig, eventlog, sps=1000, trailing_zeros=1000, first=30000):
+    """
+    Calculate sync point for android log and electrical current measurements
+
+    Args:
+        sig: current measurements, one column
+        eventlog: android log with torch on/off events
+        sps: current measurements sample rate
+        trailing_zeros: number of trailing zeros to generate in reference signal
+        first: number of samples to try as lag
+
+    Returns:
+        sync_point, int, amount of samples of electrical current log until synchronization flaslight event
+    """
     rs = ref_signal(
         parse_torch_events(eventlog, sps=sps),
         trailing_zeros=trailing_zeros)
-    cc = cross_correlate(sig, rs)
+    cc = cross_correlate(sig, rs, first)
     sync_point = np.argmax(cc["corr"])
     if cc["p_value"][sync_point] > 0.05:
         raise RuntimeError("P-value is too big: %d" % cc["p_value"][sync_point])

@@ -6,16 +6,24 @@ import datetime
 import requests
 import csv
 import pandas as pd
-import numpy as np
-import json
 import logging
 
 from volta.analysis.sync import sync, torch_status
 from pkg_resources import resource_filename
 
 
-
 def WriteListToCSV(csv_file, data_list):
+    """
+    Write contents of python list to CSV file row-by-row
+    FIXME : python csv standart library unable to use unicode. Burn this logic, please!
+
+    Args:
+        csv_file: output csv filename
+        data_list: python list w/ contents
+
+    Returns:
+        None
+    """
     try:
         with open(csv_file, 'w') as csvfile:
             writer = csv.writer(csvfile, dialect='excel', quoting=csv.QUOTE_NONNUMERIC)
@@ -27,7 +35,17 @@ def WriteListToCSV(csv_file, data_list):
 
 
 def FormatEvents(events, today, test_id):
-    """ returns list of event data """
+    """
+    lists of events data
+
+    Args:
+        events: android log w/ events (flash on/off etc)
+        today: today date, string
+        test_id: volta test id, string
+
+    Returns:
+        list of values w/ lists inside, format: [today, test_id, ts, message]
+    """
     logging.info('Started formatting events')
     with open(events) as eventlog:
         values = []
@@ -36,7 +54,7 @@ def FormatEvents(events, today, test_id):
             if event.startswith("----"):
                 continue
             message = ' '.join(event.split()[5:])
-            # Android log doesn't have `year`
+            # Android doesn't log `year` to logcat by default
             ts_prepare = datetime.datetime.strptime(
                 "{year}-{date} {time}".format(
                     year=datetime.datetime.now().strftime("%Y"),
@@ -47,11 +65,23 @@ def FormatEvents(events, today, test_id):
             )
             ts = int(((ts_prepare - datetime.datetime(1970,1,1)).total_seconds()) * 10000 )
             values.append([today, test_id, ts, message])
-        logging.info('Ts: %s', ts)
         return values
 
 
 def FormatCurrent(fname, volta_start, date, test_id):
+    """
+    lists of currents data
+
+    Args:
+        fname: electrical current measurement csv file
+        volta_start: start, counted by sync point w/ cross-correlation
+        date: today date, string
+        test_id: volta test id, string
+
+    Returns:
+        list of values w/ lists inside, format: [today, test_id, ts, message]
+    """
+
     logging.info('Started formatting currents')
 
     df = pd.read_csv(fname, delimiter=' ', names="ts curr".split())
@@ -65,11 +95,20 @@ def FormatCurrent(fname, volta_start, date, test_id):
         dt = key.strftime("%Y-%m-%d %H:%M:%S.%f")
         ts = int((datetime.datetime.strptime(dt, "%Y-%m-%d %H:%M:%S.%f") - datetime.datetime(1970,1,1)).total_seconds() * 10000 )
         values.append([date, test_id, ts, value])
-    logging.info('Ts: %s', ts)
     return values
 
 
 def CreateJob(test_id, task='LOAD-272'):
+    """
+    creates job in lunapark, uploading metadata
+
+    Args:
+        test_id: volta test id, str
+        task: lunapark task id, str
+
+    Returns:
+
+    """
     try:
         url = "https://lunapark.yandex-team.ru/mobile/create_job.json"
         data = {
@@ -89,21 +128,32 @@ def CreateJob(test_id, task='LOAD-272'):
 
 class LogcatMerger(tornado.web.RequestHandler):
     def get(self):
-        """ Helper page for logcat merger w/ list of available events/logs
+        """
+        Helper page for logcat merger w/ list of available events/logs
 
         Returns:
             template w/ list of logs/events
         """
         logs = os.listdir('logs')
+        log_files = ['logs/{filename}'.format(filename=filename) for filename in logs if filename.endswith('log')]
+
         events = os.listdir('events')
+        event_files = ['events/{filename}'.format(filename=filename) for filename in events if filename.endswith('log')]
+
         self.render(
             resource_filename(__name__, 'merger.html'),
             title="Plots",
-            logs=logs,
-            events=events
+            logs=log_files,
+            events=event_files
         )
 
     def post(self):
+        """
+        Sync android and electrical current measurements logs and upload data to lunapark
+
+        Returns:
+            url to test
+        """
         year = datetime.datetime.now().strftime("%Y")
         test_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
         date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -113,8 +163,6 @@ class LogcatMerger(tornado.web.RequestHandler):
         # log_samplerate = self.get_body_argument('samplerate')
         # task = self.get_body_argument('task')
 
-        log = 'logs/'+log
-        events = 'events/'+events
         logging.info('Incoming log fname: %s', log)
         logging.info('Incoming events fname: %s', events)
 
@@ -127,32 +175,41 @@ class LogcatMerger(tornado.web.RequestHandler):
         )
         logging.debug('Sync point: %s', sync_point)
 
+        message = None
         with open(events) as eventlog:
             for line in eventlog.readlines():
                 if "newStatus=2" in line:
                     message = line
                     break
 
-        syncflash = datetime.datetime.strptime(' '.join(message.split(' ')[:2]), "%m-%d %H:%M:%S.%f").replace(year=2016)
-        syncflash_unix = (syncflash - datetime.datetime(1970,1,1)).total_seconds()
+        if message:
+            syncflash = datetime.datetime.strptime(' '.join(message.split(' ')[:2]), "%m-%d %H:%M:%S.%f").replace(year=2016)
+            syncflash_unix = (syncflash - datetime.datetime(1970,1,1)).total_seconds()
+        else:
+            self.write('Unable to find appropriate flashlight messages in android log to synchronize')
+            return
         
         logging.debug('Syncflash_unix: %s', syncflash_unix)
 
         # please be caferull w/ dots because of py3/py2 divide behavior difference
         volta_start = syncflash_unix - sync_point/500.
 
+        # format data to desired
         events_data = FormatEvents(events, date, test_id)
         current_data = FormatCurrent(log, volta_start, date, test_id)
 
         # FIXME : task as a parameter
         task = 'LOAD-272'
-        CreateJob(test_id, task)
+        jobid = CreateJob(test_id, task)
 
         output_events = 'events/events_'+test_id+".data"
         WriteListToCSV(output_events, events_data)
         with open(output_events, 'r') as outfile:
             data = outfile.read()
-            url = "http://volta-backend-test.haze.yandex.net:8123/?query=INSERT INTO volta.logs FORMAT CSV"
+            url = "{url}{query}".format(
+                url="http://volta-backend-test.haze.yandex.net:8123/?query=",
+                query="INSERT INTO volta.logs FORMAT CSV"
+            )
             r = requests.post(url, data=data)
             logging.info('Upload events to clickhouse status: %s. \n Answer: %s', r.status_code, r.text)
     
@@ -160,6 +217,15 @@ class LogcatMerger(tornado.web.RequestHandler):
         WriteListToCSV(output_current, current_data)
         with open(output_current, 'r') as outfile:
             data = outfile.read()
-            url = "http://volta-backend-test.haze.yandex.net:8123/?query=INSERT INTO volta.current FORMAT CSV"
+            url = "{url}{query}".format(
+                url="http://volta-backend-test.haze.yandex.net:8123/?query=",
+                query="INSERT INTO volta.current FORMAT CSV"
+            )
             r = requests.post(url, data=data)
             logging.info('Upload current to clickhouse status: %s. \n Answer: %s', r.status_code, r.text)
+
+        url_for_return = "<html>" \
+                         "<meta http-equiv='refresh' content=\"0;{redir_url}\" />" \
+                         "<p><a href='{id}'>redirect</a></p>" \
+                         "</html>".format(id=jobid, redir_url=jobid)
+        self.write(url_for_return)
