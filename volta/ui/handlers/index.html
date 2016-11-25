@@ -9,15 +9,19 @@
     </head>
     <body>
         <div class="container bgcont center-block">
-            <div class="row">
-                <h1 class="bg-info">Выберите действие</h1>
-                <a class="btn btn-default btn-lg" href="lmplot" role="button">Построить график ток->время по логу</a>
-                <a class="btn btn-default btn-lg" href="barplot" role="button">Сравнить графики (колонки)</a>
-                <a class="btn btn-default btn-lg" href="record" role="button">Снять показания с коробки</a>
-                <a class="btn btn-default btn-lg" href="plot" role="button">Посмотреть графики</a>
-                <a class="btn btn-default btn-lg" href="merger" role="button">Залить логи в Лунапарк</a>
-               <br><br>
-            </div>
+            <form action="" method="GET" role="form" class="form-horizontal">
+                <label>Выберите действие</label>
+                <div class="form-group">
+                    <a class="btn btn-default btn-lg" href="record" role="button">Снять показания с коробки</a><br><br>
+
+                    <a class="btn btn-default btn-lg" href="lmplot" role="button">Построить график ток->время по логу</a>
+                    <a class="btn btn-default btn-lg" href="barplot" role="button">Сравнить графики (колонки) по нескольким логам</a><br><br>
+    
+                    <a class="btn btn-default btn-lg" href="plot" role="button">Посмотреть готовые графики</a><br><br>
+        
+                    <a class="btn btn-default btn-lg" href="merger" role="button">Залить логи в Лунапарк</a>
+                </div>
+            </form>
         </div>
     {% include "counter.html" %}
     </body>

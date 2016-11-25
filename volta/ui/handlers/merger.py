@@ -142,7 +142,7 @@ class LogcatMerger(tornado.web.RequestHandler):
 
         self.render(
             resource_filename(__name__, 'merger.html'),
-            title="Plots",
+            title="Log merger",
             logs=log_files,
             events=event_files
         )
@@ -160,8 +160,8 @@ class LogcatMerger(tornado.web.RequestHandler):
     
         log = self.get_body_argument('log')
         events = self.get_body_argument('events')
-        # log_samplerate = self.get_body_argument('samplerate')
-        # task = self.get_body_argument('task')
+        samplerate = float(self.get_body_argument('samplerate'))
+        task = self.get_body_argument('task')
 
         logging.info('Incoming log fname: %s', log)
         logging.info('Incoming events fname: %s', events)
@@ -169,7 +169,7 @@ class LogcatMerger(tornado.web.RequestHandler):
         sync_point = sync(
             pd.read_csv(log, delimiter=' ', names="ts curr".split())["curr"],
             events,
-            sps=500,
+            sps=samplerate,
             first=10000,
             trailing_zeros=1000,
         )
@@ -191,15 +191,12 @@ class LogcatMerger(tornado.web.RequestHandler):
         
         logging.debug('Syncflash_unix: %s', syncflash_unix)
 
-        # please be caferull w/ dots because of py3/py2 divide behavior difference
-        volta_start = syncflash_unix - sync_point/500.
+        volta_start = syncflash_unix - sync_point/samplerate
 
         # format data to desired
         events_data = FormatEvents(events, date, test_id)
         current_data = FormatCurrent(log, volta_start, date, test_id)
 
-        # FIXME : task as a parameter
-        task = 'LOAD-272'
         jobid = CreateJob(test_id, task)
 
         output_events = 'events/events_'+test_id+".data"

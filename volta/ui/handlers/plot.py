@@ -1,5 +1,6 @@
 import tornado.web
 import os
+import base64
 
 from pkg_resources import resource_filename
 
@@ -31,8 +32,14 @@ class PlotDisplayer(tornado.web.RequestHandler):
             self.send_error(status_code=404)
             return None
 
-        self.set_header("Content-Type", "image/jpeg")
+        #self.set_header("Content-Type", "image/jpeg")
         plot_fpath = os.path.join('plots', plot)
         with open(plot_fpath) as img:
             data = img.read()
-        self.write(data)
+            b64_data = base64.b64encode(data)
+        self.render(
+            resource_filename(__name__, 'result.html'),
+            title="Result",
+            data=b64_data,
+            message=None
+        )
