@@ -18,7 +18,8 @@ yandex package for mobile energy consumption measurements
         'numpy',
         'matplotlib',
         'requests',
-        'pyserial'
+        'pyserial',
+        'progressbar2',
     ],
     setup_requires=[
         'pytest-runner',
@@ -33,6 +34,7 @@ yandex package for mobile energy consumption measurements
         'console_scripts': [
             'volta-ui = volta.ui.ui:main',
             'volta-sync = volta.analysis.sync:main',
+            'volta-grab = volta.analysis.grab:main',
         ],
     },
     license='MPLv2',
