@@ -1,0 +1,22 @@
+<html>
+    {% include "navbar.html" %}
+    <head>
+        <link rel="stylesheet" href="/static/style.css">
+        <link rel="stylesheet" href="/static/bootstrap.min.css">
+        <link rel="stylesheet" href="/static/checkboxes.css">
+        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+        <title>{{ title }}</title>
+    </head>
+    <body>
+        <div class="container bgcont center-block">
+            {% if data %}
+            <h1 class="bg-info">Результат:</h1>
+            <img src="data:image/png;base64,{{ data }}" alt="Graph" /> 
+            {% end %}
+            {% if message %}
+                <p class="bg-info"> {{ message }} </p>
+            {% end %}
+        </div>
+    {% include "counter.html" %}
+    </body>
+</html>

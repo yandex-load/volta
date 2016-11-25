@@ -32,12 +32,11 @@ class Recorder(tornado.web.RequestHandler):
             ports = glob.glob('/dev/cu.[A-Za-z]*')
             # FIXME : maybe some intelligent logic here?
             for port in ports:
-                arduino_devs.append(port)
+                if not 'Bluetooth' in port:
+                    arduino_devs.append(port)
         else:
             raise EnvironmentError('Unsupported platform')
-        # FIXME : exclude bluetooth!
         # FIXME : enter total seconds, not total amount of samples
-        #arduino_devs = ['/dev/{device}'.format(device=device) for device in devices if device.startswith('cu')]
         self.render(
             resource_filename(__name__, 'record.html'),
             title="Recorder",
@@ -76,4 +75,10 @@ class Recorder(tornado.web.RequestHandler):
             except Exception as exc:
                 logging.error('Error trying to record samples', exc_info=True)
                 return None
-        self.write('Ok. Logfile: %s' % logfile)
+
+        self.render(
+            resource_filename(__name__, 'result.html'),
+            title="Results",
+            data=None,
+            message="Done. Logfile name: %s" % logfile
+        )

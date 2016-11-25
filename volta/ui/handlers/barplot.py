@@ -5,6 +5,7 @@ import datetime
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
+import base64
 
 from pkg_resources import resource_filename
 
@@ -66,11 +67,17 @@ class BarplotBuilder(tornado.web.RequestHandler):
             return None
 
         # read plot and return contents
-        self.set_header("Content-Type", "image/jpeg")
         with open(filename) as img:
             data = img.read()
+            b64_data = base64.b64encode(data)
         plt.close()
-        self.write(data)
+
+        self.render(
+            resource_filename(__name__, 'result.html'),
+            title="Result",
+            data=b64_data,
+            message=None
+        )
 
 
 def input_files_to_df(files, delimiter):

@@ -1,0 +1,56 @@
+<html>
+    {% include "navbar.html" %}
+    <head>
+        <link rel="stylesheet" href="/static/style.css">
+        <link rel="stylesheet" href="/static/bootstrap.min.css">
+        <link rel="stylesheet" href="/static/checkboxes.css">
+        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+        <title>{{ title }}</title>
+    </head>
+    <body>
+        <div class="container bgcont center-block">
+            <form action="merger" method="POST" role="form" class="form-horizontal">
+                {% if len(logs) == 0 or len(events) == 0 %}
+                <fieldset disabled>
+                {% end %}
+                <div class="form-group">
+                    <label for="log">Выберите лог со значениями тока (лог коробки). Всего найдено логов: {{ len(logs) }}</label>
+                    <select class="form-control" name="log">
+                        {% if len(logs) == 0 %}
+                            <option>Не найдены логи с метриками тока. Логи должны быть в директории logs относительно того места, откуда запускается volta-ui</option>
+                        {% end %}
+                        {% for log in logs %}
+                            <option value="{{ escape(log) }}" name="log" id="log">{{ escape(log) }}</option>
+                        {% end %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="event">Выберите лог событий (лог Android). Всего найдено логов с эвентами: {{ len(events) }}</label>
+                    <select class="form-control" name="events">
+                        {% if len(events) == 0 %}
+                            <option>Не найдены логи с событиями. Логи должны быть в директории events относительно того места, откуда запускается volta-ui</option>
+                        {% end %}
+                        {% for event in events %}
+                            <option value="{{ escape(event) }}" name="events" id="events">{{ escape(event) }}</option>
+                        {% end %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="samplerate">Log samplerate</label>
+                    <input type="text" class="form-control" id="samplerate" name="samplerate" placeholder="500" aria-describedby="samplerate-helpblock">
+                    <span id="samplerate-helpblock" class="help-block">На измерение какого количества мгновенных значений тока была настроена коробка во время записи лога</span>
+                </div>
+                <div class="form-group">
+                    <label for="task">Таск</label>
+                    <input type="text" class="form-control" id="task" name="task" placeholder="LOAD-272" aria-describedby="task-helpblock">
+                    <span id="task-helpblock" class="help-block">ID таска в Лунапарке, к которому прикрепить результаты тестов</span>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary btn-lg">Go!</button>
+                </div>
+            </form>
+        </div>
+    {% include "counter.html" %}
+    </body>
+ </html>
