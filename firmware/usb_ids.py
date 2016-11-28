@@ -1,4 +1,3 @@
-import usb
 import gzip
 import logging
 
@@ -6,6 +5,23 @@ logger = logging.getLogger(__name__)
 
 
 def ids_file_to_dict(fname):
+    """
+    reads usb_ids.gz file and returns python dict
+
+    Args:
+        fname: usb_ids.gz
+
+    Returns:
+        {'manufacturer_id':
+            {'name': 'manufacturer_name'},
+            {'devices':
+                {'device_id': 'device_name'},
+                {'device_id': 'device_name'},
+                {'device_id': 'device_name'},
+                ...
+            }
+        }
+    """
     ids_dict = {}
     with gzip.open(fname, 'r') as ids_f:
         for line in ids_f.readlines():
@@ -23,6 +39,8 @@ def ids_file_to_dict(fname):
                     ids_dict[man_id]['devices'] = {}
             # fill devices
             elif len(data) > 1:
+                if not man_id:
+                    continue
                 dev_id = data[1].split(' ')[0]
                 dev_name = data[1].split(' ')[1:]
                 ids_dict[man_id]['devices'][dev_id] = ' '.join(dev_name)
