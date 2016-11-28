@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Grab data from measurement device.')
+        description='Calculate sync point for android log and electrical current measurements.')
     parser.add_argument(
         '-i', '--device',
         default="/dev/cu.wchusbserial1410",
@@ -18,7 +18,6 @@ def main():
     parser.add_argument(
         '-s', '--seconds',
         default=60,
-        type=int,
         help='number of seconds to collect')
     parser.add_argument(
         '-o', '--output',
