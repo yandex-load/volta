@@ -89,3 +89,6 @@ ENV/
 .ropeproject
 
 .idea/
+
+#vim swap files
+.swp
