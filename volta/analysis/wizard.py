@@ -7,8 +7,6 @@ import os
 import usb
 
 
-from usb_ids import ids_file_to_sqlite
-
 logger = logging.getLogger(__name__)
 
 
@@ -20,10 +18,13 @@ def EventPoller(event):
             time.sleep(1)
     return False
 
+
 def isUsbConnected():
     logger.info("Подключите коробочку в USB...")
     device = usb.core.find(idVendor=0x1a86, idProduct=0x7523) # CH341 idVendor=0x1a86, idProduct=0x7523
-    if device: return True
+    if device:
+        logging.info('Найдена коробочка!')
+        return True
 
 
 def isPhoneConnected():
@@ -31,21 +32,33 @@ def isPhoneConnected():
     conn = sqlite3.connect('usb_list.db')
     c = conn.cursor()
     devices = usb.core.find(find_all=1)
+
+    phones = []
     for device in devices:
-        known_phones = [u'SAMSUNG_Android',
-                        u'iPhone']
+        known_phones = [
+            u'SAMSUNG_Android',
+            u'iPhone',
+            u'Android'
+        ]
         if not device.product in known_phones:
             continue
+        else:
+            phones.append(device)
+    if len(phones) == 1 :
         q = 'SELECT name FROM devices WHERE manufacturer_id="{man_id}" AND id="{device_id}"'.format(
-            man_id=format(device.idVendor, '04x'),
-            device_id=format(device.idProduct, '04x'),
+            man_id=format(phones[0].idVendor, '04x'),
+            device_id=format(phones[0].idProduct, '04x'),
         )
         c.execute(q)
-
-        device_name = c.fetchone()
-        if device_name:
-            logging.info('Найден телефон: %s. id: %s', device_name[0].encode('utf-8'), device.serial_number.encode('utf-8'))
-            return True
+        try:
+            device_name = c.fetchone()[0].encode('utf-8')
+        except:
+            device_name = 'Unknown device'
+        logging.info('Найден телефон: %s. id: %s', device_name, phones[0].serial_number.encode('utf-8'))
+        return True
+    elif len(phones) > 1:
+        logging.info('Найдено более 1 телефона! Отключите те, что не будут участвовать в измерениях.')
+        return False
     return False
 
 def main():
@@ -54,8 +67,7 @@ def main():
         format='%(asctime)s [%(levelname)s] [volta wizard] %(filename)s:%(lineno)d %(message)s'
     )
     logger.info("Volta wizard started")
-    if EventPoller(isUsbConnected):
-        logger.info('Надйена подключенная коробочка!')
+    #EventPoller(isUsbConnected)
     EventPoller(isPhoneConnected)
 
 if __name__ == "__main__":
