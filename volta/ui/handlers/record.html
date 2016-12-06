@@ -8,6 +8,22 @@
         <title>{{ title }}</title>
     </head>
     <body>
+    <script type="text/javascript">
+    window.interest = 0;
+    function go(){
+        samples = document.getElementById('samples').value;
+        document.getElementById('progressbar').style.display = "block"
+        if(interest != 100) {
+            interest = interest + 100/(samples/500);
+            document.getElementById('interest').innerHTML = interest + ' %';
+            document.getElementById('progress').style.width = interest * 5 + 'px';
+        }
+        else {
+            document.getElementById('interest').innerHTML = 'Загрузка завершена';
+            document.getElementById('interest').style.margin = '15px 0 0 186px';
+        }
+    };
+    </script>
         <div class="container bgcont center-block">
             <form action="record" method="POST" role="form">
                 {% if len(devices) == 0 %}
@@ -43,7 +59,12 @@
                     <span id="prefix-helpblock" class="help-block">Строка-префикс будет добавлена в начало к имени каждого лога. По-умолчанию формат: "Дата_Время"</span>
                 </div>
                 <div class="form-group">
-                    <button type="submit" class="btn btn-primary btn-lg">Go!</button>
+                    <button type="submit" class="btn btn-primary btn-lg" onclick="setInterval(go, 1000)">Go!</button>
+                </div>
+                <!-- progressbar-->
+                <div class="form-group" style="width: 500px; border: 1px solid #666; margin: 0 auto; display:none" id="progressbar">
+                    <center style="color: #666; position: absolute; margin: 15px 0 0 235px;" id="interest">0 %</center>
+                    <img id="progress" style="width: 0; height: 50px;" src="/static/prog.jpg">
                 </div>
             </form>
         </div>

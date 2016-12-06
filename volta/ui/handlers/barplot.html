@@ -15,7 +15,7 @@
                 {% end %}
                 <div class="form-group">
                     <label for="log">Выберите логи, всего найдено логов {{ len(items) }}. Зажав shift или ctrl можно выбрать несколько.</label>
-                    <select multiple class="form-control" name="log">
+                    <select multiple class="form-control" size="30" name="log">
                         {% if len(items) == 0 %}
                             <option>Не найдены логи. Логи должны быть в директории logs относительно того места, откуда запускается volta-ui</option>
                         {% end %}
