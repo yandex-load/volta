@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import pandas as pd
 from scipy import interpolate
@@ -80,6 +82,7 @@ def sync(sig, eventlog, sps=1000, trailing_zeros=1000, first=30000):
         parse_torch_events(eventlog, sps=sps),
         trailing_zeros=trailing_zeros)
     cc = cross_correlate(sig, rs, first)
+    log.info('cc')
     sync_point = np.argmax(cc["corr"])
     if cc["p_value"][sync_point] > 0.05:
         raise RuntimeError("P-value is too big: %d" % cc["p_value"][sync_point])
