@@ -59,8 +59,11 @@ def cross_correlate(sig, ref, first=30000):
     lags = np.arange(len(sig) - len(ref))
     if len(lags) > first:
         lags = lags[:first]
+    log.debug("Lags count: %d", len(lags))
+    log.debug("Ref length: %d", len(ref))
+    log.debug("Signal length: %d", len(sig))
     return pd.DataFrame.from_records(
-        [pearsonr(sig[lag:lag+len(ref)], ref) for lag in lags],
+        (pearsonr(sig[lag:lag+len(ref)], ref) for lag in lags),
         columns=["corr", "p_value"])
 
 
