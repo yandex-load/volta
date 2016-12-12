@@ -7,7 +7,7 @@ import usb
 import subprocess
 import glob
 import json
-
+import argparse
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ class PhoneWorker(object):
     def __init__(self):
         self.db = sqlite3.connect('usb_list.db').cursor()
         self.known_phones = [
-            u'SAMSUNG_Android', u'Android', u'Nexus 5X',
+            u'SAMSUNG_Android', u'Android', u'Nexus 5X', u'FS511',
             u'iPhone',
         ]
         self.device_serial = None
@@ -89,6 +89,7 @@ class PhoneWorker(object):
     def isPhoneConnected(self):
         logger.info("Подключите телефон в USB...")
         # ищем все подключенные известные нам телефоны по атрибуту product
+        logger.debug('Found products: %s', [device.product for device in usb.core.find(find_all=1)])
         phones = [device for device in usb.core.find(find_all=1) if device.product in self.known_phones]
         if len(phones) == 1 :
             # id'шники преобразовываем в hex, соблюдая формат
@@ -175,8 +176,15 @@ class PhoneWorker(object):
         return True
 
 def main():
+    parser = argparse.ArgumentParser(
+        description='wizard for volta.')
+    parser.add_argument(
+        '-d', '--debug',
+        help='enable debug logging',
+        action='store_true')
+    args = parser.parse_args()
     logging.basicConfig(
-        level="INFO",
+        level="DEBUG" if args.debug else "INFO",    
         format='%(asctime)s [%(levelname)s] [WIZARD] %(filename)s:%(lineno)d %(message)s'
     )
     logger.info("Volta wizard started")
