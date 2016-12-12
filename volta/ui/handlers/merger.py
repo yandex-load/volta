@@ -8,7 +8,6 @@ import csv
 import pandas as pd
 import logging
 
-from volta.analysis.sync import sync, torch_status
 from pkg_resources import resource_filename
 
 

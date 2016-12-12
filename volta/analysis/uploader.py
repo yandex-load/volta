@@ -9,7 +9,7 @@ import numpy as np
 import argparse
 import json
 
-from sync import sync, torch_status
+from volta.analysis.sync import sync, torch_status
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)

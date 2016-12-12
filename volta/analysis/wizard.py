@@ -9,6 +9,9 @@ import glob
 import json
 import argparse
 
+from pkg_resources import resource_string, resource_filename
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -52,7 +55,7 @@ class VoltaWorker(object):
         ports = glob.glob('/dev/cu.[A-Za-z]*')
         device = [port for port in ports if 'Bluetooth' not in port][0]
         self.worker = subprocess.Popen(
-            'python grab.py --device {device} -s {duration}'.format(duration=self.test_duration, device=device),
+            'volta-grab --device {device} -s {duration}'.format(duration=self.test_duration, device=device),
             shell=True
         )
         logger.info('Тест уже начался. Не забудьте помигать на телефоне фонариком!')
@@ -68,7 +71,7 @@ class VoltaWorker(object):
 
     def upload(self, output, events):
         logger.info('Считаем кросс-корреляцию и загружаем логи в Лунапарк')
-        upload = subprocess.Popen('python uploader.py -f {output} -e {events}'.format(output=output, events=events), shell=True)
+        upload = subprocess.Popen('volta-uploader -f {output} -e {events}'.format(output=output, events=events), shell=True)
         rc = upload.wait()
         logging.info('Upload завершился: %s', rc)
         if rc is not None:
@@ -76,7 +79,8 @@ class VoltaWorker(object):
 
 class PhoneWorker(object):
     def __init__(self):
-        self.db = sqlite3.connect('usb_list.db').cursor()
+        print resource_filename("volta.analysis", 'usb_list.db')
+        self.db = sqlite3.connect(resource_filename("volta.analysis", 'usb_list.db')).cursor()
         self.known_phones = [
             u'SAMSUNG_Android', u'Android', u'Nexus 5X', u'FS511',
             u'iPhone',
@@ -114,8 +118,6 @@ class PhoneWorker(object):
 
     def isPhoneDisconnected(self):
         logger.info("Отключите телефон от USB...")
-        conn = sqlite3.connect('usb_list.db')
-        c = conn.cursor()
         devices = usb.core.find(find_all=1)
         phones = []
         for device in devices:
@@ -128,9 +130,9 @@ class PhoneWorker(object):
                 man_id=format(phones[0].idVendor, '04x'),
                 device_id=format(phones[0].idProduct, '04x'),
             )
-            c.execute(q)
+            self.db.execute(q)
             try:
-                device_name = c.fetchone()[0].encode('utf-8')
+                device_name = self.db.fetchone()[0].encode('utf-8')
             except:
                 device_name = 'Unknown device'
             logging.info('Найден телефон: %s. id: %s', device_name, phones[0].serial_number.encode('utf-8'))
