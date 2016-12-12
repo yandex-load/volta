@@ -6,6 +6,7 @@ import sqlite3
 import usb
 import subprocess
 import glob
+import json
 
 
 logger = logging.getLogger(__name__)
@@ -65,6 +66,13 @@ class VoltaWorker(object):
         else:
             raise('Worker died?')
 
+    def upload(self, output, events):
+        logger.info('Считаем кросс-корреляцию и загружаем логи в Лунапарк')
+        upload = subprocess.Popen('python uploader.py -f {output} -e {events}'.format(output=output, events=events), shell=True)
+        rc = upload.wait()
+        logging.info('Upload завершился: %s', rc)
+        if rc is not None:
+            return rc
 
 class PhoneWorker(object):
     def __init__(self):
@@ -74,6 +82,9 @@ class PhoneWorker(object):
             u'iPhone',
         ]
         self.device_serial = None
+        self.device_name = None
+        self.android_version = None
+        self.android_api_version = None
 
     def isPhoneConnected(self):
         logger.info("Подключите телефон в USB...")
@@ -143,10 +154,30 @@ class PhoneWorker(object):
         if rc is not None:
             return rc
 
+    def getInfoAboutDevice(self):
+        logger.info('Получаем информацию об устройстве')
+        adb = subprocess.Popen('adb shell getprop ro.build.version.release', stdout=subprocess.PIPE, shell=True)
+        adb.wait()
+        self.android_version = adb.communicate()[0].strip('\n')
+        adb2 = subprocess.Popen('adb shell getprop ro.build.version.sdk ', stdout=subprocess.PIPE, shell=True)
+        self.android_api_version = adb2.communicate()[0].strip('\n')
+        adb2.wait()
+
+        #dump to file
+        res = {
+            'android_version': self.android_version,
+            'android_api_version': self.android_api_version,
+            'device_name': self.device_name,
+            'device_id': self.device_serial
+        }
+        with open('meta.json', 'w') as fname:
+            fname.write(json.dumps(res))
+        return True
+
 def main():
     logging.basicConfig(
         level="INFO",
-        format='%(asctime)s [%(levelname)s] [volta wizard] %(filename)s:%(lineno)d %(message)s'
+        format='%(asctime)s [%(levelname)s] [WIZARD] %(filename)s:%(lineno)d %(message)s'
     )
     logger.info("Volta wizard started")
     volta = VoltaWorker()
@@ -170,8 +201,9 @@ def main():
     # 7 - подключение телефона
     EventPoller(phone.isPhoneConnected)
     EventPoller(phone.dumpLogcatEvents)
+    EventPoller(phone.getInfoAboutDevice)
     # 8 - заливка логов
-
+    volta.upload('./output.bin', './events.log')
 
     logger.info('Volta wizard finished')
 

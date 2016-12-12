@@ -7,6 +7,7 @@ import pandas as pd
 import logging
 import numpy as np
 import argparse
+import json
 
 from sync import sync, torch_status
 
@@ -38,14 +39,14 @@ def WriteListToCSV(csv_file, data_list):
         print ("I/O error:" % exc)
     return
 
-def CreateJob(test_id, task='LOAD-272'):
+def CreateJob(test_id, meta, task='LOAD-272'):
     """
     creates job in lunapark, uploading metadata
 
     Args:
         test_id: volta test id, str
         task: lunapark task id, str
-
+        meta: meta json
     Returns:
 
     """
@@ -53,14 +54,24 @@ def CreateJob(test_id, task='LOAD-272'):
         url = "https://lunapark.yandex-team.ru/mobile/create_job.json"
         data = {
             'task': task,
-            'test_id': test_id
+            'test_id': test_id,
+            'device_id': meta['device_id'],
+            'device_name': meta['device_name'],
+            'device_os': meta['android_version'],
+            'ver': meta['android_api_version'],
+            'dsc': 'DeviceID: {device_id}. Device name: {device_name}. Device OS: {device_os}. Device API: {device_api}'.format(
+                device_id=meta['device_id'],
+                device_name=meta['device_name'],
+                device_os=meta['android_version'],
+                device_api=meta['android_api_version']
+            )
         }
         lunapark_req = requests.post(url, data=data, verify=False)
-        logging.debug('Lunapark create job status: %s', lunapark_req.status_code)
+        logger.debug('Lunapark create job status: %s', lunapark_req.status_code)
         answ = lunapark_req.json()
         job_url = 'https://lunapark.yandex-team.ru/mobile/{jobno}'.format(jobno=answ['jobno'])
     except Exception as exc:
-        logging.error('Lunapark create job exception: %s', exc, exc_info=True)
+        logger.error('Lunapark create job exception: %s', exc, exc_info=True)
         return None
     return job_url
 
@@ -83,15 +94,15 @@ class CurrentsWorker(object):
         Returns:
             list of values w/ lists inside, format: [today, test_id, ts, message]
         """
-        logging.info('Started formatting currents')
+        logger.info('Started formatting currents')
         df = pd.DataFrame(
             np.fromfile(
                 self.filename,
                 dtype=np.uint16
-            ).astype(np.float32) * (3300 / 2**12)
+            ).astype(np.float32) * (float(3300) / 2**12)
         )
         start = datetime.datetime.utcfromtimestamp(self.sync)
-        index = pd.date_range(start, periods=len(df), freq='L')
+        index = pd.date_range(start, periods=len(df), freq='100us')
         series = pd.Series(df[0].values, index=index)
         values = []
         for key, value in series.iteritems():
@@ -108,7 +119,7 @@ class CurrentsWorker(object):
                 query="INSERT INTO {backend_table} FORMAT CSV".format(backend_table=self.backend[1])
             )
             r = requests.post(url, data=data)
-            logging.debug('Upload current to clickhouse status: %s. Message: %s', r.status_code, r.text, exc_info=True)
+            logger.debug('Upload current to clickhouse status: %s. Message: %s', r.status_code, r.text, exc_info=True)
             r.raise_for_status()
             return
 
@@ -128,7 +139,7 @@ class EventsWorker(object):
         Returns:
             list of values w/ lists inside, format: [today, test_id, ts, message]
         """
-        logging.info('Started formatting events')
+        logger.info('Started formatting events')
         with open(self.filename) as eventlog:
             values = []
             for event in eventlog.readlines():
@@ -139,7 +150,7 @@ class EventsWorker(object):
                 # Android doesn't log `year` to logcat by default
                 ts_prepare = datetime.datetime.strptime(
                     "{year}-{date} {time}".format(
-                        year=datetime.datetime.now().strftime("%Y"),
+                        year=datetime.datetime.now().year,
                         date=event.split()[0],
                         time=event.split()[1]
                     ),
@@ -156,8 +167,9 @@ class EventsWorker(object):
                 url="{backend_url}/?query=".format(backend_url=self.backend[0]),
                 query="INSERT INTO {backend_table} FORMAT CSV".format(backend_table=self.backend[1])
             )
-            r = requests.post(url, data=data)
-            logging.debug('Upload current to clickhouse status: %s. Message: %s', r.status_code, r.text, exc_info=True)
+            headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}
+            r = requests.post(url, data=data, headers=headers)
+            logger.debug('Upload current to clickhouse status: %s. Message: %s', r.status_code, r.text, exc_info=True)
             r.raise_for_status()
             return
 
@@ -177,6 +189,11 @@ def main():
         default=10000
     )
     parser.add_argument(
+        '-m', '--meta',
+        help='meta json',
+        default='meta.json'
+    )
+    parser.add_argument(
         '-d', '--debug',
         help='enable debug logging',
         action='store_true')
@@ -191,12 +208,12 @@ def main():
     if not args.filename:
         raise ValueError('Unable to run without electrical current measurements file. `-f option`')
     if args.events:
-        df = pd.DataFrame(np.fromfile(args.filename, dtype=np.uint16).astype(np.float32) * (3300 / 2**12))
+        df = pd.DataFrame(np.fromfile(args.filename, dtype=np.uint16).astype(np.float32) * (float(5000) / 2**12))
         sync_sample = sync(
-            df,
+            df[0],
             args.events,
-            sps=args.samplerate,
-            first=300000,
+            sps=int(args.samplerate),
+            first=int(150000),
             trailing_zeros=1000,
         )
         message = None
@@ -209,17 +226,20 @@ def main():
         if message:
             syncflash = datetime.datetime.strptime(
                 ' '.join(message.split(' ')[:2]), "%m-%d %H:%M:%S.%f"
-            ).replace(year=datetime.datetime.stpftime("%Y"))
+            ).replace(year=datetime.datetime.now().year)
             syncflash_unix = (syncflash - datetime.datetime(1970,1,1)).total_seconds()
         else:
             raise Exception('Unable to find appropriate flashlight messages in android log to synchronize')
-        sync_point = syncflash_unix - sync_sample/args.samplerate
+        sync_point = syncflash_unix - float(sync_sample)/args.samplerate
         logger.info('sync_point found: %s', sync_point)
     else:
         sync_point = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).total_seconds()
         logger.info('sync_point is datetime.now(): %s', sync_point)
 
-    jobid = CreateJob(test_id, 'LOAD-272')
+    with open(args.meta, 'r') as jsn_fname:
+        data = jsn_fname.read()
+        meta = json.loads(data)
+    jobid = CreateJob(test_id, meta, 'LOAD-272')
 
     # make and upload currents
     current_worker = CurrentsWorker(args.filename, sync_point, date, test_id)
@@ -234,7 +254,7 @@ def main():
         WriteListToCSV(events_worker.output_file, events_data)
         events_worker.upload()
 
-    logging.info('Lunapark url: %s', jobid)
+    logger.info('Lunapark url: %s', jobid)
 
 
 if __name__ == "__main__":

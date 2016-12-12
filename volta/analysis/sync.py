@@ -38,6 +38,8 @@ def parse_torch_events(filename, sps=1000):
             torch_status(eventlog), columns=["offset", "status"])
         df["offset"] = df["offset"].map(
             lambda x: int(np.round((x - df["offset"][0]).total_seconds() * sps)))
+        # use only first 15 secs
+        df = df[df.offset < int(15*sps)]
         return df
 
 
@@ -47,6 +49,7 @@ def ref_signal(torch, trailing_zeros=1000):
     """
     log.info("Generating ref signal...")
     f = interpolate.interp1d(torch["offset"], torch["status"], kind="zero")
+    log.debug('Torches:\n %s', torch)
     X = np.linspace(0, torch["offset"].values[-1], torch["offset"].values[-1])
     return np.append(f(X), np.zeros(trailing_zeros))
 
@@ -84,9 +87,11 @@ def sync(sig, eventlog, sps=1000, trailing_zeros=1000, first=30000):
     rs = ref_signal(
         parse_torch_events(eventlog, sps=sps),
         trailing_zeros=trailing_zeros)
+    log.debug('Ref sig: %s', rs)
     cc = cross_correlate(sig, rs, first)
-    log.info('cc')
+    log.debug('Cross_correlate: \n%s', cc)
     sync_point = np.argmax(cc["corr"])
+    log.debug('sync_point: %s', sync_point) 
     if cc["p_value"][sync_point] > 0.05:
         raise RuntimeError("P-value is too big: %d" % cc["p_value"][sync_point])
     log.info(
