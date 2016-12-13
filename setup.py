@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='volta',
-    version='0.0.23',
+    version='0.0.24',
     description='yandex package for mobile energy consumption measurements',
     longer_description='''
 yandex package for mobile energy consumption measurements
@@ -27,9 +27,6 @@ yandex package for mobile energy consumption measurements
     tests_require=[
         'pytest',
     ],
-    scripts=[
-        'volta/reader/serial-reader'
-    ],
     entry_points={
         'console_scripts': [
             'volta-ui = volta.ui.ui:main',
@@ -49,6 +46,9 @@ yandex package for mobile energy consumption measurements
             '*.db',
         ],
     },
+    data_files=[
+        ('/usr/local/bin', ['volta/reader/serial-reader']),
+    ],
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: End Users/Desktop',
