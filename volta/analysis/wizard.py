@@ -79,7 +79,6 @@ class VoltaWorker(object):
 
 class PhoneWorker(object):
     def __init__(self):
-        print resource_filename("volta.analysis", 'usb_list.db')
         self.db = sqlite3.connect(resource_filename("volta.analysis", 'usb_list.db')).cursor()
         self.known_phones = [
             u'SAMSUNG_Android', u'Android', u'Nexus 5X', u'FS511',

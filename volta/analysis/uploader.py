@@ -64,6 +64,12 @@ def CreateJob(test_id, meta, task='LOAD-272'):
                 device_name=meta['device_name'],
                 device_os=meta['android_version'],
                 device_api=meta['android_api_version']
+            ),
+            'name': 'DeviceID: {device_id}. Device name: {device_name}. Device OS: {device_os}. Device API: {device_api}'.format(
+                device_id=meta['device_id'],
+                device_name=meta['device_name'],
+                device_os=meta['android_version'],
+                device_api=meta['android_api_version']
             )
         }
         lunapark_req = requests.post(url, data=data, verify=False)
