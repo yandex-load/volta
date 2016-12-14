@@ -51,6 +51,10 @@ class VoltaWorker(object):
             self.test_duration = duration
             return True
 
+    def setTestDuration(self, duration):
+        self.test_duration = duration
+        return True
+
     def startTest(self):
         ports = glob.glob('/dev/cu.[A-Za-z]*')
         device = [port for port in ports if 'Bluetooth' not in port][0]
@@ -71,11 +75,15 @@ class VoltaWorker(object):
 
     def upload(self, output, events):
         logger.info('Считаем кросс-корреляцию и загружаем логи в Лунапарк')
-        upload = subprocess.Popen('volta-uploader -f {output} -e {events}'.format(output=output, events=events), shell=True)
+        upload = subprocess.Popen('volta-uploader -f {output} -e {events}'.format(output=output, events=events),
+                                  stdout=subprocess.PIPE, shell=True
+                                  )
+
         rc = upload.wait()
+        jobid = upload.stdout.read()
         logging.info('Upload завершился: %s', rc)
         if rc is not None:
-            return rc
+            return jobid
 
 class PhoneWorker(object):
     def __init__(self):

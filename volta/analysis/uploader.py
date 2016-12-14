@@ -8,6 +8,7 @@ import logging
 import numpy as np
 import argparse
 import json
+import sys
 
 from volta.analysis.sync import sync, torch_status
 
@@ -261,6 +262,7 @@ def main():
         events_worker.upload()
 
     logger.info('Lunapark url: %s', jobid)
+    sys.stdout.write(jobid)
 
 
 if __name__ == "__main__":
