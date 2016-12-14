@@ -44,6 +44,7 @@ yandex package for mobile energy consumption measurements
             'handlers/*',
         ],
         'volta.ui_ws': [
+            'static/*',
             '*.html',
         ],
         'volta.analysis': [
