@@ -124,7 +124,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
 
     parser = argparse.ArgumentParser(description='Configures ui tornado server.')
-    parser.add_argument('--port', dest='port', default=8888, help='port for webserver (default: 8888)')
+    parser.add_argument('--port', dest='port', default=9998, help='port for webserver (default: 9998)')
     args = parser.parse_args()
 
     app = make_app()
