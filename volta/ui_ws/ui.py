@@ -10,6 +10,7 @@ import argparse
 import threading
 import time
 
+from pkg_resources import resource_filename
 
 from volta.analysis.wizard import VoltaWorker, EventPoller, PhoneWorker
 
@@ -105,7 +106,8 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
 class IndexPage(tornado.web.RequestHandler):
     def get(self):
         """ index page w/ buttons """
-        self.render('index.html',
+        self.render(
+            resource_filename(__name__, 'index.html'),
             title="Volta UI"
         )
 
