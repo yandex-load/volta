@@ -120,27 +120,11 @@ def make_app():
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
-    #_logger_stdout = logging.StreamHandler(sys.stdout)
-    #_logger_stdout.setLevel(logging.DEBUG)
-    #formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    #_logger_stdout.setFormatter(formatter)
-    #logger.addHandler(_logger_stdout)
 
     parser = argparse.ArgumentParser(description='Configures ui tornado server.')
     parser.add_argument('--port', dest='port', default=8888, help='port for webserver (default: 8888)')
     args = parser.parse_args()
 
-    #work_dirs = {
-    #    'plots' : 'plots',
-    #    'logs' : 'logs',
-    #    'events': 'events',
-    #}
-    #for key, dirname in work_dirs.iteritems():
-    #    try:
-    #        os.stat(dirname)
-    #    except:
-    #        logging.debug('Directory %s not found, trying to create it', dirname)
-    #        os.mkdir(dirname)
     app = make_app()
     app.listen(args.port)
     url = "http://localhost:{port}".format(port=args.port)
