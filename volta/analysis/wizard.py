@@ -75,10 +75,14 @@ class VoltaWorker(object):
 
     def upload(self, output, events):
         logger.info('Считаем кросс-корреляцию и загружаем логи в Лунапарк')
-        upload = subprocess.Popen('volta-uploader -f {output} -e {events}'.format(output=output, events=events),
-                                  stdout=subprocess.PIPE, shell=True
-                                  )
-
+        if events:
+            upload = subprocess.Popen('volta-uploader -f {output} -e {events}'.format(output=output, events=events),
+                    stdout=subprocess.PIPE, shell=True
+                )
+        else:
+            upload = subprocess.Popen('volta-uploader -f {output}'.format(output=output, events=events),
+                    stdout=subprocess.PIPE, shell=True
+                )
         rc = upload.wait()
         jobid = upload.stdout.read()
         logging.info('Upload завершился: %s', rc)
