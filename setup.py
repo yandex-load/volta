@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='volta',
-    version='0.0.26',
+    version='0.0.27',
     description='yandex package for mobile energy consumption measurements',
     longer_description='''
 yandex package for mobile energy consumption measurements
@@ -35,6 +35,7 @@ yandex package for mobile energy consumption measurements
             'volta-uploader = volta.analysis.uploader:main',
             'volta-wizard = volta.analysis.wizard:main',
             'volta-wizard-ui = volta.wizard.ui:main'
+            'volta-realtime = volta.analysis.realtime:main',
         ],
     },
     license='MPLv2',
