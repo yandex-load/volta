@@ -100,7 +100,7 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
         self.close()
 
     def on_close(self):
-        self.write_message('Volta wizard finished')
+        logger.info('Volta wizard finished')
 
 
 class IndexPage(tornado.web.RequestHandler):
