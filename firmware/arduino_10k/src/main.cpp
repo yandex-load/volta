@@ -1,9 +1,10 @@
 #include <Arduino.h>
+#include "buffer.h"
 
-const char welcome[] = "\nVOLTAHELLO\n{\"sps\":10000}\nDATASTART\n";
+const char welcome[] = "\nVOLTAHELLO\n{\"sps\":5000}\nDATASTART\n";
 
 uint16_t sensorValue = 0;
-char buff[50];
+CircularBuffer<uint16_t, 128> buff;
 
 #define BAUD 230400
 #define TIMER_PRELOAD 65536-F_CPU/64/10000
@@ -94,7 +95,11 @@ ISR(TIMER1_OVF_vect) {
         TCNT1 = TIMER_PRELOAD;
         sensorValue = analog();
         trigger_analog();
-        uart_write(sensorValue);
+        buff.push(sensorValue);
 }
 
-void loop() {}
+void loop() {
+        if(buff.remain()){
+                uart_write(buff.pop());
+        }
+}
