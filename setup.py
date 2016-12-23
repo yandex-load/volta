@@ -32,9 +32,9 @@ yandex package for mobile energy consumption measurements
         'console_scripts': [
             'volta-ui = volta.ui.ui:main',
             'volta-sync = volta.analysis.sync:main',
-            'volta-grab = volta.analysis.grab:main',
-            'volta-uploader = volta.analysis.uploader:main',
-            'volta-wizard = volta.analysis.wizard:main',
+            'volta-grab = volta.analysis.grab:run',
+            'volta-uploader = volta.analysis.uploader:run',
+            'volta-wizard = volta.analysis.wizard:run',
             'volta-wizard-ui = volta.wizard.ui:main',
             'volta-realtime = volta.analysis.realtime:main',
         ],
