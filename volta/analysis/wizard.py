@@ -78,9 +78,9 @@ class VoltaWorker(object):
             'events': events,
             'samplerate': 10000
         }
-        uploader.main(args)
+        jobid = uploader.main(args)
         logging.info('Upload завершился')
-        return '123'
+        return jobid
 
 class PhoneWorker(object):
     def __init__(self):

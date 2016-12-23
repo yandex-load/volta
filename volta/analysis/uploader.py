@@ -274,7 +274,7 @@ def main(args):
         events_worker.upload()
 
     logger.info('Lunapark url: %s', jobid)
-    sys.stdout.write(jobid)
+    return jobid
 
 
 if __name__ == "__main__":
