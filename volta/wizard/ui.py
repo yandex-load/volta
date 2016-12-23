@@ -84,7 +84,6 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
             EventPoller(self.phone.isPhoneDisconnected)
             self.write_message(format_message(u'Не забудьте помигать фонариком!', 'message'))
         # 6 - запуск теста, мигание фонариком
-        self.write_message(format_message(u'Не забудьте помигать фонариком!', 'message'))
         self.write_message(format_message(u'Начинается тест', 'message'))
         grabber = grabberThread(self.volta)
         grabber.run()

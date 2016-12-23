@@ -53,26 +53,32 @@ def CreateJob(test_id, meta, task='LOAD-272'):
     """
     try:
         url = "https://lunapark.yandex-team.ru/mobile/create_job.json"
-        data = {
-            'task': task,
-            'test_id': test_id,
-            'device_id': meta['device_id'],
-            'device_name': meta['device_name'],
-            'device_os': meta['android_version'],
-            'ver': meta['android_api_version'],
-            'dsc': 'DeviceID: {device_id}. Device name: {device_name}. Device OS: {device_os}. Device API: {device_api}'.format(
-                device_id=meta['device_id'],
-                device_name=meta['device_name'],
-                device_os=meta['android_version'],
-                device_api=meta['android_api_version']
-            ),
-            'name': 'DeviceID: {device_id}. Device name: {device_name}. Device OS: {device_os}. Device API: {device_api}'.format(
-                device_id=meta['device_id'],
-                device_name=meta['device_name'],
-                device_os=meta['android_version'],
-                device_api=meta['android_api_version']
-            )
-        }
+        if not meta:
+            data = {
+                'task': task,
+                'test_id': test_id
+            }
+        else:
+            data = {
+                'task': task,
+                'test_id': test_id,
+                'device_id': meta['device_id'],
+                'device_name': meta['device_name'],
+                'device_os': meta['android_version'],
+                'ver': meta['android_api_version'],
+                'dsc': 'DeviceID: {device_id}. Device name: {device_name}. Device OS: {device_os}. Device API: {device_api}'.format(
+                    device_id=meta['device_id'],
+                    device_name=meta['device_name'],
+                    device_os=meta['android_version'],
+                    device_api=meta['android_api_version']
+                ),
+                'name': 'DeviceID: {device_id}. Device name: {device_name}. Device OS: {device_os}. Device API: {device_api}'.format(
+                    device_id=meta['device_id'],
+                    device_name=meta['device_name'],
+                    device_os=meta['android_version'],
+                    device_api=meta['android_api_version']
+                )
+            }
         lunapark_req = requests.post(url, data=data, verify=False)
         logger.debug('Lunapark create job status: %s', lunapark_req.status_code)
         answ = lunapark_req.json()
@@ -198,7 +204,7 @@ def main():
     parser.add_argument(
         '-m', '--meta',
         help='meta json',
-        default='meta.json'
+        default=None
     )
     parser.add_argument(
         '-d', '--debug',
@@ -243,9 +249,12 @@ def main():
         sync_point = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).total_seconds()
         logger.info('sync_point is datetime.now(): %s', sync_point)
 
-    with open(args.meta, 'r') as jsn_fname:
-        data = jsn_fname.read()
-        meta = json.loads(data)
+    if args.meta:
+        with open(args.meta, 'r') as jsn_fname:
+            data = jsn_fname.read()
+            meta = json.loads(data)
+    else:
+        meta = None
     jobid = CreateJob(test_id, meta, 'LOAD-272')
 
     # make and upload currents
