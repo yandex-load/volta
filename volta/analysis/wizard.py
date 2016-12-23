@@ -202,12 +202,12 @@ def run():
         help='enable debug logging',
         action='store_true')
     args = vars(parser.parse_args())
-    main(**args)
+    main(args)
 
 
-def main(**kwargs):
+def main(args):
     logging.basicConfig(
-        level="DEBUG" if kwargs.get('debug') else "INFO",
+        level="DEBUG" if args.get('debug') else "INFO",
         format='%(asctime)s [%(levelname)s] [wizard] %(filename)s:%(lineno)d %(message)s'
     )
     logger.info("Volta wizard started")

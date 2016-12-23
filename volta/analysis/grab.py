@@ -4,7 +4,6 @@ import json
 import argparse
 import progressbar
 import logging
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +11,10 @@ logger = logging.getLogger(__name__)
 class Grabber(object):
     def __init__(self):
         self.samplerate = 10000
+        self.baud_rate = 230400
 
-    def grab_binary_10k(self, args):
-        with serial.Serial(args['device'], 230400, timeout=1) as ser:
+    def grab_binary(self, args):
+        with serial.Serial(args.get('device'), self.baud_rate, timeout=1) as ser:
             logger.info("Waiting for synchronization line...")
             while ser.readline() != "VOLTAHELLO\n":
                 pass
@@ -24,12 +24,12 @@ class Grabber(object):
 
             logger.info(
                 "Collecting %d seconds of data (%d samples) to '%s'." % (
-                    args['seconds'], args['seconds'] * self.samplerate, args['output']))
+                    args.get('seconds'), args.get('seconds') * self.samplerate, args.get('output')))
             while ser.readline() != "DATASTART\n":
                 pass
-            with open(args['output'], "wb") as out:
+            with open(args.get('output'), "wb") as out:
                 with progressbar.ProgressBar(max_value=args['seconds']) as bar:
-                    for i in range(args['seconds']):
+                    for i in range(args.get('seconds')):
                         bar.update(i)
                         out.write(ser.read(self.samplerate * 2))
 
@@ -62,7 +62,7 @@ def main(args):
         format='%(asctime)s [%(levelname)s] [grabber] %(filename)s:%(lineno)d %(message)s')
     logger.info("Volta data grabber.")
     grabber = Grabber()
-    grabber.grab_binary_10k(args)
+    grabber.grab_binary(args)
     return grabber
 
 

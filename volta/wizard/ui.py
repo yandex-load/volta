@@ -17,35 +17,6 @@ from volta.analysis.wizard import VoltaWorker, EventPoller, PhoneWorker
 
 
 logger = logging.getLogger(__name__)
-wizard_logger = logging.getLogger('volta')
-with open('wizard.log', 'w'):
-    pass
-fh = logging.FileHandler('wizard.log')
-fh.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-wizard_logger.addHandler(fh)
-
-
-class grabberThread(threading.Thread):
-    """
-    Drain a generator to a destination that answers to put(), in a thread
-    """
-    def __init__(self, source):
-        super(grabberThread, self).__init__()
-        self.source = source
-        self._finished = threading.Event()
-        self._interrupted = threading.Event()
-
-    def run(self):
-        self.source.startTest()
-        self._finished.set()
-
-    def wait(self, timeout=None):
-        self._finished.wait(timeout=timeout)
-
-    def close(self):
-        self._interrupted.set()
 
 
 def format_message(message, type):
@@ -89,6 +60,7 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
         self.volta = VoltaWorker()
         self.phone = PhoneWorker()
         self.write_message(format_message(u'Подключите коробку', 'message'))
+
         # 1 - подключение коробки
         self.volta.device = EventPoller(self.volta.isUsbConnected)
         self.write_message(format_message(u'Коробка найдена!', 'message'))
@@ -97,11 +69,14 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
             # 2 - подключение телефона
             phone = EventPoller(self.phone.isPhoneConnected)
             self.write_message(format_message(u'Телефон найден: %s' % phone, 'message'))
+
         # 3 - установка apk
         # TODO
+
         # 4 - параметризация теста
         self.volta.setTestDuration(self.duration)
         self.write_message(format_message(u'Длительность теста будет %s секунд.' % self.duration, 'message'))
+
         # pre5 - сброс logcat
         if config['events']:
             self.write_message(format_message(u'Чистим логи на телефоне (logcat)', 'message'))
@@ -112,32 +87,19 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
             self.write_message(format_message(u'Не забудьте помигать фонариком!', 'message'))
         # 6 - запуск теста, мигание фонариком
         self.write_message(format_message(u'Начинается тест', 'message'))
-        grabber = grabberThread(self.volta)
-        grabber.run()
-
-        counter = 0
-        if self.duration > 10:
-            while counter < self.duration:
-                progress = 100 * counter / self.duration
-                if progress < 100:
-                    self.write_message(format_message(u'Прогресс: %s %%' % progress, 'message'))
-                step=10
-                counter = counter + step
-                time.sleep(step)
-
-        grabber.wait(self.duration * 2)
+        self.volta.startTest()
         self.write_message(format_message(u'Готово', 'message'))
 
+        # 7 - подключение телефона
         if config['events']:
             self.write_message(format_message(u'Подключите телефон', 'message'))
-            # 7 - подключение телефона
             EventPoller(self.phone.isPhoneConnected)
             self.write_message(format_message(u'Найден телефон, забираем логи с телефона', 'message'))
             EventPoller(self.phone.dumpLogcatEvents)
             EventPoller(self.phone.getInfoAboutDevice)
 
+        # 8 - заливка логов
         if config['upload']:
-            # 8 - заливка логов
             self.write_message(format_message(
                 u'Собираем логи и заливаем логи в Лунапарк. Это может занять какое-то время.', 'message')
             )
@@ -180,6 +142,16 @@ def main():
         level=logging.DEBUG,
         format='%(asctime)s [%(levelname)s] [wizard ui] %(filename)s:%(lineno)d %(message)s'
     )
+
+    wizard_logger = logging.getLogger('')
+    with open('wizard.log', 'w'):
+        pass
+    fh = logging.FileHandler('wizard.log')
+    fh.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    wizard_logger.addHandler(fh)
+
     parser = argparse.ArgumentParser(description='Configures ui tornado server.')
     parser.add_argument('--port', dest='port', default=9998, help='port for webserver (default: 9998)')
     args = parser.parse_args()
