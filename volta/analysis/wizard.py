@@ -104,6 +104,7 @@ class PhoneWorker(object):
     def isPhoneConnected(self):
         logger.info("Подключите телефон в USB...")
         # ищем все подключенные известные нам телефоны по атрибуту product
+        phones = []
         for device in usb.core.find(find_all=1):
             try:
                 if device.product in self.known_phones:
