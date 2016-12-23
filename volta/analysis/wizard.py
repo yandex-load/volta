@@ -112,8 +112,6 @@ class PhoneWorker(object):
                     phones.append(device)
             except:
                 logger.warning('Unable to detect device product', exc_info=True)
-            else:
-                phones.append(device)
         if len(phones) == 1 :
             # id'шники преобразовываем в hex, соблюдая формат
             self.db.execute(
