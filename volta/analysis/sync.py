@@ -48,6 +48,8 @@ def ref_signal(torch, trailing_zeros=1000):
     Generate square reference signal with trailing zeroes
     """
     log.info("Generating ref signal...")
+    if len(torch) == 0:
+        raise Exception('Torches not found.')
     f = interpolate.interp1d(torch["offset"], torch["status"], kind="zero")
     log.debug('Torches:\n %s', torch)
     X = np.linspace(0, torch["offset"].values[-1], torch["offset"].values[-1])

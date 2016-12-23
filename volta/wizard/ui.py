@@ -10,7 +10,6 @@ import argparse
 import threading
 import time
 import json
-import sys
 
 from pkg_resources import resource_filename
 
@@ -18,7 +17,14 @@ from volta.analysis.wizard import VoltaWorker, EventPoller, PhoneWorker
 
 
 logger = logging.getLogger(__name__)
-
+wizard_logger = logging.getLogger('volta')
+with open('wizard.log', 'w'):
+    pass
+fh = logging.FileHandler('wizard.log')
+fh.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+wizard_logger.addHandler(fh)
 
 
 class grabberThread(threading.Thread):
@@ -46,11 +52,32 @@ def format_message(message, type):
     return json.dumps({'type': type, 'message': message})
 
 
+class consoleLogger(threading.Thread):
+    """ streams console logging to websocket debug div """
+    def __init__(self, ws):
+        super(consoleLogger, self).__init__()
+        self.ws = ws
+        self.finished = False
+
+    def run(self):
+        with open('wizard.log') as wiz_log:
+            while not self.finished:
+                message = wiz_log.readline()
+                if message:
+                    self.ws.write_message(format_message(message, 'debug'))
+                else:
+                    time.sleep(1)
+
 
 class WizardWebSocket(tornado.websocket.WebSocketHandler):
     def open(self):
         self.write_message("Volta wizard started")
-        #stderr_reader(sys.stderr).run()
+        self.initConsoleLogger()
+
+    def initConsoleLogger(self):
+        self.consoleLogger = consoleLogger(self)
+        self.consoleLogger.setDaemon(True)
+        self.consoleLogger.start()
 
     def on_message(self, message):
         config = json.loads(message)
@@ -99,7 +126,6 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
                 time.sleep(step)
 
         grabber.wait(self.duration * 2)
-        EventPoller(self.volta.isTestFinished)
         self.write_message(format_message(u'Готово', 'message'))
 
         if config['events']:
@@ -122,9 +148,12 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
 
             self.write_message(format_message(u'<a target="_blank" href="%s">Lunapark URL</a>' % jobid, 'message'))
         # work finished, closing the connection
+        time.sleep(3)
         self.close()
 
     def on_close(self):
+        self.consoleLogger.finished = True
+        self.consoleLogger.join(10)
         logger.info('Volta wizard finished')
 
 
@@ -145,9 +174,12 @@ def make_app():
         (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": static_path}),
     ])
 
-def main():
-    logging.basicConfig(level=logging.DEBUG)
 
+def main():
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s [%(levelname)s] [wizard ui] %(filename)s:%(lineno)d %(message)s'
+    )
     parser = argparse.ArgumentParser(description='Configures ui tornado server.')
     parser.add_argument('--port', dest='port', default=9998, help='port for webserver (default: 9998)')
     args = parser.parse_args()

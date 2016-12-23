@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def grab_binary_10k(args):
-    with serial.Serial(args.device, 230400, timeout=1) as ser:
+    with serial.Serial(args['device'], 230400, timeout=1) as ser:
         logger.info("Waiting for synchronization line...")
         while ser.readline() != "VOLTAHELLO\n":
             pass
@@ -20,23 +20,21 @@ def grab_binary_10k(args):
 
         logger.info(
             "Collecting %d seconds of data (%d samples) to '%s'." % (
-                args.seconds, args.seconds * sps, args.output))
+                args['seconds'], args['seconds'] * sps, args['output']))
         while ser.readline() != "DATASTART\n":
             pass
-        with open(args.output, "wb") as out:
-            with progressbar.ProgressBar(max_value=args.seconds) as bar:
-                for i in range(args.seconds):
+        with open(args['output'], "wb") as out:
+            with progressbar.ProgressBar(max_value=args['seconds']) as bar:
+                for i in range(args['seconds']):
                     bar.update(i)
                     out.write(ser.read(sps * 2))
 
-
-def main():
-    parser = argparse.ArgumentParser(
-        description='Grab data from measurement device.')
+def run():
+    parser = argparse.ArgumentParser(description='Grab data from measurement device.')
     parser.add_argument(
         '-i', '--device',
         default="/dev/cu.wchusbserial1410",
-        help='Arduino port')
+        help='Arduino device serial port')
     parser.add_argument(
         '-s', '--seconds',
         default=60,
@@ -50,14 +48,16 @@ def main():
         '-d', '--debug',
         help='enable debug logging',
         action='store_true')
-    args = parser.parse_args()
-    logging.basicConfig(
-        level="DEBUG" if args.debug else "INFO",
-        format='%(asctime)s [%(levelname)s] [VOLTA GRAB] %(filename)s:%(lineno)d %(message)s')
-    logger.info("Volta data grabber.")
+    args = vars(parser.parse_args())
+    main(args)
 
+def main(args):
+    logging.basicConfig(
+        level="DEBUG" if args.get('debug') else "INFO",
+        format='%(asctime)s [%(levelname)s] [grabber] %(filename)s:%(lineno)d %(message)s')
+    logger.info("Volta data grabber.")
     grab_binary_10k(args)
 
 
 if __name__ == '__main__':
-    main()
+    run()

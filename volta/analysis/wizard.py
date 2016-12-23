@@ -8,8 +8,10 @@ import subprocess
 import glob
 import json
 import argparse
-
+import sys
 from pkg_resources import resource_string, resource_filename
+
+from volta.analysis import grab, uploader
 
 
 logger = logging.getLogger(__name__)
@@ -36,7 +38,6 @@ class VoltaWorker(object):
         logger.info("Подключите коробочку в USB...")
         device = usb.core.find(idVendor=self.volta_idVendor, idProduct=self.volta_idProduct)
         if device:
-
             logger.info('Найдена коробочка')
             return device
 
@@ -56,38 +57,30 @@ class VoltaWorker(object):
         return True
 
     def startTest(self):
-        ports = glob.glob('/dev/cu.[A-Za-z]*')
+        if sys.platform.startswith('linux'):
+            ports = glob.glob('/dev/ttyUSB[0-9]*')
+        elif sys.platform.startswith('darwin'):
+            ports = glob.glob('/dev/cu.[A-Za-z]*')
         device = [port for port in ports if 'Bluetooth' not in port][0]
-        self.worker = subprocess.Popen(
-            'volta-grab --device {device} -s {duration}'.format(duration=self.test_duration, device=device),
-            shell=True
-        )
-        logger.info('Тест уже начался. Не забудьте помигать на телефоне фонариком!')
-
-    def isTestFinished(self):
-        if self.worker:
-            if self.worker.poll() is not None:
-                rc = self.worker.poll()
-                logging.info('Grabber finsihed')
-                return rc
-        else:
-            raise('Worker died?')
+        logger.info('Не забудьте помигать на телефоне фонариком!')
+        args = {
+            'device': device,
+            'seconds': self.test_duration,
+            'output': "output.bin",
+            'debug': False
+        }
+        grab.main(args)
 
     def upload(self, output, events):
         logger.info('Считаем кросс-корреляцию и загружаем логи в Лунапарк')
-        if events:
-            upload = subprocess.Popen('volta-uploader -f {output} -e {events}'.format(output=output, events=events),
-                    stdout=subprocess.PIPE, shell=True
-                )
-        else:
-            upload = subprocess.Popen('volta-uploader -f {output}'.format(output=output, events=events),
-                    stdout=subprocess.PIPE, shell=True
-                )
-        rc = upload.wait()
-        jobid = upload.stdout.read()
-        logging.info('Upload завершился: %s', rc)
-        if rc is not None:
-            return jobid
+        args = {
+            'filename': output,
+            'events': events,
+            'samplerate': 10000
+        }
+        uploader.main(args)
+        logging.info('Upload завершился')
+        return '123'
 
 class PhoneWorker(object):
     def __init__(self):
@@ -104,9 +97,10 @@ class PhoneWorker(object):
     def isPhoneConnected(self):
         logger.info("Подключите телефон в USB...")
         # ищем все подключенные известные нам телефоны по атрибуту product
+        phones = []
         logger.debug('Found products: %s', [device.product for device in usb.core.find(find_all=1)])
         phones = [device for device in usb.core.find(find_all=1) if device.product in self.known_phones]
-        if len(phones) == 1 :
+        if len(phones) == 1:
             # id'шники преобразовываем в hex, соблюдая формат
             self.db.execute(
                 'SELECT name FROM devices WHERE manufacturer_id="{man_id}" AND id="{device_id}"'.format(
@@ -188,17 +182,22 @@ class PhoneWorker(object):
             fname.write(json.dumps(res))
         return True
 
-def main():
+
+def run():
     parser = argparse.ArgumentParser(
         description='wizard for volta.')
     parser.add_argument(
         '-d', '--debug',
         help='enable debug logging',
         action='store_true')
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
+    main(**args)
+
+
+def main(**kwargs):
     logging.basicConfig(
-        level="DEBUG" if args.debug else "INFO",    
-        format='%(asctime)s [%(levelname)s] [WIZARD] %(filename)s:%(lineno)d %(message)s'
+        level="DEBUG" if kwargs.get('debug') else "INFO",
+        format='%(asctime)s [%(levelname)s] [wizard] %(filename)s:%(lineno)d %(message)s'
     )
     logger.info("Volta wizard started")
     volta = VoltaWorker()
@@ -218,7 +217,6 @@ def main():
     EventPoller(phone.isPhoneDisconnected)
     # 6 - запуск теста, мигание фонариком
     volta.startTest()
-    EventPoller(volta.isTestFinished)
     # 7 - подключение телефона
     EventPoller(phone.isPhoneConnected)
     EventPoller(phone.dumpLogcatEvents)
@@ -229,7 +227,5 @@ def main():
     logger.info('Volta wizard finished')
 
 
-
-
 if __name__ == "__main__":
-    main()
+    run()

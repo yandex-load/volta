@@ -186,8 +186,7 @@ class EventsWorker(object):
             r.raise_for_status()
             return
 
-
-def main():
+def run():
     parser = argparse.ArgumentParser(
         description='upload data to lunapark.')
     parser.add_argument(
@@ -210,27 +209,31 @@ def main():
         '-d', '--debug',
         help='enable debug logging',
         action='store_true')
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
+    main(args)
+
+
+def main(args):
     logging.basicConfig(
-        level="DEBUG" if args.debug else "INFO",
-        format='%(asctime)s [%(levelname)s] [UPLOADER] %(filename)s:%(lineno)d %(message)s'
+        level="DEBUG" if args.get('debug') else "INFO",
+        format='%(asctime)s [%(levelname)s] [uploader] %(filename)s:%(lineno)d %(message)s'
     )
     logger.info('Uploader started.')
     test_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
     date = datetime.datetime.now().strftime("%Y-%m-%d")
-    if not args.filename:
+    if not args.get('filename'):
         raise ValueError('Unable to run without electrical current measurements file. `-f option`')
-    if args.events:
-        df = pd.DataFrame(np.fromfile(args.filename, dtype=np.uint16).astype(np.float32) * (float(5000) / 2**12))
+    if args.get('events'):
+        df = pd.DataFrame(np.fromfile(args.get('filename'), dtype=np.uint16).astype(np.float32) * (float(5000) / 2**12))
         sync_sample = sync(
             df[0],
-            args.events,
-            sps=int(args.samplerate),
+            args.get('events'),
+            sps=int(args.get('samplerate')),
             first=int(150000),
             trailing_zeros=1000,
         )
         message = None
-        with open(args.events) as eventlog:
+        with open(args.get('events')) as eventlog:
             for line in eventlog.readlines():
                 if "newStatus=2" in line:
                     message = line
@@ -249,8 +252,8 @@ def main():
         sync_point = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).total_seconds()
         logger.info('sync_point is datetime.now(): %s', sync_point)
 
-    if args.meta:
-        with open(args.meta, 'r') as jsn_fname:
+    if args.get('meta'):
+        with open(args.get('meta'), 'r') as jsn_fname:
             data = jsn_fname.read()
             meta = json.loads(data)
     else:
@@ -258,14 +261,14 @@ def main():
     jobid = CreateJob(test_id, meta, 'LOAD-272')
 
     # make and upload currents
-    current_worker = CurrentsWorker(args.filename, sync_point, date, test_id)
+    current_worker = CurrentsWorker(args.get('filename'), sync_point, date, test_id)
     current_data = current_worker.FormatCurrent()
     WriteListToCSV(current_worker.output_file, current_data)
     current_worker.upload()
 
     # make and upload events
-    if args.events:
-        events_worker = EventsWorker(args.events, date, test_id)
+    if args.get('events'):
+        events_worker = EventsWorker(args.get('events'), date, test_id)
         events_data = events_worker.FormatEvents()
         WriteListToCSV(events_worker.output_file, events_data)
         events_worker.upload()
@@ -275,4 +278,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run()

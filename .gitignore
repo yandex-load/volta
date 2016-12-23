@@ -92,3 +92,7 @@ ENV/
 
 #vim swap files
 .swp
+
+# data files and binaries
+.data
+.bin
