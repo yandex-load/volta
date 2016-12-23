@@ -8,6 +8,7 @@ import subprocess
 import glob
 import json
 import argparse
+import sys
 
 from pkg_resources import resource_string, resource_filename
 
@@ -56,7 +57,10 @@ class VoltaWorker(object):
         return True
 
     def startTest(self):
-        ports = glob.glob('/dev/cu.[A-Za-z]*')
+        if sys.platform.startswith('linux'):
+            ports = glob.glob('/dev/ttyUSB[0-9]*')
+        elif sys.platform.startswith('darwin'):
+            ports = glob.glob('/dev/cu.[A-Za-z]*')
         device = [port for port in ports if 'Bluetooth' not in port][0]
         self.worker = subprocess.Popen(
             'volta-grab --device {device} -s {duration}'.format(duration=self.test_duration, device=device),
