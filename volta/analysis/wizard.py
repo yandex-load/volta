@@ -32,6 +32,7 @@ class VoltaWorker(object):
         self.worker = None
         self.volta_idVendor = 0x1a86 # CH341 idVendor=0x1a86, idProduct=0x7523
         self.volta_idProduct = 0x7523
+        self.samplerate = None
 
 
     def isUsbConnected(self):
@@ -61,6 +62,8 @@ class VoltaWorker(object):
             ports = glob.glob('/dev/ttyUSB[0-9]*')
         elif sys.platform.startswith('darwin'):
             ports = glob.glob('/dev/cu.[A-Za-z]*')
+        else:
+            raise Exception('Your OS is not supported yet')
         device = [port for port in ports if 'Bluetooth' not in port][0]
         logger.info('Не забудьте помигать на телефоне фонариком!')
         args = {
@@ -69,14 +72,14 @@ class VoltaWorker(object):
             'output': "output.bin",
             'debug': False
         }
-        grab.main(args)
+        self.grabber = grab.main(args)
 
     def upload(self, output, events):
         logger.info('Считаем кросс-корреляцию и загружаем логи в Лунапарк')
         args = {
             'filename': output,
             'events': events,
-            'samplerate': 10000
+            'samplerate': self.grabber.samplerate
         }
         jobid = uploader.main(args)
         logging.info('Upload завершился')

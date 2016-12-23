@@ -246,7 +246,7 @@ def main(args):
             syncflash_unix = (syncflash - datetime.datetime(1970,1,1)).total_seconds()
         else:
             raise Exception('Unable to find appropriate flashlight messages in android log to synchronize')
-        sync_point = syncflash_unix - float(sync_sample)/args.samplerate
+        sync_point = syncflash_unix - float(sync_sample)/args.get('samplerate')
         logger.info('sync_point found: %s', sync_point)
     else:
         sync_point = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).total_seconds()

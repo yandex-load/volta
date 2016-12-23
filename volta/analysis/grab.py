@@ -9,25 +9,29 @@ import time
 logger = logging.getLogger(__name__)
 
 
-def grab_binary_10k(args):
-    with serial.Serial(args['device'], 230400, timeout=1) as ser:
-        logger.info("Waiting for synchronization line...")
-        while ser.readline() != "VOLTAHELLO\n":
-            pass
-        params = json.loads(ser.readline())
-        sps = params["sps"]
-        logger.info("Synchronization successful. Sample rate: %d", sps)
+class Grabber(object):
+    def __init__(self):
+        self.samplerate = 10000
 
-        logger.info(
-            "Collecting %d seconds of data (%d samples) to '%s'." % (
-                args['seconds'], args['seconds'] * sps, args['output']))
-        while ser.readline() != "DATASTART\n":
-            pass
-        with open(args['output'], "wb") as out:
-            with progressbar.ProgressBar(max_value=args['seconds']) as bar:
-                for i in range(args['seconds']):
-                    bar.update(i)
-                    out.write(ser.read(sps * 2))
+    def grab_binary_10k(self, args):
+        with serial.Serial(args['device'], 230400, timeout=1) as ser:
+            logger.info("Waiting for synchronization line...")
+            while ser.readline() != "VOLTAHELLO\n":
+                pass
+            params = json.loads(ser.readline())
+            self.samplerate = params["sps"]
+            logger.info("Synchronization successful. Sample rate: %d", self.samplerate)
+
+            logger.info(
+                "Collecting %d seconds of data (%d samples) to '%s'." % (
+                    args['seconds'], args['seconds'] * self.samplerate, args['output']))
+            while ser.readline() != "DATASTART\n":
+                pass
+            with open(args['output'], "wb") as out:
+                with progressbar.ProgressBar(max_value=args['seconds']) as bar:
+                    for i in range(args['seconds']):
+                        bar.update(i)
+                        out.write(ser.read(self.samplerate * 2))
 
 def run():
     parser = argparse.ArgumentParser(description='Grab data from measurement device.')
@@ -51,12 +55,15 @@ def run():
     args = vars(parser.parse_args())
     main(args)
 
+
 def main(args):
     logging.basicConfig(
         level="DEBUG" if args.get('debug') else "INFO",
         format='%(asctime)s [%(levelname)s] [grabber] %(filename)s:%(lineno)d %(message)s')
     logger.info("Volta data grabber.")
-    grab_binary_10k(args)
+    grabber = Grabber()
+    grabber.grab_binary_10k(args)
+    return grabber
 
 
 if __name__ == '__main__':
