@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "buffer.h"
 
-const char welcome[] = "\nVOLTAHELLO\n{\"sps\":5000}\nDATASTART\n";
+const char welcome[] = "\nVOLTAHELLO\n{\"sps\":10000}\nDATASTART\n";
 
 uint16_t sensorValue = 0;
 CircularBuffer<uint16_t, 128> buff;
