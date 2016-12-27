@@ -117,9 +117,10 @@ class CurrentsWorker(object):
         )
         start = datetime.datetime.utcfromtimestamp(self.sync)
         index_freq = "{value}{units}".format(
-            value = int(1/float(self.samplerate) * 10 ** 6),
+            value = int(10 ** 6 / self.samplerate),
             units = "us"
         )
+        logger.debug('Index freq: %s', index_freq)
         index = pd.date_range(start, periods=len(df), freq=index_freq)
         series = pd.Series(df[0].values, index=index)
         values = []
@@ -228,6 +229,7 @@ def main(args):
     date = datetime.datetime.now().strftime("%Y-%m-%d")
     if not args.get('filename'):
         raise ValueError('Unable to run without electrical current measurements file. `-f option`')
+    # events log specified, so we trying to find sync point
     if args.get('events'):
         df = pd.DataFrame(np.fromfile(args.get('filename'), dtype=np.uint16).astype(np.float32) * (float(5000) / 2**12))
         sync_sample = sync(
@@ -253,6 +255,7 @@ def main(args):
             raise Exception('Unable to find appropriate flashlight messages in android log to synchronize')
         sync_point = syncflash_unix - float(sync_sample)/int(args.get('samplerate'))
         logger.info('sync_point found: %s', sync_point)
+    # no events log specified, so we take current timestamp as syncpoint
     else:
         sync_point = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).total_seconds()
         logger.info('sync_point is datetime.now(): %s', sync_point)
