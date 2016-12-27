@@ -92,13 +92,14 @@ def CreateJob(test_id, meta, task='LOAD-272'):
 
 
 class CurrentsWorker(object):
-    def __init__(self, fname, sync, date, test_id):
+    def __init__(self, fname, sync, date, test_id, samplerate):
         self.filename = fname
         self.sync = sync
         self.date = date
         self.test_id = test_id
         self.output_file = 'current_{test_id}.data'.format(test_id=test_id)
         self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.current')
+        self.samplerate = int(samplerate)
 
     def FormatCurrent(self):
         """
@@ -112,10 +113,14 @@ class CurrentsWorker(object):
             np.fromfile(
                 self.filename,
                 dtype=np.uint16
-            ).astype(np.float32) * (float(3300) / 2**12)
+            ).astype(np.float32) * (float(5000) / 2**12)
         )
         start = datetime.datetime.utcfromtimestamp(self.sync)
-        index = pd.date_range(start, periods=len(df), freq='100us')
+        index_freq = "{value}{units}".format(
+            value = int(1/float(self.samplerate) * 10 ** 6),
+            units = "us"
+        )
+        index = pd.date_range(start, periods=len(df), freq=index_freq)
         series = pd.Series(df[0].values, index=index)
         values = []
         for key, value in series.iteritems():
@@ -246,7 +251,7 @@ def main(args):
             syncflash_unix = (syncflash - datetime.datetime(1970,1,1)).total_seconds()
         else:
             raise Exception('Unable to find appropriate flashlight messages in android log to synchronize')
-        sync_point = syncflash_unix - float(sync_sample)/args.get('samplerate')
+        sync_point = syncflash_unix - float(sync_sample)/int(args.get('samplerate'))
         logger.info('sync_point found: %s', sync_point)
     else:
         sync_point = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).total_seconds()
@@ -261,7 +266,7 @@ def main(args):
     jobid = CreateJob(test_id, meta, 'LOAD-272')
 
     # make and upload currents
-    current_worker = CurrentsWorker(args.get('filename'), sync_point, date, test_id)
+    current_worker = CurrentsWorker(args.get('filename'), sync_point, date, test_id, args.get('samplerate'))
     current_data = current_worker.FormatCurrent()
     WriteListToCSV(current_worker.output_file, current_data)
     current_worker.upload()
