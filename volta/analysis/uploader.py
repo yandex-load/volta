@@ -229,7 +229,7 @@ def main(args):
             df[0],
             args.get('events'),
             sps=int(args.get('samplerate')),
-            first=int(150000),
+            first=int(args.get('samplerate')*15),
             trailing_zeros=1000,
         )
         message = None
