@@ -40,6 +40,7 @@ def WriteListToCSV(csv_file, data_list):
         print ("I/O error:" % exc)
     return
 
+
 def CreateJob(test_id, meta, task='LOAD-272'):
     """
     creates job in lunapark, uploading metadata
@@ -92,14 +93,16 @@ def CreateJob(test_id, meta, task='LOAD-272'):
 
 
 class CurrentsWorker(object):
-    def __init__(self, fname, sync, date, test_id, samplerate):
-        self.filename = fname
+    def __init__(self, args, sync, date, test_id):
+        self.filename = args.get('filename')
         self.sync = sync
         self.date = date
         self.test_id = test_id
         self.output_file = 'current_{test_id}.data'.format(test_id=test_id)
         self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.current')
-        self.samplerate = int(samplerate)
+        self.samplerate = args.get('samplerate')
+        self.slope = args.get('slope')
+        self.offset = args.get('offset')
 
     def FormatCurrent(self):
         """
@@ -113,7 +116,7 @@ class CurrentsWorker(object):
             np.fromfile(
                 self.filename,
                 dtype=np.uint16
-            ).astype(np.float32) * (float(5000) / 2**12)
+            ).astype(np.float32) * self.slope + self.offset
         )
         start = datetime.datetime.utcfromtimestamp(self.sync)
         index_freq = "{value}{units}".format(
@@ -204,7 +207,20 @@ def run():
     parser.add_argument(
         '-s', '--samplerate',
         help='samplerate',
+        type=int,
         default=10000
+    )
+    parser.add_argument(
+        '-k', '--slope',
+        help='slope, electrical current metric multiplier, `k` in linear y=kx+b function',
+        type=float,
+        default=float(5000/2**12)
+    )
+    parser.add_argument(
+        '-b', '--offset',
+        help='y-offset, electrical current metric addend, `b` in linear y=kx+b function',
+        type=float,
+        default=0
     )
     parser.add_argument(
         '-m', '--meta',
@@ -224,6 +240,7 @@ def main(args):
         level="DEBUG" if args.get('debug') else "INFO",
         format='%(asctime)s [%(levelname)s] [uploader] %(filename)s:%(lineno)d %(message)s'
     )
+    logger.debug('Args: %s', args)
     logger.info('Uploader started.')
     test_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
     date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -231,12 +248,16 @@ def main(args):
         raise ValueError('Unable to run without electrical current measurements file. `-f option`')
     # events log specified, so we trying to find sync point
     if args.get('events'):
-        df = pd.DataFrame(np.fromfile(args.get('filename'), dtype=np.uint16).astype(np.float32) * (float(5000) / 2**12))
+        df = pd.DataFrame(
+            np.fromfile(
+                args.get('filename'), dtype=np.uint16
+            ).astype(np.float32) * args.get('slope') + args.get('offset')
+        )
         sync_sample = sync(
             df[0],
             args.get('events'),
-            sps=int(args.get('samplerate')),
-            first=int(args.get('samplerate')*15),
+            sps=args.get('samplerate'),
+            first=args.get('samplerate')*15,
             trailing_zeros=1000,
         )
         message = None
@@ -253,7 +274,7 @@ def main(args):
             syncflash_unix = (syncflash - datetime.datetime(1970,1,1)).total_seconds()
         else:
             raise Exception('Unable to find appropriate flashlight messages in android log to synchronize')
-        sync_point = syncflash_unix - float(sync_sample)/int(args.get('samplerate'))
+        sync_point = syncflash_unix - float(sync_sample)/args.get('samplerate')
         logger.info('sync_point found: %s', sync_point)
     # no events log specified, so we take current timestamp as syncpoint
     else:
@@ -269,7 +290,7 @@ def main(args):
     jobid = CreateJob(test_id, meta, 'LOAD-272')
 
     # make and upload currents
-    current_worker = CurrentsWorker(args.get('filename'), sync_point, date, test_id, args.get('samplerate'))
+    current_worker = CurrentsWorker(args, sync_point, date, test_id)
     current_data = current_worker.FormatCurrent()
     WriteListToCSV(current_worker.output_file, current_data)
     current_worker.upload()
