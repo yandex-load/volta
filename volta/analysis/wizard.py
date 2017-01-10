@@ -57,6 +57,10 @@ class VoltaWorker(object):
         self.test_duration = duration
         return True
 
+    def setVoltaFormat(self, fmt):
+        self.format = fmt
+        return True
+
     def startTest(self):
         if sys.platform.startswith('linux'):
             ports = glob.glob('/dev/ttyUSB[0-9]*')
@@ -70,20 +74,12 @@ class VoltaWorker(object):
             'device': device,
             'seconds': self.test_duration,
             'output': "output.bin",
-            'debug': False
+            'debug': False,
+            'binary': self.format
         }
         self.grabber = grab.main(args)
+        self.samplerate = self.grabber.samplerate
 
-    def upload(self, output, events):
-        logger.info('Считаем кросс-корреляцию и загружаем логи в Лунапарк')
-        args = {
-            'filename': output,
-            'events': events,
-            'samplerate': self.grabber.samplerate
-        }
-        jobid = uploader.main(args)
-        logging.info('Upload завершился')
-        return jobid
 
 class PhoneWorker(object):
     def __init__(self):
@@ -211,11 +207,12 @@ def main(args):
         format='%(asctime)s [%(levelname)s] [wizard] %(filename)s:%(lineno)d %(message)s'
     )
     logger.info("Volta wizard started")
+
     volta = VoltaWorker()
     phone = PhoneWorker()
+
     # 1 - подключение коробки
     volta.device = EventPoller(volta.isUsbConnected)
-
     # 2 - подключение телефона
     EventPoller(phone.isPhoneConnected)
     # 3 - установка apk
@@ -233,9 +230,10 @@ def main(args):
     EventPoller(phone.dumpLogcatEvents)
     EventPoller(phone.getInfoAboutDevice)
     # 8 - заливка логов
-    volta.upload('./output.bin', './events.log')
-
+    jobid = uploader.main(args)
+    logger.info('Jobid: %s', jobid)
     logger.info('Volta wizard finished')
+
 
 
 if __name__ == "__main__":

@@ -4,6 +4,8 @@ import json
 import argparse
 import progressbar
 import logging
+import time
+
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +14,49 @@ class Grabber(object):
     def __init__(self):
         self.samplerate = 10000
         self.baud_rate = 230400
+
+    def detect_volta_format(self, args):
+        """
+        this method doesn't work because of some bug in pyserial - port stucks after close() method
+        """
+        with serial.Serial(args.get('device'), timeout=1) as ser:
+            logger.info('baudrate set: %s', 230400)
+            ser.baudrate = 230400
+            for _ in range(10):
+                data = ser.read(25)
+                if data:
+                    data_list = data.split('\n')
+                    logger.info('data: %s', data_list)
+                    for chunk in data_list:
+                        if chunk == "VOLTAHELLO":
+                            logger.info('Volta format detected: binary')
+                            self.baud_rate = 230400
+                            self.fmt = 'binary'
+                            ser.close()
+                            return
+            ser.reset_input_buffer()
+            ser.reset_output_buffer()
+            logger.info('baudrate set: %s', 115200)
+            ser.baudrate = 115200
+            for _ in range(10):
+                data = ser.read(25)
+                if data:
+                    data_list = data.split('\n')
+                    logger.info('data: %s', data_list)
+                    try:
+                        float(data_list[0])
+                    except ValueError:
+                        ser.reset_input_buffer()
+                        ser.reset_output_buffer()
+                        ser.close()
+                        raise RuntimeError('unknown volta format: %s', data_list)
+                    else:
+                        logger.info('Volta format detected: text')
+                        self.baud_rate = 115200
+                        self.fmt = 'text'
+                        self.samplerate = 500
+                        ser.close()
+                        return
 
     def grab_binary(self, args):
         with serial.Serial(args.get('device'), self.baud_rate, timeout=1) as ser:
@@ -33,6 +78,19 @@ class Grabber(object):
                         bar.update(i)
                         out.write(ser.read(self.samplerate * 2))
 
+    def grab_text(self, args):
+        with serial.Serial(args.get('device'), self.baud_rate, timeout=1) as ser:
+            logger.info(
+                "Collecting %d seconds of data (%d samples) to '%s'." % (
+                    args.get('seconds'), args.get('seconds') * self.samplerate, args.get('output')))
+            with open(args.get('output'), "wb") as out:
+                with progressbar.ProgressBar(max_value=args['seconds']) as bar:
+                    for i in range(args.get('seconds')):
+                        bar.update(i)
+                        for _ in range(self.samplerate):
+                            out.write(ser.readline())
+
+
 def run():
     parser = argparse.ArgumentParser(description='Grab data from measurement device.')
     parser.add_argument(
@@ -49,12 +107,16 @@ def run():
         default="output.bin",
         help='file to store the results')
     parser.add_argument(
+        '-b', '--binary',
+        action='store_true',
+        default=False,
+        help='volta output format detection')
+    parser.add_argument(
         '-d', '--debug',
         help='enable debug logging',
         action='store_true')
     args = vars(parser.parse_args())
     main(args)
-
 
 def main(args):
     logging.basicConfig(
@@ -62,7 +124,14 @@ def main(args):
         format='%(asctime)s [%(levelname)s] [grabber] %(filename)s:%(lineno)d %(message)s')
     logger.info("Volta data grabber.")
     grabber = Grabber()
-    grabber.grab_binary(args)
+    # grabber.detect_volta_format(args)
+    if args.get('binary'):
+        grabber.baud_rate = 230400
+        grabber.grab_binary(args)
+    else:
+        grabber.baud_rate = 115200
+        grabber.samplerate = 500
+        grabber.grab_text(args)
     return grabber
 
 

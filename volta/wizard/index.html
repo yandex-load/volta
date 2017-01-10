@@ -13,22 +13,15 @@
                     var ws = new WebSocket("ws://localhost:9998/wizard");
                     var config = {};
                     config.duration = document.getElementById("duration").value;
-                    events = document.getElementById('events');
-                    upload = document.getElementById('upload');
+                    config.jobname = document.getElementById("jobname").value;
+                    config.version = document.getElementById("version").value;
+                    config.app = document.getElementById("app").value;
+                    config.devicename = document.getElementById("devicename").value;
+                    config.events = document.getElementById('events').checked;
+                    config.upload = document.getElementById('upload').checked;
+                    config.binary = document.getElementById('binary').checked;
 
-                    if (events.checked) {
-                        config.events = true;
-                    }
-                    else {
-                        config.events = false;
-                    }
-                    if (upload.checked) {
-                        config.upload = true;
-                    }
-                    else {
-                        config.upload = false;
-                    }
-                    json_cfg = JSON.stringify(config)
+                    json_cfg = JSON.stringify(config);
 
                     ws.onopen = function() {
                         $("#message").append('Opened new connection to wizard...<br>');
@@ -60,24 +53,45 @@
     <body>
         <div class="container bgcont center-block">
             <div class="row">
-                <div id="configs" class="col-md-4">
+                <div id="configs" class="col-md-5">
                     <div class="row">
-                        <label for="duration">Длительность теста</label>
                         <input id="duration" name="duration" type="text" label="duration">
+                        <label for="duration">Длительность теста</label>
                     </div>
                     <div class="row">
-                        <label for="events">Записывать эвенты с телефона?</label>
                         <input id="events" name="events" type="checkbox" label="events">
+                        <label for="events">Записывать эвенты с телефона?</label>
                     </div>
                     <div class="row">
-                        <label for="upload">Залить логи в Лунапарк?</label>
+                        <input id="binary" name="binary" type="checkbox" label="binary">
+                        <label for="binary">Прошивка коробочки 10kHz? (Не трогайте, если не знаете что это)</label>
+                    </div>
+                    <div class="row">
                         <input id="upload" name="upload" type="checkbox" label="upload" checked>
+                        <label for="upload">Залить логи в Лунапарк?</label>
                     </div>
                     <div class="row">
                         <button onclick="WizardWebSocket();" class="btn btn-primary btn-lg">Run Wizard</button>
                     </div>
+                    <h2>Информация о тесте</h2>
+                    <div class="row">
+                        <input id="jobname" name="jobname" type="text" label="jobname">
+                        <label for="jobname">Имя теста</label>
+                    </div>
+                    <div class="row">
+                        <input id="version" name="version" type="text" label="version">
+                        <label for="version">Версия</label>
+                    </div>
+                    <div class="row">
+                        <input id="app" name="app" type="text" label="app">
+                        <label for="app">Имя приложения</label>
+                    </div>
+                    <div class="row">
+                        <input id="devicename" name="devicename" type="text" label="devicename">
+                        <label for="devicename">Телефон</label>
+                    </div>
                 </div>
-                <div id="message" class="panel panel-info col-md-8 pre-scrollable" style="max-height: 50%;">
+                <div id="message" class="panel panel-info col-md-7 pre-scrollable" style="max-height: 50%;">
                     <!-- output messages here -->
                 </div>
             </div>

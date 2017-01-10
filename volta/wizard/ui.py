@@ -14,7 +14,7 @@ import json
 from pkg_resources import resource_filename
 
 from volta.analysis.wizard import VoltaWorker, EventPoller, PhoneWorker
-
+from volta.analysis import uploader
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +75,7 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
 
         # 4 - параметризация теста
         self.volta.setTestDuration(self.duration)
+        self.volta.setVoltaFormat(config['binary'])
         self.write_message(format_message(u'Длительность теста будет %s секунд.' % self.duration, 'message'))
 
         # pre5 - сброс logcat
@@ -103,11 +104,16 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
             self.write_message(format_message(
                 u'Собираем логи и заливаем логи в Лунапарк. Это может занять какое-то время.', 'message')
             )
-            if config['events']:
-                jobid = self.volta.upload('./output.bin', './events.log')
-            else:
-                jobid = self.volta.upload('./output.bin', None)
-
+            args = {
+                'filename': 'output.bin',
+                'events': 'events.log' if config['events'] else None,
+                'slope': float(5000./2**12),
+                'offset': 0,
+                'samplerate': self.volta.samplerate,
+                'binary': config['binary'],
+                'config': config
+            }
+            jobid = uploader.main(args)
             self.write_message(format_message(u'<a target="_blank" href="%s">Lunapark URL</a>' % jobid, 'message'))
         # work finished, closing the connection
         time.sleep(3)

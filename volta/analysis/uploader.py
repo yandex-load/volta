@@ -41,7 +41,7 @@ def WriteListToCSV(csv_file, data_list):
     return
 
 
-def CreateJob(test_id, meta, task='LOAD-272'):
+def CreateJob(test_id, meta, config, task='LOAD-272'):
     """
     creates job in lunapark, uploading metadata
 
@@ -57,7 +57,11 @@ def CreateJob(test_id, meta, task='LOAD-272'):
         if not meta:
             data = {
                 'task': task,
-                'test_id': test_id
+                'test_id': test_id,
+                'name': config['jobname'],
+                'ver': config['version'],
+                'device_name': config['devicename'],
+                'app': config['app']
             }
         else:
             data = {
@@ -103,6 +107,7 @@ class CurrentsWorker(object):
         self.samplerate = args.get('samplerate')
         self.slope = args.get('slope')
         self.offset = args.get('offset')
+        self.binary = args.get('binary')
 
     def FormatCurrent(self):
         """
@@ -112,12 +117,11 @@ class CurrentsWorker(object):
             list of values w/ lists inside, format: [today, test_id, ts, message]
         """
         logger.info('Started formatting currents')
-        df = pd.DataFrame(
-            np.fromfile(
-                self.filename,
-                dtype=np.uint16
-            ).astype(np.float32) * self.slope + self.offset
-        )
+        reader = FileReader(self.filename, self.slope, self.offset)
+        if self.binary:
+            df = reader.binary_to_df()
+        else:
+            df = reader.plaintext_to_df()
         start = datetime.datetime.utcfromtimestamp(self.sync)
         index_freq = "{value}{units}".format(
             value = int(10 ** 6 / self.samplerate),
@@ -125,7 +129,7 @@ class CurrentsWorker(object):
         )
         logger.debug('Index freq: %s', index_freq)
         index = pd.date_range(start, periods=len(df), freq=index_freq)
-        series = pd.Series(df[0].values, index=index)
+        series = pd.Series(df.values, index=index)
         values = []
         for key, value in series.iteritems():
             dt = key.strftime("%Y-%m-%d %H:%M:%S.%f")
@@ -195,6 +199,30 @@ class EventsWorker(object):
             r.raise_for_status()
             return
 
+
+class FileReader(object):
+    def __init__(self, fname, slope, offset):
+        self.filename = fname
+        self.slope = slope
+        self.offset = offset
+
+    def binary_to_df(self):
+        df = pd.DataFrame(
+            np.fromfile(
+                self.filename,
+                dtype=np.uint16
+            ).astype(np.float32) * self.slope + self.offset
+        )
+        return df[0]
+
+    def plaintext_to_df(self):
+        df = pd.read_csv(
+            self.filename,
+            names=['curr']
+        ) * self.slope + self.offset
+        return df.curr
+
+
 def run():
     parser = argparse.ArgumentParser(
         description='upload data to lunapark.')
@@ -248,13 +276,13 @@ def main(args):
         raise ValueError('Unable to run without electrical current measurements file. `-f option`')
     # events log specified, so we trying to find sync point
     if args.get('events'):
-        df = pd.DataFrame(
-            np.fromfile(
-                args.get('filename'), dtype=np.uint16
-            ).astype(np.float32) * args.get('slope') + args.get('offset')
-        )
+        reader = FileReader(args.get('filename'), args.get('slope'), args.get('offset'))
+        if args.get('binary'):
+            df = reader.binary_to_df()
+        else:
+            df = reader.plaintext_to_df()
         sync_sample = sync(
-            df[0],
+            df,
             args.get('events'),
             sps=args.get('samplerate'),
             first=args.get('samplerate')*15,
@@ -287,7 +315,7 @@ def main(args):
             meta = json.loads(data)
     else:
         meta = None
-    jobid = CreateJob(test_id, meta, 'LOAD-272')
+    jobid = CreateJob(test_id, meta, args.get('config'), 'LOAD-272')
 
     # make and upload currents
     current_worker = CurrentsWorker(args, sync_point, date, test_id)
