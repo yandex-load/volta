@@ -65,7 +65,7 @@ class VoltaWorker(object):
         if sys.platform.startswith('linux'):
             ports = glob.glob('/dev/ttyUSB[0-9]*')
         elif sys.platform.startswith('darwin'):
-            ports = glob.glob('/dev/cu.[A-Za-z]*')
+            ports = glob.glob('/dev/cu.wchusbserial[0-9]*')
         else:
             raise Exception('Your OS is not supported yet')
         device = [port for port in ports if 'Bluetooth' not in port][0]
