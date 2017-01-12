@@ -96,14 +96,17 @@ class PhoneWorker(object):
     def isPhoneConnected(self):
         logger.info("Подключите телефон в USB...")
         # ищем все подключенные известные нам телефоны по атрибуту product
+        #logger.debug('Found devices: %s', usb.core.find(find_all=1))
         phones = []
         for device in usb.core.find(find_all=1):
             try:
+                logger.debug('Trying to detect device: %s', device)
                 if device.product in self.known_phones:
                     logger.info('Found phone: %s', device.product)
                     phones.append(device)
             except:
-                logger.warning('Unable to detect device product', exc_info=True)
+                logger.warning('Unable to detect device product')
+                logger.debug('Unable to detect device product', exc_info=True)
         if len(phones) == 1 :
             # id'шники преобразовываем в hex, соблюдая формат
             self.db.execute(
