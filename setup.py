@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='volta',
-    version='0.0.45',
+    version='0.0.46',
     description='yandex package for mobile energy consumption measurements',
     longer_description='''
 yandex package for mobile energy consumption measurements
@@ -31,6 +31,7 @@ yandex package for mobile energy consumption measurements
     ],
     entry_points={
         'console_scripts': [
+            'volta = volta.wizard.ui:main',
             'volta-ui = volta.ui.ui:main',
             'volta-sync = volta.analysis.sync:main',
             'volta-grab = volta.analysis.grab:run',
