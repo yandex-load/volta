@@ -21,6 +21,7 @@ yandex package for mobile energy consumption measurements
         'pyserial',
         'progressbar2',
         'pyqtgraph',
+        'pyusb'
     ],
     setup_requires=[
         'pytest-runner',
