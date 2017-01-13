@@ -101,4 +101,5 @@ def input_files_to_df(files, delimiter):
             work_df = work_df.append(df)
     # convert unixtimestamp to datetime/s
     work_df['ts'] = pd.to_datetime(work_df['ts'] ,unit='s')
+    work_df['curr'] = pd.to_numeric(df['curr'], errors='coerce')    
     return work_df

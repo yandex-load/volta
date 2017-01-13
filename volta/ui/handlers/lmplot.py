@@ -45,6 +45,7 @@ class LmplotBuilder(tornado.web.RequestHandler):
         # read log to dataframe, make ts and reindex
         df = pd.read_csv(input_filename, delimiter=' ', names="ts curr".split())
         df['ts'] = df.ts.astype(int)
+        df['curr'] = pd.to_numeric(df['curr'], errors='coerce')
         df['ts'] = pd.to_datetime(df['ts'],unit='s')
         df.set_index(['ts'], inplace=True)
 
