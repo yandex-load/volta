@@ -247,6 +247,7 @@ def main(args):
         EventPoller(phone.isPhoneConnected)
         EventPoller(phone.dumpLogcatEvents)
         EventPoller(phone.getInfoAboutDevice)
+        args['events'] = 'events.log'
     # 8 - заливка логов
     args['filename'] = 'output.bin'
     args['slope'] = 1
