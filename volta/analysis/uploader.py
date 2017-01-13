@@ -54,9 +54,9 @@ def CreateJob(test_id, meta, config, task='LOAD-272'):
     """
     try:
         # prod
-        # url = "https://lunapark.yandex-team.ru/mobile/create_job.json"
+        url = "https://lunapark.yandex-team.ru/mobile/create_job.json"
         # testing
-        url = "https://lunapark.test.yandex-team.ru/mobile/create_job.json"
+        # url = "https://lunapark.test.yandex-team.ru/mobile/create_job.json"
         if not meta:
             data = {
                 'task': task,

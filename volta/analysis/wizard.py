@@ -33,6 +33,7 @@ class VoltaWorker(object):
         self.volta_idVendor = 0x1a86 # CH341 idVendor=0x1a86, idProduct=0x7523
         self.volta_idProduct = 0x7523
         self.samplerate = None
+        self.format = True # True is binary
 
 
     def isUsbConnected(self):
@@ -197,9 +198,19 @@ def run():
     parser = argparse.ArgumentParser(
         description='wizard for volta.')
     parser.add_argument(
+        '-b', '--binary',
+        help='enable binary volta format',
+        action='store_true',
+        default=False)
+    parser.add_argument(
         '-d', '--debug',
         help='enable debug logging',
         action='store_true')
+    parser.add_argument(
+        '-o', '--withoutphone',
+        help='electrical currents only, without phone',
+        action='store_true',
+        default=False)
     args = vars(parser.parse_args())
     main(args)
 
@@ -216,28 +227,41 @@ def main(args):
 
     # 1 - подключение коробки
     volta.device = EventPoller(volta.isUsbConnected)
-    # 2 - подключение телефона
-    EventPoller(phone.isPhoneConnected)
+    if not args.get('withoutphone'):
+        # 2 - подключение телефона
+        EventPoller(phone.isPhoneConnected)
     # 3 - установка apk
     # TODO
     # 4 - параметризация теста
     EventPoller(volta.getTestDuration)
-    # pre5 - сброс logcat
-    EventPoller(phone.clearLogcat)
-    # 5 - отключение телефона
-    EventPoller(phone.isPhoneDisconnected)
+    if not args.get('withoutphone'):
+        # pre5 - сброс logcat
+        EventPoller(phone.clearLogcat)
+        # 5 - отключение телефона
+        EventPoller(phone.isPhoneDisconnected)
     # 6 - запуск теста, мигание фонариком
+    volta.setVoltaFormat(args.get('binary'))
     volta.startTest()
-    # 7 - подключение телефона
-    EventPoller(phone.isPhoneConnected)
-    EventPoller(phone.dumpLogcatEvents)
-    EventPoller(phone.getInfoAboutDevice)
+    if not args.get('withoutphone'):
+        # 7 - подключение телефона
+        EventPoller(phone.isPhoneConnected)
+        EventPoller(phone.dumpLogcatEvents)
+        EventPoller(phone.getInfoAboutDevice)
     # 8 - заливка логов
+    args['filename'] = 'output.bin'
+    args['slope'] = 1
+    args['offset'] = 0
+    args['binary'] = args.get('binary')
+    args['samplerate'] = volta.grabber.samplerate
+    args['config'] = {
+        'jobname': 'test',
+        'version': 'version',
+        'devicename': 'devicename',
+        'app': 'app'
+    }
     jobid = uploader.main(args)
     logger.info('Jobid: %s', jobid)
     logger.info('Volta wizard finished')
-
-
 
 if __name__ == "__main__":
     run()
