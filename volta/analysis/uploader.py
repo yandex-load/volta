@@ -8,6 +8,7 @@ import logging
 import numpy as np
 import argparse
 import json
+import re
 import sys
 
 from volta.analysis.sync import sync, torch_status
@@ -61,10 +62,6 @@ def CreateJob(test_id, meta, config, task='LOAD-272'):
             data = {
                 'task': task,
                 'test_id': test_id,
-                'name': config['jobname'],
-                'ver': config['version'],
-                'device_model': config['devicename'],
-                'app': config['app']
             }
         else:
             data = {
@@ -154,12 +151,17 @@ class CurrentsWorker(object):
 
 
 class EventsWorker(object):
-    def __init__(self, fname, date, test_id):
+    def __init__(self, fname, sync_point, date, test_id):
         self.filename = fname
         self.date = date
+        self.sync = sync_point
         self.test_id = test_id
         self.output_file = 'events_{test_id}.data'.format(test_id=test_id)
         self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.logs')
+        self.custom_ts = None
+
+    def setCustomTimestamp(self, ts):
+        self.custom_ts = ts
 
     def FormatEvents(self):
         """
@@ -169,25 +171,30 @@ class EventsWorker(object):
             list of values w/ lists inside, format: [today, test_id, ts, message]
         """
         logger.info('Started formatting events')
-        with open(self.filename) as eventlog:
-            values = []
-            for event in eventlog.readlines():
-                # filter trash
-                if event.startswith("----"):
-                    continue
-                message = ' '.join(event.split()[5:])
+        values = []
+        for data in find_event_messages(self.filename):
+            date, ts, tag, message = data
+            if message.startswith('[tesla]'):
+                m = re.match(r"\[tesla\]\s+(?P<event_ts>\S+)\s+(?P<custom_message>flash_ON.*?)", message)
+                if m:
+                    custom_data = m.groupdict()
+                    event_custom_ts = int(custom_data['event_ts'])/10**9.
+                    logger.debug('Event custom ts: %s', event_custom_ts)
+                    event_ts = self.sync + (float(event_custom_ts) - float(self.custom_ts))
+                    logger.debug('Event synced ts: %s', event_ts)
+            else:
                 # Android doesn't log `year` to logcat by default
                 ts_prepare = datetime.datetime.strptime(
                     "{year}-{date} {time}".format(
                         year=datetime.datetime.now().year,
-                        date=event.split()[0],
-                        time=event.split()[1]
+                        date=date,
+                        time=ts
                     ),
                     "%Y-%m-%d %H:%M:%S.%f"
                 )
-                ts = int(((ts_prepare - datetime.datetime(1970,1,1)).total_seconds()) * 10000 )
-                values.append([self.date, self.test_id, ts, message])
-            return values
+            ts = int(((ts_prepare - datetime.datetime(1970,1,1)).total_seconds()) * 10000 )
+            values.append([self.date, self.test_id, ts, "{tag} {message}".format(tag=tag, message=message)])
+        return values
 
     def upload(self):
         with open(self.output_file, 'r') as outfile:
@@ -262,8 +269,45 @@ def run():
         '-d', '--debug',
         help='enable debug logging',
         action='store_true')
+    parser.add_argument(
+        '-w', '--binary',
+        help='enable binary input log format',
+        action='store_true')
+    parser.add_argument(
+        '-c', '--custom',
+        help='enable custom events format',
+        action='store_true',
+        default=False)
     args = vars(parser.parse_args())
     main(args)
+
+
+def find_event_messages(log):
+    # 12-14 13:32:31.239  3679  3679 I \
+    # CameraService: onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=1
+    RE = re.compile(r"""
+        ^
+        (\S+) # date, e.g. 12-14
+        \s+
+        (\S+) # timestamp, e.g. 13:32:31.239
+        \s+
+        \S+ # pid, e.g. 3679
+        \s+
+        \S+ # ppid, e.g. 3679
+        \s+
+        \S # priority level, e.g. I
+        \s+
+        (\S+) # tag, e.g. CameraService:
+        \s+
+        (.*?) # message, e.g. onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=1
+        $
+    """, re.X)
+    with open(log,'r') as eventlog:
+        for event in eventlog.readlines():
+            match = RE.match(event)
+            if match:
+                date, ts, tag, message = match.groups(0)
+                yield (date, ts, tag, message)
 
 
 def main(args):
@@ -273,17 +317,27 @@ def main(args):
     )
     logger.debug('Args: %s', args)
     logger.info('Uploader started.')
+
     test_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
     date = datetime.datetime.now().strftime("%Y-%m-%d")
+
     if not args.get('filename'):
         raise ValueError('Unable to run without electrical current measurements file. `-f option`')
+
     # events log specified, so we trying to find sync point
     if args.get('events'):
+        # find sync sample in electrical currents log
         reader = FileReader(args.get('filename'), args.get('slope'), args.get('offset'))
+        # volta binary format, uint16
         if args.get('binary'):
             df = reader.binary_to_df()
+            logger.debug('Read dataframe: \n%s', df)
+        # volta plaintext [old-style 500Hz compatibility]
         else:
             df = reader.plaintext_to_df()
+            logger.debug('Read dataframe: \n%s', df)
+
+        # pearson's cross-correlate
         sync_sample = sync(
             df,
             args.get('events'),
@@ -291,23 +345,30 @@ def main(args):
             first=args.get('samplerate')*15,
             trailing_zeros=1000,
         )
-        message = None
-        with open(args.get('events')) as eventlog:
-            for line in eventlog.readlines():
-                if "newStatus=2" in line:
-                    message = line
-                    break
 
-        if message:
-            syncflash = datetime.datetime.strptime(
-                ' '.join(message.split(' ')[:2]), "%m-%d %H:%M:%S.%f"
-            ).replace(year=datetime.datetime.now().year)
-            syncflash_unix = (syncflash - datetime.datetime(1970,1,1)).total_seconds()
-        else:
-            raise Exception('Unable to find appropriate flashlight messages in android log to synchronize')
+        # find first flashlight message in events log
+        syncflash = None
+        for data in find_event_messages(args.get('events')):
+            dt, ts, tag, message = data
+            if "newStatus=2" in message:
+                syncflash = datetime.datetime.strptime(
+                    "{year}-{date} {time}".format(
+                        year=datetime.datetime.now().year,
+                        date=dt,
+                        time=ts
+                   ),
+                    "%Y-%m-%d %H:%M:%S.%f"
+                )
+                break
+
+        if not syncflash:
+            raise ValueError('Unable to find appropriate flashlight messages in android log to synchronize')
+
+        syncflash_unix = (syncflash - datetime.datetime(1970,1,1)).total_seconds()
         sync_point = syncflash_unix - float(sync_sample)/args.get('samplerate')
         logger.info('sync_point found: %s', sync_point)
-    # no events log specified, so we take current timestamp as syncpoint
+
+    # no events log specified, so we take timestamp.now() as syncpoint
     else:
         sync_point = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).total_seconds()
         logger.info('sync_point is datetime.now(): %s', sync_point)
@@ -318,9 +379,11 @@ def main(args):
             meta = json.loads(data)
     else:
         meta = None
+
+    # create lunapark job
     jobid = CreateJob(test_id, meta, args.get('config'), 'LOAD-272')
 
-    # make and upload currents
+    # reformat and upload currents
     current_worker = CurrentsWorker(args, sync_point, date, test_id)
     current_data = current_worker.FormatCurrent()
     WriteListToCSV(current_worker.output_file, current_data)
@@ -328,7 +391,20 @@ def main(args):
 
     # make and upload events
     if args.get('events'):
-        events_worker = EventsWorker(args.get('events'), date, test_id)
+        events_worker = EventsWorker(args.get('events'), sync_point, date, test_id)
+
+        # find custom first sync flashlight
+        if args.get('custom'):
+            for data in find_event_messages(args.get('events')):
+                dt, ts, tag, message = data
+                if message.startswith('[tesla]'):
+                    m = re.match(r"\[tesla\]\s+(?P<custom_ts>\S+)\s+(?P<custom_message>flash_ON.*?)", message)
+                    if m:
+                        custom_data = m.groupdict()
+                        events_worker.setCustomTimestamp(custom_data['custom_ts'])
+                        logger.debug('custom data: %s', custom_data)
+                        break
+
         events_data = events_worker.FormatEvents()
         WriteListToCSV(events_worker.output_file, events_data)
         events_worker.upload()
