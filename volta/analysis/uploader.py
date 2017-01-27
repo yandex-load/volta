@@ -66,27 +66,15 @@ def CreateJob(test_id, meta, config, task='LOAD-272'):
         else:
             data = {
                 'task': task,
-                'test_id': test_id,
-                'device_id': meta['device_id'],
-                'device_name': meta['device_name'],
-                'device_os': meta['android_version'],
-                'ver': meta['android_api_version'],
-                'dsc': 'DeviceID: {device_id}. Device name: {device_name}. Device OS: {device_os}. Device API: {device_api}'.format(
-                    device_id=meta['device_id'],
-                    device_name=meta['device_name'],
-                    device_os=meta['android_version'],
-                    device_api=meta['android_api_version']
-                ),
-                'name': 'DeviceID: {device_id}. Device name: {device_name}. Device OS: {device_os}. Device API: {device_api}'.format(
-                    device_id=meta['device_id'],
-                    device_name=meta['device_name'],
-                    device_os=meta['android_version'],
-                    device_api=meta['android_api_version']
-                )
+                'test_id': test_id
             }
+            for key in meta:
+                data[str(key)] = str(meta[key])
         lunapark_req = requests.post(url, data=data, verify=False)
         logger.debug('Lunapark create job status: %s', lunapark_req.status_code)
+        logger.debug('Data: %s', data)
         answ = lunapark_req.json()
+        logger.debug(answ)
         job_url = 'https://lunapark.yandex-team.ru/mobile/{jobno}'.format(jobno=answ['jobno'])
     except Exception as exc:
         logger.error('Lunapark create job exception: %s', exc, exc_info=True)
@@ -103,7 +91,9 @@ class CurrentsWorker(object):
         self.date = date
         self.test_id = test_id
         self.output_file = 'current_{test_id}.data'.format(test_id=test_id)
-        self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.current')
+        #self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.current')
+        self.backend = ('https://lunapark.yandex-team.ru/api/volta', 'volta.current')
+        #self.backend = ('https://lunapark.test.yandex-team.ru/api/volta', 'volta.current')        
         self.samplerate = args.get('samplerate')
         self.slope = args.get('slope')
         self.offset = args.get('offset')
@@ -157,7 +147,9 @@ class EventsWorker(object):
         self.sync = sync_point
         self.test_id = test_id
         self.output_file = 'events_{test_id}.data'.format(test_id=test_id)
-        self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.logs')
+        #self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.logs')
+        #self.backend = ('https://lunapark.test.yandex-team.ru/api/volta', 'volta.logs')
+        self.backend = ('https://lunapark.yandex-team.ru/api/volta', 'volta.logs')
         self.custom_ts = None
 
     def setCustomTimestamp(self, ts):
