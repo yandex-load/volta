@@ -38,6 +38,7 @@ class VoltaWorker(object):
 
     def isUsbConnected(self):
         logger.info("Подключите коробочку в USB...")
+        logger.debug('Found devices: %s', usb.core.find(find_all=1))
         device = usb.core.find(idVendor=self.volta_idVendor, idProduct=self.volta_idProduct)
         if device:
             logger.info('Найдена коробочка')
