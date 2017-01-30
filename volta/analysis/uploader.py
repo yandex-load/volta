@@ -166,8 +166,8 @@ class EventsWorker(object):
         values = []
         for data in find_event_messages(self.filename):
             date, ts, tag, message = data
-            if message.startswith('[tesla]'):
-                m = re.match(r"\[tesla\]\s+(?P<event_ts>\S+)\s+(?P<custom_message>flash_ON.*?)", message)
+            if message.startswith('[volta]'):
+                m = re.match(r"\[volta\]\s+(?P<event_ts>\S+)\s+(?P<custom_message>flash_ON.*?)", message)
                 if m:
                     custom_data = m.groupdict()
                     event_custom_ts = int(custom_data['event_ts'])/10**9.
@@ -389,8 +389,8 @@ def main(args):
         if args.get('custom'):
             for data in find_event_messages(args.get('events')):
                 dt, ts, tag, message = data
-                if message.startswith('[tesla]'):
-                    m = re.match(r"\[tesla\]\s+(?P<custom_ts>\S+)\s+(?P<custom_message>flash_ON.*?)", message)
+                if message.startswith('[volta]'):
+                    m = re.match(r"\[volta\]\s+(?P<custom_ts>\S+)\s+(?P<custom_message>flash_ON.*?)", message)
                     if m:
                         custom_data = m.groupdict()
                         events_worker.setCustomTimestamp(custom_data['custom_ts'])
