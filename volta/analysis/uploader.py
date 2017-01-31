@@ -93,7 +93,7 @@ class CurrentsWorker(object):
         self.output_file = 'current_{test_id}.data'.format(test_id=test_id)
         #self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.current')
         self.backend = ('https://lunapark.yandex-team.ru/api/volta', 'volta.current')
-        #self.backend = ('https://lunapark.test.yandex-team.ru/api/volta', 'volta.current')        
+        #self.backend = ('https://lunapark.test.yandex-team.ru/api/volta', 'volta.current')
         self.samplerate = args.get('samplerate')
         self.slope = args.get('slope')
         self.offset = args.get('offset')
@@ -166,7 +166,7 @@ class EventsWorker(object):
         values = []
         for data in find_event_messages(self.filename):
             date, ts, tag, message = data
-            if message.startswith('[volta]'):
+            if message.startswith('[volta]') and self.custom_ts is not None:
                 m = re.match(r"\[volta\]\s+(?P<event_ts>\S+)\s+(?P<custom_message>flash_ON.*?)", message)
                 if m:
                     custom_data = m.groupdict()
@@ -275,31 +275,28 @@ def run():
 
 
 def find_event_messages(log):
-    # 12-14 13:32:31.239  3679  3679 I \
-    # CameraService: onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=1
-    RE = re.compile(r"""
-        ^
-        (\S+) # date, e.g. 12-14
-        \s+
-        (\S+) # timestamp, e.g. 13:32:31.239
-        \s+
-        \S+ # pid, e.g. 3679
-        \s+
-        \S+ # ppid, e.g. 3679
-        \s+
-        \S # priority level, e.g. I
-        \s+
-        (\S+) # tag, e.g. CameraService:
-        \s+
-        (.*?) # message, e.g. onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=1
-        $
-    """, re.X)
+    RE = re.compile(r"""^(?P<Time>(?P<Time_dm>\S+)\s+(?P<Time_time>\S+)\s+(?P<Time_tag>(\S+?)\s*\(\s*\d+\)):\s+(?P<Time_msg>.*))$|^(?P<Threadtime>(?P<Threadtime_dm>\S+)\s+(?P<Threadtime_time>\S+)\s+(?P<Threadtime_tag>(.+?))\:\s+(?P<Threadtime_msg>.*))$""", re.X)
     with open(log,'r') as eventlog:
         for event in eventlog.readlines():
             match = RE.match(event)
             if match:
-                date, ts, tag, message = match.groups(0)
-                yield (date, ts, tag, message)
+                #date, ts, tag, message = match.groups(0)
+                #yield (date, ts, tag, message)
+
+                #logger.debug(event)
+                #logger.debug(match)
+                if match.group('Time'):
+                    date = match.group('Time_dm')
+                    ts = match.group('Time_time')
+                    tag = match.group('Time_tag')
+                    message = match.group('Time_msg')
+                    yield (date, ts, tag, message)
+                elif match.group('Threadtime'):
+                    date = match.group('Threadtime_dm')
+                    ts = match.group('Threadtime_time')
+                    tag = match.group('Threadtime_tag')
+                    message = match.group('Threadtime_msg')
+                    yield (date, ts, tag, message)
 
 
 def main(args):
