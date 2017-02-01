@@ -37,13 +37,18 @@ class VoltaWorker(object):
 
 
     def isUsbConnected(self):
-        logger.info("Подключите коробочку в USB...")
-        debug_devices = [dev for dev in usb.core.find(find_all=1)]
-        logger.debug('Found devices: %s', debug_devices)
-        device = usb.core.find(idVendor=self.volta_idVendor, idProduct=self.volta_idProduct)
-        if device:
-            logger.info('Найдена коробочка')
-            return device
+        logger.info("Подключите коробочку в USB и нажмите enter")
+        raw_input()
+        return True
+        # this autodetection logic works unstable and unpredictable
+        # especially on macbook pros
+        #
+        # debug_devices = [dev for dev in usb.core.find(find_all=1)]
+        # logger.debug('Found devices: %s', debug_devices)
+        # device = usb.core.find(idVendor=self.volta_idVendor, idProduct=self.volta_idProduct)
+        # if device:
+        #     logger.info('Найдена коробочка')
+        #     return device
 
     def getTestDuration(self):
         logger.info('Введите длительность теста в секундах (сколько секунд коробочка будет записывать данные тока)')
@@ -97,67 +102,72 @@ class PhoneWorker(object):
         self.android_api_version = None
 
     def isPhoneConnected(self):
-        logger.info("Подключите телефон в USB...")
+        logger.info("Подключите телефон к компьютеру.")
+        logger.info("Удостоверьтесь, что подключён только один телефон в USB (и хабы) и нажмите enter")
+        raw_input()
+        return True
         # ищем все подключенные известные нам телефоны по атрибуту product
-        #logger.debug('Found devices: %s', usb.core.find(find_all=1))
-        phones = []
-        for device in usb.core.find(find_all=1):
-            try:
-                logger.debug('Trying to detect device: %s', device)
-                if device.product in self.known_phones:
-                    logger.info('Found phone: %s', device.product)
-                    phones.append(device)
-            except:
-                logger.warning('Unable to detect device product')
-                logger.debug('Unable to detect device product', exc_info=True)
-        if len(phones) == 1 :
-            # id'шники преобразовываем в hex, соблюдая формат
-            self.db.execute(
-                'SELECT name FROM devices WHERE manufacturer_id="{man_id}" AND id="{device_id}"'.format(
-                    man_id=format(phones[0].idVendor, '04x'),
-                    device_id=format(phones[0].idProduct, '04x'),
-                )
-            )
-            # известного нам девайса может не быть в базе vendor->usb устройств
-            try:
-                device_name = self.db.fetchone()[0].encode('utf-8')
-            except:
-                device_name = 'Unknown device'
-            logger.info('Найден телефон: %s. id: %s', device_name, phones[0].serial_number.encode('utf-8'))
-            self.device_serial = phones[0].serial_number
-            self.device_name = device_name
-            return self.device_serial
-        elif len(phones) > 1:
-            logger.info('Найдено более 1 телефона! Отключите те, что не будут участвовать в измерениях.')
-        return
+        # logger.debug('Found devices: %s', usb.core.find(find_all=1))
+        # phones = []
+        # for device in usb.core.find(find_all=1):
+        #    try:
+        #        logger.debug('Trying to detect device: %s', device)
+        #        if device.product in self.known_phones:
+        #            logger.info('Found phone: %s', device.product)
+        #            phones.append(device)
+        #    except:
+        #        logger.warning('Unable to detect device product')
+        #        logger.debug('Unable to detect device product', exc_info=True)
+        #if len(phones) == 1 :
+        #    # id'шники преобразовываем в hex, соблюдая формат
+        #    self.db.execute(
+        #        'SELECT name FROM devices WHERE manufacturer_id="{man_id}" AND id="{device_id}"'.format(
+        #            man_id=format(phones[0].idVendor, '04x'),
+        #            device_id=format(phones[0].idProduct, '04x'),
+        #        )
+        #    )
+        #    # известного нам девайса может не быть в базе vendor->usb устройств
+        #    try:
+        #        device_name = self.db.fetchone()[0].encode('utf-8')
+        #    except:
+        #        device_name = 'Unknown device'
+        #    logger.info('Найден телефон: %s. id: %s', device_name, phones[0].serial_number.encode('utf-8'))
+        #    self.device_serial = phones[0].serial_number
+        #    self.device_name = device_name
+        #    return self.device_serial
+        #elif len(phones) > 1:
+        #    logger.info('Найдено более 1 телефона! Отключите те, что не будут участвовать в измерениях.')
+        #return
 
     def isPhoneDisconnected(self):
-        logger.info("Отключите телефон от USB...")
-        phones = []
-        for device in usb.core.find(find_all=1):
-            try:
-                if device.product in self.known_phones:
-                    logger.info('Found phone: %s', device.product)
-                    phones.append(device)
-                else:
-                    continue
-            except:
-                logger.warning('Unable to detect device product', exc_info=True)
-        if len(phones) >= 1 :
-            q = 'SELECT name FROM devices WHERE manufacturer_id="{man_id}" AND id="{device_id}"'.format(
-                man_id=format(phones[0].idVendor, '04x'),
-                device_id=format(phones[0].idProduct, '04x'),
-            )
-            self.db.execute(q)
-            try:
-                device_name = self.db.fetchone()[0].encode('utf-8')
-            except:
-                device_name = 'Unknown device'
-            logging.info('Найден телефон: %s. id: %s', device_name, phones[0].serial_number.encode('utf-8'))
-            return
-        elif len(phones) == 0:
-            logging.info('Телефон отключён. Запускаем тест.')
-            return True
+        logger.info("Отключите телефон от USB... и нажмите enter")
+        raw_input()
+        return True
+        # phones = []
+        #for device in usb.core.find(find_all=1):
+        #    try:
+        #        if device.product in self.known_phones:
+        #            logger.info('Found phone: %s', device.product)
+        #            phones.append(device)
+        #        else:
+        #            continue
+        #    except:
+        #        logger.warning('Unable to detect device product', exc_info=True)
+        #if len(phones) >= 1 :
+        #    q = 'SELECT name FROM devices WHERE manufacturer_id="{man_id}" AND id="{device_id}"'.format(
+        #        man_id=format(phones[0].idVendor, '04x'),
+        #        device_id=format(phones[0].idProduct, '04x'),
+        #    )
+        #    self.db.execute(q)
+        #    try:
+        #        device_name = self.db.fetchone()[0].encode('utf-8')
+        #    except:
+        #        device_name = 'Unknown device'
+        #    logging.info('Найден телефон: %s. id: %s', device_name, phones[0].serial_number.encode('utf-8'))
+        #    return
+        #elif len(phones) == 0:
+        #    logging.info('Телефон отключён. Запускаем тест.')
+        #    return True
 
     def clearLogcat(self):
         logger.info('Чистим logcat на телефоне')
