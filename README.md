@@ -1,4 +1,4 @@
-# Usage:  
-volta-ui --port 8888  
-  
+Volta is a framework for mobile performance and energy efficiency analysis.
 
+# Usage:  
+volta --port 8888  
