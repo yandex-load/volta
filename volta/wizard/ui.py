@@ -50,8 +50,7 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
         self.consoleLogger.setDaemon(True)
         self.consoleLogger.start()
 
-    def on_message(self, message):
-        config = json.loads(message)
+    def perform_test(self, config):
         if not config['duration']:
             self.write_message(format_message(u'Вы не ввели длительность теста', 'message'))
             raise ValueError('Вы не ввели длительность теста.')
@@ -118,6 +117,10 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
         # work finished, closing the connection
         time.sleep(3)
         self.close()
+
+    def on_message(self, message):
+        config = json.loads(message)
+        self.perform_test(config)
 
     def on_close(self):
         self.consoleLogger.finished = True
