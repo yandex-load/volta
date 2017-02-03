@@ -2,6 +2,7 @@
 
 import tornado.websocket
 import tornado.web
+import tornado.gen
 import os
 import webbrowser
 from tornado.ioloop import IOLoop
@@ -41,6 +42,8 @@ class consoleLogger(threading.Thread):
 
 
 class WizardWebSocket(tornado.websocket.WebSocketHandler):
+    wait = True
+
     def open(self):
         self.write_message("Volta wizard started")
         self.initConsoleLogger()
@@ -50,6 +53,14 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
         self.consoleLogger.setDaemon(True)
         self.consoleLogger.start()
 
+    @tornado.gen.coroutine
+    def wait_user_action(self, message):
+        self.write_message(format_message(message, 'wait'))
+        self.wait = True
+        while self.wait:
+            yield tornado.gen.sleep(0.5)
+
+    @tornado.gen.coroutine
     def perform_test(self, config):
         if not config['duration']:
             self.write_message(format_message(u'Вы не ввели длительность теста', 'message'))
@@ -59,15 +70,16 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
         self.volta = VoltaWorker()
         self.phone = PhoneWorker()
         self.write_message(format_message(u'Подключите коробку', 'message'))
+        yield self.wait_user_action(u'Подключите коробку')
 
         # 1 - подключение коробки
-        self.volta.device = EventPoller(self.volta.isUsbConnected)
+        self.volta.device = True #EventPoller(self.volta.isUsbConnected)
         self.write_message(format_message(u'Коробка найдена!', 'message'))
         if config['events']:
             self.write_message(format_message(u'Подключите телефон.', 'message'))
             # 2 - подключение телефона
-            phone = EventPoller(self.phone.isPhoneConnected)
-            self.write_message(format_message(u'Телефон найден: %s' % phone, 'message'))
+            # phone = EventPoller(self.phone.isPhoneConnected)
+            # self.write_message(format_message(u'Телефон найден: %s' % phone, 'message'))
 
         # 3 - установка apk
         # TODO
@@ -83,7 +95,8 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
             EventPoller(self.phone.clearLogcat)
             self.write_message(format_message(u'Теперь отключите телефон', 'message'))
             # 5 - отключение телефона
-            EventPoller(self.phone.isPhoneDisconnected)
+            yield self.wait_user_action(u'Отключите телефон')
+            # EventPoller(self.phone.isPhoneDisconnected)
             self.write_message(format_message(u'Не забудьте помигать фонариком!', 'message'))
         # 6 - запуск теста, мигание фонариком
         self.write_message(format_message(u'Начинается тест', 'message'))
@@ -93,7 +106,8 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
         # 7 - подключение телефона
         if config['events']:
             self.write_message(format_message(u'Подключите телефон', 'message'))
-            EventPoller(self.phone.isPhoneConnected)
+            yield self.wait_user_action(u'Подключите телефон')
+            #EventPoller(self.phone.isPhoneConnected)
             self.write_message(format_message(u'Найден телефон, забираем логи с телефона', 'message'))
             EventPoller(self.phone.dumpLogcatEvents)
             EventPoller(self.phone.getInfoAboutDevice)
@@ -119,8 +133,17 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
         self.close()
 
     def on_message(self, message):
-        config = json.loads(message)
-        self.perform_test(config)
+        try:
+            msg = json.loads(message)
+            if msg["message"] == "run_test":
+                config = msg["config"]
+                self.perform_test(config)
+            elif msg["message"] == "done":
+                self.wait = False
+            else:
+                raise NotImplementedError(json.dumps(msg))
+        except ValueError:
+            logger.error("Couldn't parse msg:\n%s\n" % message)
 
     def on_close(self):
         self.consoleLogger.finished = True
