@@ -61,7 +61,7 @@ def cross_correlate(sig, ref, first=30000):
     Calculate cross-correlation with lag. Take only first n lags.
     """
     log.info("Calculating cross-correlation...")
-    return signal.fftconvolve(sig[:first], ref, mode="valid")
+    return signal.fftconvolve(sig[:first], ref[::-1], mode="valid")
 
 
 def sync(sig, eventlog, sps=1000, first=30000):
