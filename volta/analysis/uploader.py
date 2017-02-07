@@ -332,7 +332,6 @@ def main(args):
             args.get('events'),
             sps=args.get('samplerate'),
             first=args.get('samplerate')*15,
-            trailing_zeros=1000,
         )
 
         # find first flashlight message in events log

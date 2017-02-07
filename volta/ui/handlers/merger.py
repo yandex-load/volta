@@ -170,7 +170,6 @@ class LogcatMerger(tornado.web.RequestHandler):
             events,
             sps=samplerate,
             first=10000,
-            trailing_zeros=1000,
         )
         logging.debug('Sync point: %s', sync_point)
 
