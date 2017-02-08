@@ -21,7 +21,10 @@
                     config.upload = document.getElementById('upload').checked;
                     config.binary = document.getElementById('binary').checked;
 
-                    json_cfg = JSON.stringify(config);
+                    json_cfg = JSON.stringify({
+                        "message": "run_test",
+                        "config": config
+                    });
 
                     ws.onopen = function() {
                         $("#message").append('Opened new connection to wizard...<br>');
@@ -32,6 +35,12 @@
                         var received_msg = JSON.parse(evt.data);
                         if (received_msg.type == 'message') {
                             $("#message").append('<li>' + received_msg.message + '</li>');
+                        }
+                        else if (received_msg.type == 'wait') {
+                            alert(received_msg.message);
+                            ws.send(JSON.stringify({
+                                "message": "done"
+                            }));
                         }
                         else {
                             $("#debug").append('<li>'+received_msg.message+'</li>');

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='volta',
-    version='0.0.55',
+    version='0.0.56',
     description='yandex package for mobile energy consumption measurements',
     longer_description='''
 yandex package for mobile energy consumption measurements
@@ -16,6 +16,7 @@ yandex package for mobile energy consumption measurements
         'pandas',
         'seaborn',
         'numpy',
+        'scipy',
         'matplotlib',
         'requests',
         'pyserial',
