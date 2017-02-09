@@ -19,12 +19,12 @@ def torch_status(lines):
             yield (
                 datetime.strptime(
                     line.split()[1], "%H:%M:%S.%f"),
-                .7)
+                1)
         elif "newStatus=1" in line:
             yield (
                 datetime.strptime(
                     line.split()[1], "%H:%M:%S.%f"),
-                -.3)
+                0)
 
 
 def parse_torch_events(filename, sps=1000):
@@ -53,7 +53,8 @@ def ref_signal(torch):
     f = interpolate.interp1d(torch["offset"], torch["status"], kind="zero")
     log.debug('Torches:\n %s', torch)
     X = np.linspace(0, torch["offset"].values[-1], torch["offset"].values[-1])
-    return f(X)
+    rs = f(X)
+    return rs - np.mean(rs)
 
 
 def cross_correlate(sig, ref, first=30000):
