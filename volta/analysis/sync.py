@@ -24,7 +24,7 @@ def torch_status(lines):
             yield (
                 datetime.strptime(
                     line.split()[1], "%H:%M:%S.%f"),
-                0)
+                -1)
 
 
 def parse_torch_events(filename, sps=1000):
