@@ -19,12 +19,12 @@ def torch_status(lines):
             yield (
                 datetime.strptime(
                     line.split()[1], "%H:%M:%S.%f"),
-                1)
+                .7)
         elif "newStatus=1" in line:
             yield (
                 datetime.strptime(
                     line.split()[1], "%H:%M:%S.%f"),
-                -1)
+                -.3)
 
 
 def parse_torch_events(filename, sps=1000):
