@@ -80,14 +80,14 @@ class Grabber(object):
 
     def grab_text(self, args):
         with serial.Serial(args.get('device'), self.baud_rate, timeout=1) as ser:
-            time.sleep(2)
-            logger.info('Relay disabled for 10 seconds')
-            ser.write(bytes(b'0'))
-            ser.flush()
-            time.sleep(10)
-            ser.write(bytes(b'1'))
-            ser.flush()
-            logger.info('Relay enabled')
+            # time.sleep(2)
+            # logger.info('Relay disabled for 10 seconds')
+            # ser.write(bytes(b'0'))
+            # ser.flush()
+            # time.sleep(10)
+            # ser.write(bytes(b'1'))
+            # ser.flush()
+            # logger.info('Relay enabled')
             logger.info(
                 "Collecting %d seconds of data (%d samples) to '%s'." % (
                     args.get('seconds'), args.get('seconds') * self.samplerate, args.get('output')))
