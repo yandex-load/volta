@@ -92,7 +92,7 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
         # pre5 - сброс logcat
         if config['events']:
             self.write_message(format_message(u'Подключите телефон', 'message'))
-            yield self.wait_user_action(u'Подключите телефон и готовьтесь мигать приложением фонарика')
+            yield self.wait_user_action(u'Подключите телефон')
             self.write_message(format_message(u'Чистим логи на телефоне (logcat)', 'message'))
             EventPoller(self.phone.clearLogcat)
             self.write_message(format_message(u'Теперь отключите телефон', 'message'))
