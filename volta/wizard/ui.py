@@ -91,15 +91,14 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
 
         # pre5 - сброс logcat
         if config['events']:
-            self.write_message(format_message(u'Подключите телефон и готовьтесь мигать приложением фонарика', 'message'))
+            self.write_message(format_message(u'Подключите телефон', 'message'))
             yield self.wait_user_action(u'Подключите телефон и готовьтесь мигать приложением фонарика')
             self.write_message(format_message(u'Чистим логи на телефоне (logcat)', 'message'))
             EventPoller(self.phone.clearLogcat)
             self.write_message(format_message(u'Теперь отключите телефон', 'message'))
             # 5 - отключение телефона
-            yield self.wait_user_action(u'Отключите телефон')
+            yield self.wait_user_action(u'Отключите телефон. В течение 15 секунд после нажатия на эту кнопку помигайте фонариком на телефоне.')
             # EventPoller(self.phone.isPhoneDisconnected)
-            self.write_message(format_message(u'Не забудьте помигать фонариком!', 'message'))
         # 6 - запуск теста, мигание фонариком
         self.write_message(format_message(u'Начинается тест', 'message'))
         self.volta.startTest()
@@ -129,7 +128,7 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
                 'config': config
             }
             jobid = uploader.main(args)
-            self.write_message(format_message(u'<a target="_blank" href="%s">Lunapark URL</a>' % jobid, 'message'))
+            self.write_message(format_message(u'%s' % jobid, 'results'))
         # work finished, closing the connection
         time.sleep(3)
         self.close()

@@ -76,7 +76,12 @@ class VoltaWorker(object):
             ports = glob.glob('/dev/cu.wchusbserial[0-9]*')
         else:
             raise Exception('Your OS is not supported yet')
-        device = [port for port in ports if 'Bluetooth' not in port][0]
+        try:
+            device = [port for port in ports if 'Bluetooth' not in port][0]
+        except IndexError:
+            raise RuntimeError('Не найдена коробочка\n'
+                               'Проверьте, что вы подключили её и правильно установили драйвера.\n'
+                               'Ссылка: https://github.com/yandex-load/volta/tree/master/volta/drivers/ch341ser')
         logger.info('Не забудьте помигать на телефоне фонариком!')
         args = {
             'device': device,

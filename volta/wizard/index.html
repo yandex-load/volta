@@ -36,6 +36,10 @@
                         if (received_msg.type == 'message') {
                             $("#message").append('<li>' + received_msg.message + '</li>');
                         }
+                        else if (received_msg.type == 'results') {
+                            $("#message").html("");
+                            $("#message").append('<li><a target="_blank" href="' + received_msg.message + '">Results URL</a></li>');
+                        }
                         else if (received_msg.type == 'wait') {
                             alert(received_msg.message);
                             ws.send(JSON.stringify({
