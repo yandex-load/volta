@@ -129,6 +129,7 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
             }
             jobid = uploader.main(args)
             self.write_message(format_message(u'%s' % jobid, 'results'))
+            self.wait_user_action(u'Тест завершился!')
         # work finished, closing the connection
         time.sleep(3)
         self.close()
