@@ -13,10 +13,12 @@
                     var ws = new WebSocket("ws://localhost:9998/wizard");
                     var config = {};
                     config.duration = document.getElementById("duration").value;
-                    config.jobname = document.getElementById("jobname").value;
-                    config.version = document.getElementById("version").value;
+                    config.name = document.getElementById("name").value;
+                    config.dsc = document.getElementById("dsc").value;
+                    config.ver = document.getElementById("ver").value;
                     config.app = document.getElementById("app").value;
-                    config.devicename = document.getElementById("devicename").value;
+                    config.device_model = document.getElementById("device_model").value;
+                    config.component = document.getElementById('component').value;
                     config.events = document.getElementById('events').checked;
                     config.upload = document.getElementById('upload').checked;
                     config.binary = document.getElementById('binary').checked;
@@ -88,20 +90,28 @@
                     </div>
                     <h2>Информация о тесте</h2>
                     <div class="row">
-                        <input id="jobname" name="jobname" type="text" label="jobname">
-                        <label for="jobname">Имя теста</label>
+                        <input id="name" name="name" type="text" label="name">
+                        <label for="name">Имя теста</label>
                     </div>
                     <div class="row">
-                        <input id="version" name="version" type="text" label="version">
-                        <label for="version">Версия</label>
+                        <input id="dsc" name="dsc" type="text" label="dsc">
+                        <label for="dsc">Описание теста</label>
+                    </div>
+                    <div class="row">
+                        <input id="ver" name="ver" type="text" label="ver">
+                        <label for="ver">Версия</label>
                     </div>
                     <div class="row">
                         <input id="app" name="app" type="text" label="app">
                         <label for="app">Имя приложения</label>
                     </div>
                     <div class="row">
-                        <input id="devicename" name="devicename" type="text" label="devicename">
-                        <label for="devicename">Телефон</label>
+                        <input id="device_model" name="device_model" type="text" label="device_model">
+                        <label for="device_model">Модель телефона</label>
+                    </div>
+                    <div class="row">
+                        <input id="component" name="component" type="text" label="component">
+                        <label for="component">Регрессия?</label>
                     </div>
                 </div>
                 <div id="message" class="panel panel-info col-md-7 pre-scrollable" style="max-height: 50%;">

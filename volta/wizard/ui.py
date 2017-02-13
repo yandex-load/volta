@@ -125,7 +125,7 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
                 'offset': 0,
                 'samplerate': self.volta.samplerate,
                 'binary': config['binary'],
-                'config': config
+                'job_config': config
             }
             jobid = uploader.main(args)
             self.write_message(format_message(u'%s' % jobid, 'results'))

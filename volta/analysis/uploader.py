@@ -42,7 +42,7 @@ def WriteListToCSV(csv_file, data_list):
     return
 
 
-def CreateJob(test_id, meta, config, task='LOAD-272'):
+def CreateJob(test_id, job_config, task='LOAD-272'):
     """
     creates job in lunapark, uploading metadata
 
@@ -58,18 +58,13 @@ def CreateJob(test_id, meta, config, task='LOAD-272'):
         url = "https://lunapark.yandex-team.ru/mobile/create_job.json"
         # testing
         # url = "https://lunapark.test.yandex-team.ru/mobile/create_job.json"
-        if not meta:
-            data = {
-                'task': task,
-                'test_id': test_id,
-            }
-        else:
-            data = {
-                'task': task,
-                'test_id': test_id
-            }
-            for key in meta:
-                data[str(key)] = str(meta[key])
+        data = {
+            'task': task,
+            'test_id': test_id,
+        }
+        if job_config:
+            for key in job_config:
+                data[str(key)] = str(job_config[key])
         lunapark_req = requests.post(url, data=data, verify=False)
         logger.debug('Lunapark create job status: %s', lunapark_req.status_code)
         logger.debug('Data: %s', data)
@@ -253,11 +248,6 @@ def run():
         default=0
     )
     parser.add_argument(
-        '-m', '--meta',
-        help='meta json',
-        default=None
-    )
-    parser.add_argument(
         '-d', '--debug',
         help='enable debug logging',
         action='store_true')
@@ -309,6 +299,7 @@ def main(args):
 
     test_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
     date = datetime.datetime.now().strftime("%Y-%m-%d")
+    job_config = args.get('job_config', None)
 
     if not args.get('filename'):
         raise ValueError('Unable to run without electrical current measurements file. `-f option`')
@@ -361,15 +352,8 @@ def main(args):
         sync_point = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).total_seconds()
         logger.info('sync_point is datetime.now(): %s', sync_point)
 
-    if args.get('meta'):
-        with open(args.get('meta'), 'r') as jsn_fname:
-            data = jsn_fname.read()
-            meta = json.loads(data)
-    else:
-        meta = None
-
     # create lunapark job
-    jobid = CreateJob(test_id, meta, args.get('config'), 'LOAD-272')
+    jobid = CreateJob(test_id, job_config)
 
     # reformat and upload currents
     current_worker = CurrentsWorker(args, sync_point, date, test_id)
