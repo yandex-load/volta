@@ -57,7 +57,7 @@ const float SAMPLE_INTERVAL = 1.0/SAMPLE_RATE;
 // #define ADC_PRESCALER 7 // F_CPU/128 125 kHz on an Uno
 // #define ADC_PRESCALER 6 // F_CPU/64  250 kHz on an Uno
 // #define ADC_PRESCALER 5 // F_CPU/32  500 kHz on an Uno
-#define ADC_PRESCALER 4 // F_CPU/16 1000 kHz on an Uno
+// #define ADC_PRESCALER 4 // F_CPU/16 1000 kHz on an Uno
 // #define ADC_PRESCALER 3 // F_CPU/8  2000 kHz on an Uno (8-bit mode only)
 //------------------------------------------------------------------------------
 // Reference voltage.  See the processor data-sheet for reference details.
@@ -72,10 +72,10 @@ uint8_t const ADC_REF = (1 << REFS0);  // Vcc Reference.
 // The program creates a contiguous file with FILE_BLOCK_COUNT 512 byte blocks.
 // This file is flash erased using special SD commands.  The file will be
 // truncated if logging is stopped early.
-const uint32_t FILE_BLOCK_COUNT = 2048000;
+const uint32_t FILE_BLOCK_COUNT = 256000;
 
 // log file base name.  Must be six characters or less.
-#define FILE_BASE_NAME "analog"
+#define FILE_BASE_NAME "a0_"
 
 // Set RECORD_EIGHT_BITS non-zero to record only the high 8-bits of the ADC.
 #define RECORD_EIGHT_BITS 0
@@ -647,7 +647,7 @@ void logData() {
   Serial.println(F("Creating new file"));
   binFile.close();
   if (!binFile.createContiguous(sd.vwd(),
-                                TMP_FILE_NAME, 512 * FILE_BLOCK_COUNT)) {
+                                binName, 512 * FILE_BLOCK_COUNT)) {
     error("createContiguous failed");
   }
   // Get the address of the file on the SD.
@@ -786,10 +786,15 @@ void logData() {
       error("Can't truncate file");
     }
   }
-  if (!binFile.rename(sd.vwd(), binName)) {
-    error("Can't rename file");
-  }
-  Serial.print(F("File renamed: "));
+  // Serial.print(F("Renaming file to: "));
+  // Serial.println(binName);
+  // if (!binFile.rename(sd.vwd(), binName)) {
+  //   error("Can't rename file");
+  // }
+  // Serial.print(F("File renamed: "));
+  // Serial.println(binName);
+  binFile.close();
+  Serial.print(F("File dumped: "));
   Serial.println(binName);
   Serial.print(F("Max block write usec: "));
   Serial.println(maxLatency);
