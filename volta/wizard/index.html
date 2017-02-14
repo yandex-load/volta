@@ -19,6 +19,7 @@
                     config.app = document.getElementById("app").value;
                     config.device_model = document.getElementById("device_model").value;
                     config.component = document.getElementById('component').value;
+                    config.task = document.getElementById('task').value;
                     config.events = document.getElementById('events').checked;
                     config.upload = document.getElementById('upload').checked;
                     config.binary = document.getElementById('binary').checked;
@@ -89,6 +90,10 @@
                         <button onclick="WizardWebSocket();" class="btn btn-primary btn-lg">Run Wizard</button>
                     </div>
                     <h2>Информация о тесте</h2>
+                    <div class="row">
+                        <input id="task" name="task" type="text" label="task">
+                        <label for="task">Имя таска в трекере/Лунапарке</label>
+                    </div>
                     <div class="row">
                         <input id="name" name="name" type="text" label="name">
                         <label for="name">Имя теста</label>

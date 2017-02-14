@@ -42,7 +42,7 @@ def WriteListToCSV(csv_file, data_list):
     return
 
 
-def CreateJob(test_id, job_config, task='LOAD-272'):
+def CreateJob(test_id, job_config):
     """
     creates job in lunapark, uploading metadata
 
@@ -58,13 +58,17 @@ def CreateJob(test_id, job_config, task='LOAD-272'):
         url = "https://lunapark.yandex-team.ru/mobile/create_job.json"
         # testing
         # url = "https://lunapark.test.yandex-team.ru/mobile/create_job.json"
-        data = {
-            'task': task,
-            'test_id': test_id,
-        }
+        data = {}
+        logger.debug('job_config: %s', job_config)
         if job_config:
             for key in job_config:
-                data[str(key)] = str(job_config[key])
+                try:
+                    data[str(key)] = job_config[key].encode('utf-8')
+                except AttributeError:
+                    logger.warning('Unable to decode value while create lunapark job: %s', key)
+        data['test_id'] = test_id
+        if not data.get('task', None):
+            data['task'] = 'LOAD-272' # default task id
         lunapark_req = requests.post(url, data=data, verify=False)
         logger.debug('Lunapark create job status: %s', lunapark_req.status_code)
         logger.debug('Data: %s', data)
