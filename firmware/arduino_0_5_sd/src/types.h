@@ -1,5 +1,5 @@
-#ifndef AnalogBinLogger_h
-#define AnalogBinLogger_h
+#ifndef types_h
+#define types_h
 //------------------------------------------------------------------------------
 // First block of file.
 struct metadata_t {
@@ -38,4 +38,4 @@ struct adcdata_t {
     unsigned short u16[DATA_DIM16];
   } data;
 };
-#endif  // AnalogBinLogger_h
+#endif  // types_h
