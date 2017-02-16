@@ -1,25 +1,7 @@
 /**
  * This program logs data from the Arduino ADC to a binary file.
- *
- * Samples are logged at regular intervals. Each Sample consists of the ADC
- * values for the analog pins defined in the PIN_LIST array.  The pins numbers
- * may be in any order.
- *
- * Edit the configuration constants below to set the sample pins, sample rate,
- * and other configuration values.
- *
- * If your SD card has a long write latency, it may be necessary to use
- * slower sample rates.  Using a Mega Arduino helps overcome latency
- * problems since 13 512 byte buffers will be used.
- *
- * Each 512 byte data block in the file has a four byte header followed by up
- * to 508 bytes of data. (508 values in 8-bit mode or 254 values in 10-bit mode)
- * Each block contains an integral number of samples with unused space at the
- * end of the block.
- *
  * Data is written to the file using a SD multiple block write command.
-
- This version is based on SdFat AnalogBinLogger example
+ * Based on SdFat AnalogBinLogger example.
  */
 #include "header.h"
 
@@ -114,6 +96,13 @@ void logData() {
   // Initialize ADC and timer1.
   adcInit((metadata_t*) &block[0]);
 
+  // initialize file system.
+  Serial.println("Initialize file system.");
+  if (!sd.begin(SD_CS_PIN, SPI_FULL_SPEED)) {
+    sd.initErrorPrint();
+    fatalBlink();
+  }
+
   // Find unused file name.
   if (BASE_NAME_SIZE > 6) {
     error("FILE_BASE_NAME too long");
@@ -129,15 +118,9 @@ void logData() {
       binName[BASE_NAME_SIZE]++;
     }
   }
-  // Delete old tmp file.
-  if (sd.exists(TMP_FILE_NAME)) {
-    Serial.println(F("Deleting tmp file"));
-    if (!sd.remove(TMP_FILE_NAME)) {
-      error("Can't remove tmp file");
-    }
-  }
   // Create new file.
-  Serial.println(F("Creating new file"));
+  Serial.print(F("Creating new file: "));
+  Serial.println(binName);
   binFile.close();
   if (!binFile.createContiguous(sd.vwd(),
                                 binName, 512 * FILE_BLOCK_COUNT)) {
@@ -279,13 +262,6 @@ void logData() {
       error("Can't truncate file");
     }
   }
-  // Serial.print(F("Renaming file to: "));
-  // Serial.println(binName);
-  // if (!binFile.rename(sd.vwd(), binName)) {
-  //   error("Can't rename file");
-  // }
-  // Serial.print(F("File renamed: "));
-  // Serial.println(binName);
   binFile.close();
   Serial.print(F("File dumped: "));
   Serial.println(binName);
@@ -320,11 +296,6 @@ void setup(void) {
   Serial.print(F("FreeStack: "));
   Serial.println(FreeStack());
 
-  // initialize file system.
-  if (!sd.begin(SD_CS_PIN, SPI_FULL_SPEED)) {
-    sd.initErrorPrint();
-    fatalBlink();
-  }
 }
 //------------------------------------------------------------------------------
 void loop(void) {
