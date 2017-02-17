@@ -133,7 +133,7 @@ class CurrentsWorker(object):
                 url="{backend_url}/?query=".format(backend_url=self.backend[0]),
                 query="INSERT INTO {backend_table} FORMAT CSV".format(backend_table=self.backend[1])
             )
-            r = requests.post(url, data=data)
+            r = requests.post(url, data=data, verify=False)
             logger.debug('Upload current to clickhouse status: %s. Message: %s', r.status_code, r.text, exc_info=True)
             r.raise_for_status()
             return
@@ -195,7 +195,7 @@ class EventsWorker(object):
                 query="INSERT INTO {backend_table} FORMAT CSV".format(backend_table=self.backend[1])
             )
             headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}
-            r = requests.post(url, data=data, headers=headers)
+            r = requests.post(url, data=data, headers=headers, verify=False)
             logger.debug('Upload current to clickhouse status: %s. Message: %s', r.status_code, r.text, exc_info=True)
             r.raise_for_status()
             return
