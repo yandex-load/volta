@@ -224,6 +224,10 @@ def run():
         help='enable debug logging',
         action='store_true')
     parser.add_argument(
+        '-t', '--task',
+        help='lunapark task id',
+        default=None)
+    parser.add_argument(
         '-o', '--withoutphone',
         help='electrical currents only, without phone',
         action='store_true',
@@ -271,12 +275,14 @@ def main(args):
     args['offset'] = 0
     args['binary'] = args.get('binary')
     args['samplerate'] = volta.grabber.samplerate
-    args['config'] = {
+    args['job_config'] = {
         'jobname': 'test',
         'version': 'version',
         'devicename': 'devicename',
         'app': 'app'
     }
+    if args.get('task', None):
+        args['job_config']['task'] = args.get('task')
     jobid = uploader.main(args)
     logger.info('Jobid: %s', jobid)
     logger.info('Volta wizard finished')
