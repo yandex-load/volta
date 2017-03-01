@@ -214,7 +214,7 @@ class FileReader(object):
                 dtype=np.uint16
             ).astype(np.float32) * self.slope + self.offset
         )
-        return df[0]
+        return df[0][256:]
 
     def plaintext_to_df(self):
         df = pd.read_csv(
