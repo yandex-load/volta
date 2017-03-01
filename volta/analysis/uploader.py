@@ -264,6 +264,10 @@ def run():
         help='enable custom events format',
         action='store_true',
         default=False)
+    parser.add_argument(
+        '-t', '--task',
+        help='lunapark task id',
+        default=None)
     args = vars(parser.parse_args())
     main(args)
 
@@ -303,7 +307,13 @@ def main(args):
 
     test_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
     date = datetime.datetime.now().strftime("%Y-%m-%d")
+
+    # FIXME please refactor option/job_config configuration below
     job_config = args.get('job_config', None)
+    if args.get('task', None):
+        if not job_config:
+            job_config = {}
+        job_config['task'] = args.get('task')
 
     if not args.get('filename'):
         raise ValueError('Unable to run without electrical current measurements file. `-f option`')
