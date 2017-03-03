@@ -57,7 +57,7 @@ def CreateJob(test_id, job_config):
         # prod
         url = "https://lunapark.yandex-team.ru/mobile/create_job.json"
         # testing
-        # url = "https://lunapark.test.yandex-team.ru/mobile/create_job.json"
+        #url = "https://lunapark.test.yandex-team.ru/mobile/create_job.json"
         data = {}
         logger.debug('job_config: %s', job_config)
         if job_config:

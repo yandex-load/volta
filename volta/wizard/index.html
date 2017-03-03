@@ -41,7 +41,11 @@
                         }
                         else if (received_msg.type == 'results') {
                             $("#message").html("");
+                            $("#message").attr('class', "col-md-5")
                             $("#message").append('<li><a target="_blank" href="' + received_msg.message + '">Results URL</a></li>');
+                        }
+                        else if (received_msg.type == 'start') {
+                            $("#message").attr('class', "col-md-5 under-construction")
                         }
                         else if (received_msg.type == 'wait') {
                             alert(received_msg.message);
