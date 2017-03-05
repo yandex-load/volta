@@ -1,0 +1,88 @@
+{
+	"build_systems":
+	[
+		{
+			"cmd":
+			[
+				"platformio",
+				"-f", "-c", "sublimetext",
+				"run"
+			],
+			"name": "PlatformIO",
+			"variants":
+			[
+				{
+					"cmd":
+					[
+						"platformio",
+						"-f", "-c", "sublimetext",
+						"run"
+					],
+					"name": "Build"
+				},
+				{
+					"cmd":
+					[
+						"platformio",
+						"-f", "-c", "sublimetext",
+						"run",
+						"--target",
+						"clean"
+					],
+					"name": "Clean"
+				},
+				{
+					"cmd":
+					[
+						"platformio",
+						"-f", "-c", "sublimetext",
+						"run",
+						"--target",
+						"upload"
+					],
+					"name": "Upload"
+				},
+				{
+					"cmd":
+					[
+						"platformio",
+						"-f", "-c", "sublimetext",
+						"run",
+						"--target",
+						"program"
+					],
+					"name": "Upload using Programmer"
+				},
+				{
+					"cmd":
+					[
+						"platformio",
+						"-f", "-c", "sublimetext",
+						"run",
+						"--target",
+						"uploadfs"
+					],
+					"name": "Upload SPIFFS image"
+				},
+				{
+					"cmd":
+					[
+						"platformio",
+						"-f", "-c", "sublimetext",
+						"update"
+					],
+					"name": "Update platforms and libraries"
+				}
+			],
+			"working_dir": "${project_path:${folder}}",
+			"selector": "source.c, source.c++",
+			"path": "/opt/esp-open-sdk/utils/:/usr/local/opt/gnu-sed/libexec/gnubin:/usr/local/sbin:/Users/direvius/.gvm/pkgsets/go1.7/global/bin:/Users/direvius/.gvm/gos/go1.7/bin:/Users/direvius/.gvm/pkgsets/go1.7/global/overlay/bin:/Users/direvius/.gvm/bin:/Users/direvius/.gvm/bin:/Users/direvius/.nvm/versions/io.js/v3.3.1/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin:/usr/local/munki:/Users/direvius/git/go/bin"
+		}
+	],
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	]
+}
