@@ -89,7 +89,7 @@ class CurrentsWorker(object):
         self.sync = sync
         self.date = date
         self.test_id = test_id
-        self.output_file = 'current_{test_id}.data'.format(test_id=test_id)
+        self.output_file = 'logs/current_{test_id}.data'.format(test_id=test_id)
         #self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.current')
         self.backend = ('https://lunapark.yandex-team.ru/api/volta', 'volta.current')
         #self.backend = ('https://lunapark.test.yandex-team.ru/api/volta', 'volta.current')
@@ -145,7 +145,7 @@ class EventsWorker(object):
         self.date = date
         self.sync = sync_point
         self.test_id = test_id
-        self.output_file = 'events_{test_id}.data'.format(test_id=test_id)
+        self.output_file = 'logs/events_{test_id}.data'.format(test_id=test_id)
         #self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.logs')
         #self.backend = ('https://lunapark.test.yandex-team.ru/api/volta', 'volta.logs')
         self.backend = ('https://lunapark.yandex-team.ru/api/volta', 'volta.logs')

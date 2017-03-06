@@ -14,7 +14,9 @@ import json
 
 from pkg_resources import resource_filename
 
-from volta.analysis.wizard import VoltaWorker, EventPoller, PhoneWorker
+from volta.analysis.wizard import VoltaWorker, EventPoller, PhoneWorker, create_work_dirs
+from volta.wizard.handlers.barplot import BarplotBuilder
+from volta.wizard.handlers.lmplot import LmplotBuilder
 from volta.analysis import uploader
 
 logger = logging.getLogger(__name__)
@@ -169,6 +171,8 @@ def make_app():
     return tornado.web.Application([
         (r"/", IndexPage),
         (r"/wizard", WizardWebSocket),
+        (r"/barplot", BarplotBuilder),
+        (r"/lmplot", LmplotBuilder),        
         (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": static_path}),
     ])
 
@@ -191,6 +195,8 @@ def main():
     parser = argparse.ArgumentParser(description='Configures ui tornado server.')
     parser.add_argument('--port', dest='port', default=9998, help='port for webserver (default: 9998)')
     args = parser.parse_args()
+
+    create_work_dirs()
 
     app = make_app()
     app.listen(args.port)

@@ -9,6 +9,7 @@ import glob
 import json
 import argparse
 import sys
+import os
 from pkg_resources import resource_string, resource_filename
 
 from volta.analysis import grab, uploader
@@ -16,6 +17,19 @@ from volta.analysis import grab, uploader
 
 logger = logging.getLogger(__name__)
 
+def create_work_dirs():
+    work_dirs = {
+        'plots' : 'plots',
+        'logs' : 'logs',
+        'events': 'events',
+    }
+    for key, dirname in work_dirs.iteritems():
+        try:
+            os.stat(dirname)
+        except:
+            logging.debug('Directory %s not found, trying to create it', dirname)
+            os.mkdir(dirname)
+    return
 
 def EventPoller(event):
     while True:
@@ -243,6 +257,7 @@ def main(args):
     )
     logger.info("Volta wizard started")
 
+    create_work_dirs()
     volta = VoltaWorker()
     phone = PhoneWorker()
 
