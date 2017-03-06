@@ -331,12 +331,12 @@ def main(args):
             df = reader.plaintext_to_df()
             logger.debug('Read dataframe: \n%s', df)
 
-        # pearson's cross-correlate
+        # sync
         sync_sample = sync(
             df,
             args.get('events'),
             sps=args.get('samplerate'),
-            first=args.get('samplerate')*15,
+            first=args.get('samplerate')*20,
         )
 
         # find first flashlight message in events log

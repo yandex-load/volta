@@ -38,8 +38,8 @@ def parse_torch_events(filename, sps=1000):
             torch_status(eventlog), columns=["offset", "status"])
         df["offset"] = df["offset"].map(
             lambda x: int(np.round((x - df["offset"][0]).total_seconds() * sps)))
-        # use only first 15 secs
-        df = df[df.offset < int(15*sps)]
+        # use only first 20 secs
+        df = df[df.offset < int(20*sps)]
         return df
 
 
