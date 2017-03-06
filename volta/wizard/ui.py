@@ -103,7 +103,8 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
             # EventPoller(self.phone.isPhoneDisconnected)
         # 6 - запуск теста, мигание фонариком
         self.write_message(format_message(u'Начинается тест', 'message'))
-        yield self.wait_user_action(u'В течение 15 секунд помигайте фонариком на телефоне.')
+        if config['events']:
+            yield self.wait_user_action(u'В течение 15 секунд помигайте фонариком на телефоне.')
         self.write_message(format_message(u'Начинается тест', 'start'))
         self.volta.startTest()
         self.write_message(format_message(u'Готово', 'message'))

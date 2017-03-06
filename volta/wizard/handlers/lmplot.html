@@ -24,7 +24,7 @@
                     <label for="log">Выберите логи, всего найдено логов {{ len(items) }}</label>
                     <select class="form-control" name="log">
                         {% if len(items) == 0 %}
-                            <option>Не найдены логи. Логи должны быть в директории logs относительно того места, откуда запускается volta-ui</option>
+                            <option>Не найдены логи. Логи должны быть в директории logs относительно того места, откуда запускается volta</option>
                         {% end %}
                         {% for item in items %}
                         <option value="{{ escape(item) }}" name="log" id="log">{{ escape(item.split('/')[-1]) }}</option>
