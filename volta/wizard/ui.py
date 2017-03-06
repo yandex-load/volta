@@ -11,6 +11,7 @@ import argparse
 import threading
 import time
 import json
+import requests
 
 from pkg_resources import resource_filename
 
@@ -61,6 +62,14 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
         self.wait = True
         while self.wait:
             yield tornado.gen.sleep(0.5)
+
+    def check_task(self, task):
+        try:
+            check = requests.get('https://lunapark.yandex-team.ru/api/task/'+task+'/joblist.json', verify=False)
+            check.raise_for_status()
+        except:
+            return False
+        return True
 
     @tornado.gen.coroutine
     def perform_test(self, config):
@@ -144,6 +153,12 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
             msg = json.loads(message)
             if msg["message"] == "run_test":
                 config = msg["config"]
+                task_status = self.check_task(msg["config"]["task"])
+                if not task_status:
+                    self.write_message(format_message(u'Таск в Лунапарке не найден!'
+                                                      u'В стартреке нужно нажать в таске '
+                                                      u'"Действие->Нагрузочное тестирование', 'message'))
+                    raise RuntimeError('Не найден таск: %s' % msg['config'])
                 self.perform_test(config)
             elif msg["message"] == "done":
                 self.wait = False
