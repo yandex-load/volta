@@ -117,9 +117,9 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
         self.write_message(format_message(u'Начинается тест', 'start'))
         try:
             self.volta.startTest()
-        except RuntimeError as exc:
-            self.write_message(format_message(u'Не удалось запустить тест.', 'message'))
-            self.write_message(format_message(unicode(exc), 'message'))
+        except RuntimeError:
+            self.write_message(format_message(u'Не удалось запустить тест. Подробности в терминале', 'message'))
+            logger.error('Не удалось запустить тест', exc_info=True)
             raise NotImplementedError()
         else:
             self.write_message(format_message(u'Готово', 'message'))
