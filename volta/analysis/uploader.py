@@ -202,7 +202,6 @@ class EventsWorker(object):
                 if match_stop:
                     if match_stop.group('name').strip():
                         self.fragments[-1].append(ts)
-                        print self.fragments[-1]
             values.append([self.date, self.test_id, ts, "{tag} {message}".format(tag=tag, message=message)])
         return values
 
