@@ -115,9 +115,14 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
         if config['events']:
             yield self.wait_user_action(u'В течение 15 секунд помигайте фонариком на телефоне.')
         self.write_message(format_message(u'Начинается тест', 'start'))
-        self.volta.startTest()
-        self.write_message(format_message(u'Готово', 'message'))
-
+        try:
+            self.volta.startTest()
+        except RuntimeError as exc:
+            self.write_message(format_message(u'Не удалось запустить тест.', 'message'))
+            self.write_message(format_message(unicode(exc), 'message'))
+            raise NotImplementedError()
+        else:
+            self.write_message(format_message(u'Готово', 'message'))
         # 7 - подключение телефона
         if config['events']:
             self.write_message(format_message(u'Подключите телефон', 'message'))
