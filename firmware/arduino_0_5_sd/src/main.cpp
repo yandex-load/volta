@@ -277,6 +277,9 @@ void logData() {
   Serial.println(overruns);
   Serial.println(F("Done"));
 }
+
+
+
 //------------------------------------------------------------------------------
 void setup(void) {
   // Setup the dump switch with an internal pull-up :
@@ -298,10 +301,11 @@ void setup(void) {
 
   Serial.print(F("FreeStack: "));
   Serial.println(FreeStack());
-
 }
 //------------------------------------------------------------------------------
 void loop(void) {
+  // init done
+
   // discard any input
   while (Serial.read() >= 0) {}
   Serial.println();
