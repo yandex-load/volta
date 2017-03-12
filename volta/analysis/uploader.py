@@ -196,11 +196,13 @@ class EventsWorker(object):
             if self.fragment_start and self.fragment_stop:
                 match_start = fr_start.match(event)
                 if match_start:
-                    if match_start.group('name').strip():
+                    name = match_start.group('name').strip()
+                    if name:
                         self.fragments.append([name, ts])
                 match_stop = fr_stop.match(event)
                 if match_stop:
-                    if match_stop.group('name').strip():
+                    name = match_stop.group('name').strip()
+                    if name and self.fragments[-1][0]==name:
                         self.fragments[-1].append(ts)
             values.append([self.date, self.test_id, ts, "{tag} {message}".format(tag=tag, message=message)])
         return values
