@@ -38,7 +38,8 @@ def WriteListToCSV(csv_file, data_list):
             for data in data_list:
                 writer.writerow(data)
     except IOError as exc:
-        print ("I/O error:" % exc)
+        print "I/O error({0}): {1} > {2}".format(exc.errno, exc.strerror, csv_file)
+        # print ("I/O error:" % exc) -- crash if no "log" folder found
     return
 
 
@@ -140,12 +141,16 @@ class CurrentsWorker(object):
 
 
 class EventsWorker(object):
-    def __init__(self, fname, sync_point, date, test_id):
+    def __init__(self, fname, sync_point, date, test_id, fragment_start, fragment_stop):
         self.filename = fname
         self.date = date
         self.sync = sync_point
         self.test_id = test_id
+        self.fragment_start = fragment_start
+        self.fragment_stop = fragment_stop
+        self.fragments = []
         self.output_file = 'logs/events_{test_id}.data'.format(test_id=test_id)
+        self.fragments_output_file = 'logs/fragments_{test_id}.data'.format(test_id=test_id)
         #self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.logs')
         #self.backend = ('https://lunapark.test.yandex-team.ru/api/volta', 'volta.logs')
         self.backend = ('https://lunapark.yandex-team.ru/api/volta', 'volta.logs')
@@ -163,8 +168,12 @@ class EventsWorker(object):
         """
         logger.info('Started formatting events')
         values = []
+        self.fragments = []
+        if self.fragment_start and self.fragment_stop:
+            fr_start = re.compile(self.fragment_start, re.X)
+            fr_stop = re.compile(self.fragment_stop, re.X)
         for data in find_event_messages(self.filename):
-            date, ts, tag, message = data
+            date, ts, tag, message, event = data
             if message.startswith('[volta]') and self.custom_ts is not None:
                 m = re.match(r"\[volta\]\s+(?P<event_ts>\S+)\s+(?P<custom_message>flash_ON.*?)", message)
                 if m:
@@ -184,6 +193,17 @@ class EventsWorker(object):
                     "%Y-%m-%d %H:%M:%S.%f"
                 )
             ts = int(((ts_prepare - datetime.datetime(1970,1,1)).total_seconds()) * 10000 )
+            if self.fragment_start and self.fragment_stop:
+                match_start = fr_start.match(event)
+                if match_start:
+                    name = match_start.group('name').strip()
+                    if name:
+                        self.fragments.append([name, ts])
+                match_stop = fr_stop.match(event)
+                if match_stop:
+                    name = match_stop.group('name').strip()
+                    if name and self.fragments[-1][0]==name:
+                        self.fragments[-1].append(ts)
             values.append([self.date, self.test_id, ts, "{tag} {message}".format(tag=tag, message=message)])
         return values
 
@@ -268,6 +288,14 @@ def run():
         '-t', '--task',
         help='lunapark task id',
         default=None)
+    parser.add_argument(
+        '-u', '--fragment-start',
+        help='fragment start regular expression - ^.*TestRunner:\sstarted:\s(?P<name>.*)$',
+        default=None)
+    parser.add_argument(
+        '-v', '--fragment-stop',
+        help='fragment stop regular expression - ^.*TestRunner:\sfinished:\s(?P<name>.*)$',
+        default=None)
     args = vars(parser.parse_args())
     main(args)
 
@@ -288,13 +316,13 @@ def find_event_messages(log):
                     ts = match.group('Time_time')
                     tag = match.group('Time_tag')
                     message = match.group('Time_msg')
-                    yield (date, ts, tag, message)
+                    yield (date, ts, tag, message, event)
                 elif match.group('Threadtime'):
                     date = match.group('Threadtime_dm')
                     ts = match.group('Threadtime_time')
                     tag = match.group('Threadtime_tag')
                     message = match.group('Threadtime_msg')
-                    yield (date, ts, tag, message)
+                    yield (date, ts, tag, message, event)
 
 
 def main(args):
@@ -342,7 +370,7 @@ def main(args):
         # find first flashlight message in events log
         syncflash = None
         for data in find_event_messages(args.get('events')):
-            dt, ts, tag, message = data
+            dt, ts, tag, message, event = data
             if "newStatus=2" in message:
                 syncflash = datetime.datetime.strptime(
                     "{year}-{date} {time}".format(
@@ -377,12 +405,12 @@ def main(args):
 
     # make and upload events
     if args.get('events'):
-        events_worker = EventsWorker(args.get('events'), sync_point, date, test_id)
+        events_worker = EventsWorker(args.get('events'), sync_point, date, test_id, args.get('fragment_start'), args.get('fragment_stop'))
 
         # find custom first sync flashlight
         if args.get('custom'):
             for data in find_event_messages(args.get('events')):
-                dt, ts, tag, message = data
+                dt, ts, tag, message, event = data
                 if message.startswith('[volta]'):
                     m = re.match(r"\[volta\]\s+(?P<custom_ts>\S+)\s+(?P<custom_message>flash_ON.*?)", message)
                     if m:
@@ -393,6 +421,8 @@ def main(args):
 
         events_data = events_worker.FormatEvents()
         WriteListToCSV(events_worker.output_file, events_data)
+        if events_worker.fragments:
+            WriteListToCSV(events_worker.fragments_output_file, events_worker.fragments)
         events_worker.upload()
 
     logger.info('Lunapark url: %s', jobid)
