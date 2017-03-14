@@ -5,6 +5,15 @@
  */
 #include "header.h"
 
+#include "SevenSegmentTM1637.h"
+
+#include <SPI.h>
+#include <Wire.h>
+
+const byte PIN_CLK = 8;   // define CLK pin (any digital pin)
+const byte PIN_DIO = 7;   // define DIO pin (any digital pin)
+SevenSegmentTM1637    display(PIN_CLK, PIN_DIO);
+
 // queueNext assumes QUEUE_DIM is a power of two
 inline uint8_t queueNext(uint8_t ht) {
   return (ht + 1) & (QUEUE_DIM -1);
@@ -100,6 +109,7 @@ void logData() {
   Serial.println("Initialize file system.");
   if (!sd.begin(SD_CS_PIN, SPI_FULL_SPEED)) {
     sd.initErrorPrint();
+    display.print("ERRO");
     fatalBlink();
   }
 
@@ -121,6 +131,7 @@ void logData() {
   // Create new file.
   Serial.print(F("Creating new file: "));
   Serial.println(binName);
+  display.print(binName);
   binFile.close();
   if (!binFile.createContiguous(sd.vwd(),
                                 binName, 512 * FILE_BLOCK_COUNT)) {
@@ -211,6 +222,7 @@ void logData() {
       if (pBlock->overrun) {
         overruns += pBlock->overrun;
         if (ERROR_LED_PIN >= 0) {
+          display.print("ERRO");
           digitalWrite(ERROR_LED_PIN, HIGH);
         }
       }
@@ -276,12 +288,16 @@ void logData() {
   Serial.print(F("Overruns: "));
   Serial.println(overruns);
   Serial.println(F("Done"));
+  display.print("DONE");
 }
 
 
 
 //------------------------------------------------------------------------------
 void setup(void) {
+
+  Serial.begin(9600);
+  Serial.print("Starting setup");
   // Setup the dump switch with an internal pull-up :
   pinMode(DUMP_SW_PIN,INPUT_PULLUP);
 
@@ -294,18 +310,21 @@ void setup(void) {
   if (WRITE_LED_PIN >= 0) {
     pinMode(WRITE_LED_PIN, OUTPUT);
   }
-  Serial.begin(9600);
 
   // Read the first sample pin to init the ADC.
   analogRead(PIN_LIST[0]);
 
   Serial.print(F("FreeStack: "));
   Serial.println(FreeStack());
+
+  display.begin();
+  display.setBacklight(100);
+  display.print("INIT");
 }
+
+
 //------------------------------------------------------------------------------
 void loop(void) {
-  // init done
-
   // discard any input
   while (Serial.read() >= 0) {}
   Serial.println();
@@ -313,16 +332,23 @@ void loop(void) {
   Serial.println(F("r - record ADC data"));
 
   int sw_value = HIGH;
+  Serial.print("Sw_value 1st init: ");
+  Serial.println(sw_value);
   while(!Serial.available()) {
     // Update the Bounce instance :
     debouncer.update();
 
     // Get the updated value :
     sw_value = debouncer.read();
-    if(sw_value == LOW) break;
+    delay(1000);
+    if(sw_value == LOW) {
+      Serial.println("Button pushed");
+      break;
+    }
   }
   char c = tolower(Serial.read());
   if(sw_value == LOW) c = 'r';
+  Serial.println("ERROR LED PIN check");
   if (ERROR_LED_PIN >= 0) {
     digitalWrite(ERROR_LED_PIN, LOW);
   }
@@ -330,7 +356,7 @@ void loop(void) {
   do {
     delay(10);
   } while (Serial.read() >= 0);
-
+  Serial.println("logData() started");
   if (c == 'r') {
     logData();
   } else {

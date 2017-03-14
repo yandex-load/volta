@@ -3,7 +3,7 @@
 SdFat sd;
 SdBaseFile binFile;
 Bounce debouncer = Bounce();
-char binName[13] = FILE_BASE_NAME "00.bin";
+char binName[13] = FILE_BASE_NAME "00";
 
 block_t* emptyQueue[QUEUE_DIM];
 uint8_t emptyHead;

@@ -51,7 +51,7 @@ uint8_t const ADC_REF = (1 << REFS0);  // Vcc Reference.
 const uint32_t FILE_BLOCK_COUNT = 256000;
 
 // log file base name.  Must be six characters or less.
-#define FILE_BASE_NAME "a0_"
+#define FILE_BASE_NAME "0_"
 
 // Set RECORD_EIGHT_BITS non-zero to record only the high 8-bits of the ADC.
 #define RECORD_EIGHT_BITS 0
