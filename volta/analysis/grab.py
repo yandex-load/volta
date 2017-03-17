@@ -92,7 +92,15 @@ class Grabber(object):
                     for i in range(args.get('seconds')):
                         bar.update(i)
                         for _ in range(self.samplerate):
-                            out.write(ser.readline())
+                            data = ser.readline().strip('\n')
+                            try:
+                                float(data)
+                            except:
+                                logger.warning('Trash data grabbed. Skipping and filling w/ zeroes. Data: %s. ', data)
+                                data = "0.0"
+                            finally:
+                                out.write(data)
+                                out.write('\n')
 
 
 def run():
@@ -127,6 +135,7 @@ def main(args):
         level="DEBUG" if args.get('debug') else "INFO",
         format='%(asctime)s [%(levelname)s] [grabber] %(filename)s:%(lineno)d %(message)s')
     logger.info("Volta data grabber.")
+    logger.info("Config: %s", args)
     grabber = Grabber()
     # grabber.detect_volta_format(args)
     if args.get('binary'):
