@@ -55,6 +55,7 @@ def CreateJob(test_id, job_config):
 
     """
     try:
+        # FIXME params w/ refactoring here!
         # prod
         url = "https://lunapark.yandex-team.ru/mobile/create_job.json"
         # testing
@@ -76,6 +77,11 @@ def CreateJob(test_id, job_config):
         answ = lunapark_req.json()
         logger.debug(answ)
         job_url = 'https://lunapark.yandex-team.ru/mobile/{jobno}'.format(jobno=answ['jobno'])
+        try:
+            with open('jobno.log', 'w') as jobno:
+                jobno.write(job_url)
+        except:
+            logger.warning('Unable to dump jobno', exc_info=True)
     except Exception as exc:
         logger.error('Lunapark create job exception: %s', exc, exc_info=True)
         return None
