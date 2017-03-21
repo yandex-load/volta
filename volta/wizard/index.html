@@ -24,6 +24,7 @@
                     config.events = document.getElementById('events').checked;
                     config.upload = document.getElementById('upload').checked;
                     config.binary = document.getElementById('binary').checked;
+                    config.person = document.getElementById('person').value;
 
                     json_cfg = JSON.stringify({
                         "message": "run_test",
@@ -122,6 +123,10 @@
                     <div class="row">
                         <input id="component" name="component" type="text" label="component">
                         <label for="component">Регрессия?</label>
+                    </div>
+                    <div class="row">
+                        <input id="person" name="person" type="text" label="person">
+                        <label for="person">Ваш логин</label>
                     </div>
                 </div>
                 <div id="message" class="panel panel-info col-md-7 pre-scrollable" style="max-height: 50%;">
