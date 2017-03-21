@@ -10,9 +10,9 @@ import argparse
 import json
 import re
 import sys
+import os
 
 from volta.analysis.sync import sync, torch_status
-from volta.analysis.wizard import create_work_dirs
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -20,12 +20,28 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 logger = logging.getLogger(__name__)
 
+
 env = {
     "front": "https://lunapark.yandex-team.ru",
     "backend": "https://lunapark.yandex-team.ru",
     # "front": "https://lunapark.test.yandex-team.ru",
     # "backend": "https://lunapark.test.yandex-team.ru"
 }
+
+
+def create_work_dirs():
+    work_dirs = {
+        'plots' : 'plots',
+        'logs' : 'logs',
+        'events': 'events',
+    }
+    for key, dirname in work_dirs.iteritems():
+        try:
+            os.stat(dirname)
+        except:
+            logging.debug('Directory %s not found, trying to create it', dirname)
+            os.mkdir(dirname)
+    return
 
 
 def WriteListToCSV(csv_file, data_list):
