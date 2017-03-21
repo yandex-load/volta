@@ -4,16 +4,44 @@ import json
 import argparse
 import progressbar
 import logging
+import signal
 import time
 
 
 logger = logging.getLogger(__name__)
 
 
+def signal_handler(sig, frame):
+    """ required for non-tty python runs to interrupt """
+    logger.warning("Got signal %s, going to stop", sig)
+    raise KeyboardInterrupt()
+
+def ignore_handler(sig, frame):
+    logger.warning("Got signal %s, ignoring", sig)
+
+def set_sig_handler():
+    uncatchable = ['SIG_DFL', 'SIGSTOP', 'SIGKILL']
+    ignore = ['SIGCHLD', 'SIGCLD']
+    all_sig = [s for s in dir(signal) if s.startswith("SIG")]
+    for sig_name in ignore:
+        try:
+            sig_num = getattr(signal, sig_name)
+            signal.signal(sig_num, ignore_handler)
+        except Exception:
+            pass
+    for sig_name in [s for s in all_sig if s not in (uncatchable + ignore)]:
+        try:
+            sig_num = getattr(signal, sig_name)
+            signal.signal(sig_num, signal_handler)
+        except Exception as ex:
+            logger.error("Can't set handler for %s, %s", sig_name, ex)
+
+
 class Grabber(object):
     def __init__(self):
         self.samplerate = 10000
         self.baud_rate = 230400
+        self.stopped = False
 
     def detect_volta_format(self, args):
         """
@@ -75,8 +103,14 @@ class Grabber(object):
             with open(args.get('output'), "wb") as out:
                 with progressbar.ProgressBar(max_value=args['seconds']) as bar:
                     for i in range(args.get('seconds')):
-                        bar.update(i)
-                        out.write(ser.read(self.samplerate * 2))
+                        try:
+                            bar.update(i)
+                            out.write(ser.read(self.samplerate * 2))
+                        except KeyboardInterrupt:
+                            logger.info('Stopped via process signal at %s second', i)
+                            out.flush()
+                            logger.info('Done graceful shutdown')
+                            raise KeyboardInterrupt()
 
     def grab_text(self, args):
         with serial.Serial(args.get('device'), self.baud_rate, timeout=1) as ser:
@@ -90,17 +124,23 @@ class Grabber(object):
             with open(args.get('output'), "wb") as out:
                 with progressbar.ProgressBar(max_value=args['seconds']) as bar:
                     for i in range(args.get('seconds')):
-                        bar.update(i)
-                        for _ in range(self.samplerate):
-                            data = ser.readline().strip('\n')
-                            try:
-                                float(data)
-                            except:
-                                logger.warning('Trash data grabbed. Skipping and filling w/ zeroes. Data: %s. ', data)
-                                data = "0.0"
-                            finally:
-                                out.write(data)
-                                out.write('\n')
+                        try:
+                            bar.update(i)
+                            for _ in range(self.samplerate):
+                                data = ser.readline().strip('\n')
+                                try:
+                                    float(data)
+                                except:
+                                    logger.warning('Trash data grabbed. Skipping and filling w/ zeroes. Data: %s. ', data)
+                                    data = "0.0"
+                                finally:
+                                    out.write(data)
+                                    out.write('\n')
+                        except KeyboardInterrupt:
+                            logger.info('Stopped via process signal on %s second', i)
+                            out.flush()
+                            logger.info('Done graceful shutdown')
+                            raise KeyboardInterrupt()
 
 
 def run():
@@ -149,4 +189,6 @@ def main(args):
 
 
 if __name__ == '__main__':
+    set_sig_handler()
     run()
+
