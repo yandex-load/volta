@@ -12,12 +12,20 @@ import re
 import sys
 
 from volta.analysis.sync import sync, torch_status
+from volta.analysis.wizard import create_work_dirs
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 logger = logging.getLogger(__name__)
+
+env = {
+    "front": "https://lunapark.yandex-team.ru",
+    "backend": "https://lunapark.yandex-team.ru",
+    # "front": "https://lunapark.test.yandex-team.ru",
+    # "backend": "https://lunapark.test.yandex-team.ru"
+}
 
 
 def WriteListToCSV(csv_file, data_list):
@@ -56,10 +64,7 @@ def CreateJob(test_id, job_config):
     """
     try:
         # FIXME params w/ refactoring here!
-        # prod
-        url = "https://lunapark.yandex-team.ru/mobile/create_job.json"
-        # testing
-        #url = "https://lunapark.test.yandex-team.ru/mobile/create_job.json"
+        url = "{url}{path}".format(url=env['front'], path="/mobile/create_job.json")
         data = {}
         logger.debug('job_config: %s', job_config)
         if job_config:
@@ -76,7 +81,7 @@ def CreateJob(test_id, job_config):
         logger.debug('Data: %s', data)
         answ = lunapark_req.json()
         logger.debug(answ)
-        job_url = 'https://lunapark.yandex-team.ru/mobile/{jobno}'.format(jobno=answ['jobno'])
+        job_url = "{url}{path}{jobno}".format(url=env['front'], path="/mobile/", jobno=answ['jobno'])
         try:
             with open('jobno.log', 'w') as jobno:
                 jobno.write(job_url)
@@ -97,9 +102,7 @@ class CurrentsWorker(object):
         self.date = date
         self.test_id = test_id
         self.output_file = 'logs/current_{test_id}.data'.format(test_id=test_id)
-        #self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.current')
-        self.backend = ('https://lunapark.yandex-team.ru/api/volta', 'volta.current')
-        #self.backend = ('https://lunapark.test.yandex-team.ru/api/volta', 'volta.current')
+        self.backend = ("{url}{path}".format(url=env['backend'], path="/api/volta"), "volta.current")
         self.samplerate = args.get('samplerate')
         self.slope = args.get('slope')
         self.offset = args.get('offset')
@@ -157,9 +160,7 @@ class EventsWorker(object):
         self.fragments = []
         self.output_file = 'logs/events_{test_id}.data'.format(test_id=test_id)
         self.fragments_output_file = 'logs/fragments_{test_id}.data'.format(test_id=test_id)
-        #self.backend = ('http://volta-backend-test.haze.yandex.net:8123', 'volta.logs')
-        #self.backend = ('https://lunapark.test.yandex-team.ru/api/volta', 'volta.logs')
-        self.backend = ('https://lunapark.yandex-team.ru/api/volta', 'volta.logs')
+        self.backend = ("{url}{path}".format(url=env['backend'], path="/api/volta"), "volta.logs")
         self.custom_ts = None
 
     def setCustomTimestamp(self, ts):
@@ -205,12 +206,14 @@ class EventsWorker(object):
                     name = match_start.group('name').strip()
                     if name:
                         self.fragments.append([name, ts])
+                        values.append([self.date, self.test_id, ts, name, "fragment_start"])
                 match_stop = fr_stop.match(event)
                 if match_stop:
                     name = match_stop.group('name').strip()
                     if name and self.fragments[-1][0]==name:
                         self.fragments[-1].append(ts)
-            values.append([self.date, self.test_id, ts, "{tag} {message}".format(tag=tag, message=message)])
+                        values.append([self.date, self.test_id, ts, name, "fragment_end"])
+            values.append([self.date, self.test_id, ts, "{tag} {message}".format(tag=tag, message=message), "log_event"])
         return values
 
     def upload(self):
@@ -339,6 +342,7 @@ def main(args):
     logger.debug('Args: %s', args)
     logger.info('Uploader started.')
 
+    create_work_dirs()
     test_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
     date = datetime.datetime.now().strftime("%Y-%m-%d")
 
@@ -437,3 +441,4 @@ def main(args):
 
 if __name__ == "__main__":
     run()
+
