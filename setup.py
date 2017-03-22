@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='volta',
-    version='0.0.81',
+    version='0.0.82',
     description='yandex package for mobile energy consumption measurements',
     longer_description='''
 yandex package for mobile energy consumption measurements
@@ -21,7 +21,6 @@ yandex package for mobile energy consumption measurements
         'requests',
         'pyserial',
         'progressbar2',
-        'pyqtgraph',
         'pyusb'
     ],
     setup_requires=[
