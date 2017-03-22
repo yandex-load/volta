@@ -229,7 +229,7 @@ class EventsWorker(object):
                     if name and self.fragments[-1][0]==name:
                         self.fragments[-1].append(ts)
                         values.append([self.date, self.test_id, ts, name, "fragment_end"])
-            values.append([self.date, self.test_id, ts, "{tag} {message}".format(tag=tag, message=message), "log_event"])
+            values.append([self.date, self.test_id, ts, "{tag} {message}".format(tag=tag, message=message)])
         return values
 
     def upload(self):
