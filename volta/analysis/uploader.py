@@ -7,9 +7,7 @@ import pandas as pd
 import logging
 import numpy as np
 import argparse
-import json
 import re
-import sys
 import os
 
 from volta.analysis.sync import sync, torch_status
@@ -269,6 +267,82 @@ class FileReader(object):
         return df.curr
 
 
+def find_event_messages(log):
+    RE = re.compile(r"""^(?P<Time>(?P<Time_dm>\S+)\s+(?P<Time_time>\S+)\s+(?P<Time_tag>(\S+?)\s*\(\s*\d+\)):\s+(?P<Time_msg>.*))$|^(?P<Threadtime>(?P<Threadtime_dm>\S+)\s+(?P<Threadtime_time>\S+)\s+(?P<Threadtime_tag>(.+?))\:\s+(?P<Threadtime_msg>.*))$""", re.X)
+    with open(log,'r') as eventlog:
+        for event in eventlog.readlines():
+            match = RE.match(event)
+            if match:
+                #date, ts, tag, message = match.groups(0)
+                #yield (date, ts, tag, message)
+
+                #logger.debug(event)
+                #logger.debug(match)
+                if match.group('Time'):
+                    date = match.group('Time_dm')
+                    ts = match.group('Time_time')
+                    tag = match.group('Time_tag')
+                    message = match.group('Time_msg')
+                    yield (date, ts, tag, message, event)
+                elif match.group('Threadtime'):
+                    date = match.group('Threadtime_dm')
+                    ts = match.group('Threadtime_time')
+                    tag = match.group('Threadtime_tag')
+                    message = match.group('Threadtime_msg')
+                    yield (date, ts, tag, message, event)
+
+
+
+def find_sync_point(args):
+    # events log specified, so we trying to find sync point
+    if args.get('events'):
+        # find sync sample in electrical currents log
+        reader = FileReader(args.get('filename'), args.get('slope'), args.get('offset'))
+        # volta binary format, uint16
+        if args.get('binary'):
+            df = reader.binary_to_df()
+            logger.debug('Read dataframe: \n%s', df)
+        # volta plaintext [old-style 500Hz compatibility]
+        else:
+            df = reader.plaintext_to_df()
+            logger.debug('Read dataframe: \n%s', df)
+        # sync
+        sync_sample = sync(
+            df,
+            args.get('events'),
+            sps=args.get('samplerate'),
+            first=args.get('samplerate')*20,
+        )
+
+        # find first flashlight message in events log
+        syncflash = None
+        for data in find_event_messages(args.get('events')):
+            dt, ts, tag, message, event = data
+            if "newStatus=2" in message:
+                syncflash = datetime.datetime.strptime(
+                    "{year}-{date} {time}".format(
+                        year=datetime.datetime.now().year,
+                        date=dt,
+                        time=ts
+                    ),
+                    "%Y-%m-%d %H:%M:%S.%f"
+                )
+                break
+
+        if not syncflash:
+            raise ValueError('Unable to find appropriate flashlight messages in android log to synchronize')
+
+        syncflash_unix = (syncflash - datetime.datetime(1970,1,1)).total_seconds()
+        sync_point = syncflash_unix - float(sync_sample)/args.get('samplerate')
+        logger.info('sync_point found: %s', sync_point)
+    # no events log specified, so we take timestamp.now() as syncpoint
+    else:
+        sync_point = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).total_seconds()
+        logger.info('sync_point is datetime.now(): %s', sync_point)
+
+    return sync_point
+
+
 def run():
     parser = argparse.ArgumentParser(
         description='upload data to lunapark.')
@@ -325,31 +399,6 @@ def run():
     main(args)
 
 
-def find_event_messages(log):
-    RE = re.compile(r"""^(?P<Time>(?P<Time_dm>\S+)\s+(?P<Time_time>\S+)\s+(?P<Time_tag>(\S+?)\s*\(\s*\d+\)):\s+(?P<Time_msg>.*))$|^(?P<Threadtime>(?P<Threadtime_dm>\S+)\s+(?P<Threadtime_time>\S+)\s+(?P<Threadtime_tag>(.+?))\:\s+(?P<Threadtime_msg>.*))$""", re.X)
-    with open(log,'r') as eventlog:
-        for event in eventlog.readlines():
-            match = RE.match(event)
-            if match:
-                #date, ts, tag, message = match.groups(0)
-                #yield (date, ts, tag, message)
-
-                #logger.debug(event)
-                #logger.debug(match)
-                if match.group('Time'):
-                    date = match.group('Time_dm')
-                    ts = match.group('Time_time')
-                    tag = match.group('Time_tag')
-                    message = match.group('Time_msg')
-                    yield (date, ts, tag, message, event)
-                elif match.group('Threadtime'):
-                    date = match.group('Threadtime_dm')
-                    ts = match.group('Threadtime_time')
-                    tag = match.group('Threadtime_tag')
-                    message = match.group('Threadtime_msg')
-                    yield (date, ts, tag, message, event)
-
-
 def main(args):
     logging.basicConfig(
         level="DEBUG" if args.get('debug') else "INFO",
@@ -372,53 +421,10 @@ def main(args):
     if not args.get('filename'):
         raise ValueError('Unable to run without electrical current measurements file. `-f option`')
 
-    # events log specified, so we trying to find sync point
-    if args.get('events'):
-        # find sync sample in electrical currents log
-        reader = FileReader(args.get('filename'), args.get('slope'), args.get('offset'))
-        # volta binary format, uint16
-        if args.get('binary'):
-            df = reader.binary_to_df()
-            logger.debug('Read dataframe: \n%s', df)
-        # volta plaintext [old-style 500Hz compatibility]
-        else:
-            df = reader.plaintext_to_df()
-            logger.debug('Read dataframe: \n%s', df)
-
-        # sync
-        sync_sample = sync(
-            df,
-            args.get('events'),
-            sps=args.get('samplerate'),
-            first=args.get('samplerate')*20,
-        )
-
-        # find first flashlight message in events log
-        syncflash = None
-        for data in find_event_messages(args.get('events')):
-            dt, ts, tag, message, event = data
-            if "newStatus=2" in message:
-                syncflash = datetime.datetime.strptime(
-                    "{year}-{date} {time}".format(
-                        year=datetime.datetime.now().year,
-                        date=dt,
-                        time=ts
-                   ),
-                    "%Y-%m-%d %H:%M:%S.%f"
-                )
-                break
-
-        if not syncflash:
-            raise ValueError('Unable to find appropriate flashlight messages in android log to synchronize')
-
-        syncflash_unix = (syncflash - datetime.datetime(1970,1,1)).total_seconds()
-        sync_point = syncflash_unix - float(sync_sample)/args.get('samplerate')
-        logger.info('sync_point found: %s', sync_point)
-
-    # no events log specified, so we take timestamp.now() as syncpoint
-    else:
+    try:
+        sync_point = find_sync_point(args)
+    except ValueError:
         sync_point = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).total_seconds()
-        logger.info('sync_point is datetime.now(): %s', sync_point)
 
     # create lunapark job
     jobid = CreateJob(test_id, job_config)
