@@ -9,6 +9,7 @@ import numpy as np
 import argparse
 import re
 import os
+import pwd
 
 from volta.analysis.sync import sync, torch_status
 
@@ -77,6 +78,10 @@ def CreateJob(test_id, job_config):
 
     """
     try:
+        operator = pwd.getpwuid(os.geteuid())[0]
+    except:
+        operator = 'alien'
+    try:
         # FIXME params w/ refactoring here!
         url = "{url}{path}".format(url=env['front'], path="/mobile/create_job.json")
         data = {}
@@ -88,6 +93,7 @@ def CreateJob(test_id, job_config):
                 except AttributeError:
                     logger.warning('Unable to decode value while create lunapark job: %s', key)
         data['test_id'] = test_id
+        data['person'] = operator
         if not data.get('task', None):
             data['task'] = 'LOAD-272' # default task id
         lunapark_req = requests.post(url, data=data, verify=False)
@@ -307,6 +313,7 @@ def find_sync_point(args):
             df = reader.plaintext_to_df()
             logger.debug('Read dataframe: \n%s', df)
         # sync
+        syncflash = None
         sync_sample = sync(
             df,
             args.get('events'),
@@ -315,7 +322,6 @@ def find_sync_point(args):
         )
 
         # find first flashlight message in events log
-        syncflash = None
         for data in find_event_messages(args.get('events')):
             dt, ts, tag, message, event = data
             if "newStatus=2" in message:
