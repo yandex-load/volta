@@ -66,7 +66,7 @@ def WriteListToCSV(csv_file, data_list):
     return
 
 
-def CreateJob(test_id, job_config):
+def CreateJob(test_id, job_config, lp_name=None):
     """
     creates job in lunapark, uploading metadata
 
@@ -94,6 +94,8 @@ def CreateJob(test_id, job_config):
                     logger.warning('Unable to decode value while create lunapark job: %s', key)
         data['test_id'] = test_id
         data['person'] = operator
+        if lp_name:
+            data['name'] = lp_name
         if not data.get('task', None):
             data['task'] = 'LOAD-272' # default task id
         lunapark_req = requests.post(url, data=data, verify=False)
@@ -394,6 +396,10 @@ def run():
         help='lunapark task id',
         default=None)
     parser.add_argument(
+        '-n', '--name',
+        help='lunapark name',
+        default=None)
+    parser.add_argument(
         '-u', '--fragment-start',
         help='fragment start regular expression - ^.*TestRunner:\sstarted:\s(?P<name>.*)$',
         default=None)
@@ -433,7 +439,8 @@ def main(args):
         sync_point = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).total_seconds()
 
     # create lunapark job
-    jobid = CreateJob(test_id, job_config)
+    lp_name = args.get('name', None)
+    jobid = CreateJob(test_id, job_config, lp_name)
 
     # reformat and upload currents
     current_worker = CurrentsWorker(args, sync_point, date, test_id)
