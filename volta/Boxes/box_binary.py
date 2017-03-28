@@ -8,16 +8,9 @@ import time
 import numpy as np
 import json
 from volta.common.interfaces import VoltaBox
-from volta.common.util import Drain
+from volta.common.util import Drain, TimeChopper
 
 logger = logging.getLogger(__name__)
-
-
-dtypes = {
-    'current': np.uint16
-}
-
-box_columns = ['current']
 
 
 class VoltaBoxBinary(VoltaBox):
@@ -27,7 +20,7 @@ class VoltaBoxBinary(VoltaBox):
         self.device = config.get('device', '/dev/cu.wchusbserial1420')
         self.sample_rate = None
         self.baud_rate = 230400
-        self.chop_ratio = 0.1
+        self.chop_ratio = config.get('chop_ratio', 1)
         self.volta_serial = serial.Serial(self.device, self.baud_rate, timeout=self.grab_timeout)
         logger.debug('serial initialized: %s', self.volta_serial)
 
@@ -51,9 +44,11 @@ class VoltaBoxBinary(VoltaBox):
 
         volta_spec = json.loads(self.volta_serial.readline())
         self.sample_rate = volta_spec["sps"]
+        logger.info('Sample rate handshake success: %s', self.sample_rate)
 
         # clean up dirty buffer
-        self.volta_serial.read(self.sample_rate*2)
+        while self.volta_serial.readline() != "DATASTART\n":
+            pass
 
         self.pipeline = Drain(
             TimeChopper(
@@ -90,10 +85,17 @@ class BoxBinaryReader(object):
         self.source = source
         self.sample_rate = sample_rate
         self.buffer = ""
+        self.orphan_byte = None
 
     def _read_chunk(self):
         data = self.source.read(self.sample_rate * 2 * 10)
         if data:
+            if self.orphan_byte:
+                data = self.orphan_byte+data
+            if (len(data) % 2 != 0):
+                self.orphan_byte = data[len(data)-1:]
+                #logger.info('Orphan byte happened: %s', self.orphan_byte)
+                data = data[:len(data)-1]
             return string_to_np(data)
 
     def __iter__(self):
@@ -103,30 +105,6 @@ class BoxBinaryReader(object):
 
     def close(self):
         self.closed = True
-
-
-class TimeChopper(object):
-    """
-    Group incoming chunks into dataframe by sample rate w/ chop_ratio
-    """
-
-    def __init__(self, source, sample_rate, chop_ratio=1.0):
-        self.source = source
-        self.sample_rate = sample_rate
-        self.buffer = np.array([])
-        self.chop_ratio = chop_ratio
-        self.slice_size = int(self.sample_rate*self.chop_ratio)
-
-    def __iter__(self):
-        logger.debug('Chopper slicing data w/ %s ratio, slice size will be %s', self.chop_ratio, self.slice_size)
-        for chunk in self.source:
-            logger.debug('Chopper got %s data', len(chunk))
-            self.buffer = np.append(self.buffer, chunk)
-            while len(self.buffer) > self.slice_size:
-                ready_sample = self.buffer[:self.slice_size]
-                to_buffer = self.buffer[self.slice_size:]
-                self.buffer = to_buffer
-                yield pd.DataFrame(data=ready_sample, columns=box_columns)
 
 
 # ==================================================

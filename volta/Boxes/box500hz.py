@@ -7,16 +7,9 @@ import pandas as pd
 import time
 import numpy as np
 from volta.common.interfaces import VoltaBox
-from volta.common.util import Drain
+from volta.common.util import Drain, TimeChopper
 
 logger = logging.getLogger(__name__)
-
-
-dtypes = {
-    'current': np.float64
-}
-
-box_columns = ['current']
 
 
 class VoltaBox500Hz(VoltaBox):
@@ -26,7 +19,7 @@ class VoltaBox500Hz(VoltaBox):
         self.device = config.get('device', '/dev/cu.wchusbserial1420')
         self.sample_rate = 500
         self.baud_rate = 115200
-        self.chop_ratio = 0.1
+        self.chop_ratio = config.get('chop_ratio', 1)
         self.volta_serial = serial.Serial(self.device, self.baud_rate, timeout=self.grab_timeout)
         logger.debug('serial initialized: %s', self.volta_serial)
 
@@ -105,30 +98,6 @@ class BoxPlainTextReader(object):
 
     def close(self):
         self.closed = True
-
-
-class TimeChopper(object):
-    """
-    Group incoming chunks into dataframe by sample rate w/ chop_ratio
-    """
-
-    def __init__(self, source, sample_rate, chop_ratio=1.0):
-        self.source = source
-        self.sample_rate = sample_rate
-        self.buffer = np.array([])
-        self.chop_ratio = chop_ratio
-        self.slice_size = int(self.sample_rate*self.chop_ratio)
-
-    def __iter__(self):
-        logger.debug('Chopper slicing data w/ %s ratio, slice size will be %s', self.chop_ratio, self.slice_size)
-        for chunk in self.source:
-            logger.debug('Chopper got %s data', len(chunk))
-            self.buffer = np.append(self.buffer, chunk)
-            while len(self.buffer) > self.slice_size:
-                ready_sample = self.buffer[:self.slice_size]
-                to_buffer = self.buffer[self.slice_size:]
-                self.buffer = to_buffer
-                yield pd.DataFrame(data=ready_sample, columns=box_columns)
 
 
 # ==================================================
