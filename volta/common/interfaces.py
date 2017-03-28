@@ -1,20 +1,19 @@
 class VoltaBox(object):
     """ Volta box interface
-    Parent class for all volta boxes
+    Parent class for volta boxes
     """
-
-    def __init__(self, core):
-        self.core = core
-        self.samplerate = None
-        self.device = None
-        self.output_file = None
-        self.test_duration = None
-
-    def configure(self, config=None):
-        """     configure volta box, set baud rate and samplerate      """
+    def __init__(self, config):
+        """ parse config stage """
         pass
 
-    def grab(self):
-        """     Grab stage      """
+    def start_test(self):
+        """ Grab stage """
         raise NotImplementedError("Abstract method needs to be overridden")
 
+    def end_test(self):
+        """ end test """
+        raise NotImplementedError("Abstract method needs to be overridden")
+
+    def add_sink(self, queue):
+        """ add listener """
+        raise NotImplementedError("Abstract method needs to be overridden")
