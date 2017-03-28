@@ -93,9 +93,9 @@ class BoxBinaryReader(object):
             if self.orphan_byte:
                 data = self.orphan_byte+data
             if (len(data) % 2 != 0):
-                self.orphan_byte = data[len(data)-1:]
-                #logger.info('Orphan byte happened: %s', self.orphan_byte)
-                data = data[:len(data)-1]
+                self.orphan_byte = data[-1:]
+                data = data[:-1]
+                self.orphan_byte = None
             return string_to_np(data)
 
     def __iter__(self):
