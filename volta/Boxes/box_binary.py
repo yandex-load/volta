@@ -18,16 +18,21 @@ class VoltaBoxBinary(VoltaBox):
         VoltaBox.__init__(self, config)
         self.grab_timeout = config.get('grab_timeout', 1)
         self.device = config.get('device', '/dev/cu.wchusbserial1420')
-        self.sample_rate = None
+        self.sample_rate = config.get('sample_rate', 10000)
         self.baud_rate = 230400
+        self.file_import = config.get('file_import', None)
         self.chop_ratio = config.get('chop_ratio', 1)
-        self.volta_serial = serial.Serial(self.device, self.baud_rate, timeout=self.grab_timeout)
-        logger.debug('serial initialized: %s', self.volta_serial)
+        if not self.file_import:
+            self.data_source = serial.Serial(self.device, self.baud_rate, timeout=self.grab_timeout)
+        else:
+            self.data_source = open(self.file_import, 'r')
+            logger.info('File import mode: %s', self.file_import)
+        logger.debug('Data source initialized: %s', self.data_source)
 
     def start_test(self, results):
         """ handshake w/ device, get samplerate
             pipeline
-                read serial data ->
+                read source data ->
                 chop by samplerate w/ ratio ->
                 make pandas DataFrame ->
                 drain DataFrame to queue `results`
@@ -39,23 +44,22 @@ class VoltaBoxBinary(VoltaBox):
         """
 
         # handshake
-        while self.volta_serial.readline() != "VOLTAHELLO\n":
+        while self.data_source.readline() != "VOLTAHELLO\n":
             pass
 
-        volta_spec = json.loads(self.volta_serial.readline())
+        volta_spec = json.loads(self.data_source.readline())
         self.sample_rate = volta_spec["sps"]
         logger.info('Sample rate handshake success: %s', self.sample_rate)
 
-        # clean up dirty buffer
-        while self.volta_serial.readline() != "DATASTART\n":
+        while self.data_source.readline() != "DATASTART\n":
             pass
 
+        self.reader = BoxBinaryReader(
+            self.data_source, self.sample_rate
+        )
         self.pipeline = Drain(
             TimeChopper(
-                BoxBinaryReader(
-                    self.volta_serial, self.sample_rate
-                ),
-                self.sample_rate, self.chop_ratio
+                self.reader, self.sample_rate, self.chop_ratio
             ),
             results
         )
@@ -64,8 +68,10 @@ class VoltaBoxBinary(VoltaBox):
         logger.info('Waiting grabber thread finish...')
 
     def end_test(self):
+        self.reader.close()
         self.pipeline.close()
-        self.volta_serial.close()
+        self.pipeline.join(10)
+        self.data_source.close()
 
 
 def string_to_np(data):
@@ -112,10 +118,12 @@ class BoxBinaryReader(object):
 def main():
     logging.basicConfig(
         level="DEBUG",
-        format='%(asctime)s [%(levelname)s] [Volta 500hz] %(filename)s:%(lineno)d %(message)s')
+        format='%(asctime)s [%(levelname)s] [Volta Binary] %(filename)s:%(lineno)d %(message)s')
     logger.info("Volta Binary Box")
     cfg = {
-        'device': '/dev/cu.wchusbserial1420'
+        'device': '/dev/cu.wchusbserial1420',
+        # 'file_import': '/Volumes/NO NAME/0_06',
+        # 'sample_rate': 1000
     }
     worker = VoltaBoxBinary(cfg)
     logger.info('worker args: %s', worker.__dict__)

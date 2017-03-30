@@ -20,12 +20,12 @@ class VoltaBox500Hz(VoltaBox):
         self.sample_rate = 500
         self.baud_rate = 115200
         self.chop_ratio = config.get('chop_ratio', 1)
-        self.volta_serial = serial.Serial(self.device, self.baud_rate, timeout=self.grab_timeout)
-        logger.debug('serial initialized: %s', self.volta_serial)
+        self.data_source = serial.Serial(self.device, self.baud_rate, timeout=self.grab_timeout)
+        logger.debug('Data source initialized: %s', self.data_source)
 
     def start_test(self, results):
         """ pipeline
-                read serial data ->
+                read source data ->
                 chop by samplerate w/ ratio ->
                 make pandas DataFrame ->
                 drain DataFrame to queue `results`
@@ -38,15 +38,14 @@ class VoltaBox500Hz(VoltaBox):
 
         # clean up dirty buffer
         for _ in range(500):
-            self.volta_serial.readline()
+            self.data_source.readline()
 
+        self.reader = BoxPlainTextReader(
+            self.data_source, self.sample_rate
+        )
         self.pipeline = Drain(
             TimeChopper(
-                BoxPlainTextReader(
-                    self.volta_serial
-                ),
-                self.sample_rate,
-                self.chop_ratio
+                self.reader, self.sample_rate, self.chop_ratio
             ),
             results
         )
@@ -55,8 +54,10 @@ class VoltaBox500Hz(VoltaBox):
         logger.info('Waiting grabber thread finish...')
 
     def end_test(self):
+        self.reader.close()
         self.pipeline.close()
-        self.volta_serial.close()
+        self.pipeline.join(10)
+        self.data_source.close()
 
 
 def string_to_np(data):
