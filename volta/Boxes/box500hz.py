@@ -8,6 +8,7 @@ import time
 import numpy as np
 from volta.common.interfaces import VoltaBox
 from volta.common.util import Drain, TimeChopper
+from volta.common.resource import manager as resource
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +16,16 @@ logger = logging.getLogger(__name__)
 class VoltaBox500Hz(VoltaBox):
     def __init__(self, config):
         VoltaBox.__init__(self, config)
-        self.grab_timeout = config.get('grab_timeout', 1)
-        self.device = config.get('device', '/dev/cu.wchusbserial1420')
-        self.sample_rate = 500
-        self.baud_rate = 115200
+        self.sample_rate = config.get('sample_rate', 500)
+        self.source = config.get('source', '/dev/cu.wchusbserial1420')
         self.chop_ratio = config.get('chop_ratio', 1)
-        self.data_source = serial.Serial(self.device, self.baud_rate, timeout=self.grab_timeout)
+        self.baud_rate = config.get('baud_rate', 115200)
+        self.grab_timeout = config.get('grab_timeout', 1)
+        # initialize data source
+        self.source_opener = resource.get_opener(self.source)
+        self.source_opener.baud_rate = self.baud_rate
+        self.source_opener.read_timeout = self.grab_timeout
+        self.data_source = self.source_opener()
         logger.debug('Data source initialized: %s', self.data_source)
 
     def start_test(self, results):
@@ -109,7 +114,8 @@ def main():
         format='%(asctime)s [%(levelname)s] [Volta 500hz] %(filename)s:%(lineno)d %(message)s')
     logger.info("Volta 500 hz box ")
     cfg = {
-        'device': '/dev/cu.wchusbserial1420'
+        'source': '/dev/cu.wchusbserial1420'
+        #'source': '/Users/netort/output.bin'
     }
     worker = VoltaBox500Hz(cfg)
     logger.info('worker args: %s', worker.__dict__)

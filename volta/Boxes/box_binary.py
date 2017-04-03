@@ -9,6 +9,7 @@ import numpy as np
 import json
 from volta.common.interfaces import VoltaBox
 from volta.common.util import Drain, TimeChopper
+from volta.common.resource import manager as resource
 
 logger = logging.getLogger(__name__)
 
@@ -16,17 +17,16 @@ logger = logging.getLogger(__name__)
 class VoltaBoxBinary(VoltaBox):
     def __init__(self, config):
         VoltaBox.__init__(self, config)
-        self.grab_timeout = config.get('grab_timeout', 1)
-        self.device = config.get('device', '/dev/cu.wchusbserial1420')
+        self.source = config.get('source', '/dev/cu.wchusbserial1420')
         self.sample_rate = config.get('sample_rate', 10000)
-        self.baud_rate = 230400
-        self.file_import = config.get('file_import', None)
         self.chop_ratio = config.get('chop_ratio', 1)
-        if not self.file_import:
-            self.data_source = serial.Serial(self.device, self.baud_rate, timeout=self.grab_timeout)
-        else:
-            self.data_source = open(self.file_import, 'r')
-            logger.info('File import mode: %s', self.file_import)
+        self.baud_rate = config.get('baud_rate', 230400)
+        self.grab_timeout = config.get('grab_timeout', 1)
+        # initialize data source
+        self.source_opener = resource.get_opener(self.source)
+        self.source_opener.baud_rate = self.baud_rate
+        self.source_opener.read_timeout = self.grab_timeout
+        self.data_source = self.source_opener()
         logger.debug('Data source initialized: %s', self.data_source)
 
     def start_test(self, results):
@@ -121,8 +121,7 @@ def main():
         format='%(asctime)s [%(levelname)s] [Volta Binary] %(filename)s:%(lineno)d %(message)s')
     logger.info("Volta Binary Box")
     cfg = {
-        'device': '/dev/cu.wchusbserial1420',
-        # 'file_import': '/Volumes/NO NAME/0_06',
+        'source': '/dev/cu.wchusbserial1420',
         # 'sample_rate': 1000
     }
     worker = VoltaBoxBinary(cfg)

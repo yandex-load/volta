@@ -1,4 +1,12 @@
 import threading
+import pandas as pd
+import logging
+import numpy as np
+
+box_columns = ['current']
+
+
+logger = logging.getLogger(__name__)
 
 
 class Drain(threading.Thread):
@@ -25,3 +33,28 @@ class Drain(threading.Thread):
 
     def close(self):
         self._interrupted.set()
+
+
+class TimeChopper(object):
+    """
+    Group incoming chunks into dataframe by sample rate w/ chop_ratio
+    """
+
+    def __init__(self, source, sample_rate, chop_ratio=1.0):
+        self.source = source
+        self.sample_rate = sample_rate
+        self.buffer = np.array([])
+        self.chop_ratio = chop_ratio
+        self.slice_size = int(self.sample_rate*self.chop_ratio)
+
+    def __iter__(self):
+        logger.debug('Chopper slicing data w/ %s ratio, slice size will be %s', self.chop_ratio, self.slice_size)
+        for chunk in self.source:
+            if chunk is not None:
+                logger.debug('Chopper got %s data', len(chunk))
+                self.buffer = np.append(self.buffer, chunk)
+                while len(self.buffer) > self.slice_size:
+                    ready_sample = self.buffer[:self.slice_size]
+                    to_buffer = self.buffer[self.slice_size:]
+                    self.buffer = to_buffer
+                    yield pd.DataFrame(data=ready_sample, columns=box_columns)
