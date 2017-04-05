@@ -2,11 +2,24 @@ import threading
 import pandas as pd
 import logging
 import numpy as np
+import subprocess
+import os
 
 box_columns = ['current']
 
 
 logger = logging.getLogger(__name__)
+
+def popen(cmnd):
+    return subprocess.Popen(
+        cmnd,
+        bufsize=0,
+        preexec_fn=os.setsid,
+        close_fds=True,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.PIPE, )
 
 
 class Drain(threading.Thread):

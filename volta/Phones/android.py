@@ -19,6 +19,7 @@ class AndroidPhone(Phone):
         Phone.__init__(self, config)
         self.volta = volta
         self.source = config.get('source', '00dc3419957ba583')
+        self.lightning_apk_path = config.get('lightning', 'binary/lightning.apk')
         self.adb_cmd = "adb -s {dev} logcat".format(dev=self.source)
 
     def prepare(self):
@@ -29,9 +30,8 @@ class AndroidPhone(Phone):
             clean log
         """
         # test
-        lightning = resource.resource_filename(__name__, 'binary/lightning.apk')
-
-        pass
+        self.lightning_apk_fname = resource.get_opener(self.lightning_apk_path).get_filename
+        logger.info('Lightning: %s', self.lightning_apk_fname)
 
     def start(self):
         """
@@ -67,11 +67,13 @@ def main():
         level="DEBUG",
         format='%(asctime)s [%(levelname)s] [Volta 500hz] %(filename)s:%(lineno)d %(message)s')
     logger.info("Volta Phone Anroid ")
-    cfg = {
+    cfg_volta = {
+    }
+    cfg_phone = {
         'source': '00dc3419957ba583'
     }
-    volta = VoltaBoxBinary(cfg)
-    worker = AndroidPhone(cfg, volta)
+    volta = VoltaBoxBinary(cfg_volta)
+    worker = AndroidPhone(cfg_phone, volta)
     logger.info('worker args: %s', worker.__dict__)
     worker.start_test()
     time.sleep(10)

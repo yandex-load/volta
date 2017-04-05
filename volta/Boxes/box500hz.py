@@ -42,7 +42,7 @@ class VoltaBox500Hz(VoltaBox):
         """
 
         # clean up dirty buffer
-        for _ in range(500):
+        for _ in range(self.sample_rate):
             self.data_source.readline()
 
         self.reader = BoxPlainTextReader(
