@@ -75,10 +75,8 @@ def main():
     volta = VoltaBoxBinary(cfg_volta)
     worker = AndroidPhone(cfg_phone, volta)
     logger.info('worker args: %s', worker.__dict__)
-    worker.start_test()
+    worker.prepare()
     time.sleep(10)
-    logger.info('test finishing...')
-    worker.end_test()
     logger.info('test finished')
 
 if __name__ == "__main__":
