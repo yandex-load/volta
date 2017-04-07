@@ -143,7 +143,6 @@ class CurrentsWorker(object):
             df = reader.binary_to_df()
         else:
             df = reader.plaintext_to_df()
-        logger.debug('Df: %s', df)
         start = datetime.datetime.utcfromtimestamp(self.sync)
         index_freq = "{value}{units}".format(
             value = int(10 ** 6 / self.samplerate),
