@@ -54,9 +54,9 @@ class VoltaBox500Hz(VoltaBox):
             ),
             results
         )
-        logger.info('Starting grab thread')
+        logger.info('Starting grab thread...')
         self.pipeline.start()
-        logger.info('Waiting grabber thread finish...')
+        logger.debug('Waiting grabber thread finish...')
 
     def end_test(self):
         self.reader.close()
@@ -115,17 +115,17 @@ def main():
     logger.info("Volta 500 hz box ")
     cfg = {
         'source': '/dev/cu.wchusbserial1420'
-        #'source': '/Users/netort/output.bin'
+        # 'source': '/Users/netort/output.bin'
     }
     worker = VoltaBox500Hz(cfg)
     logger.info('worker args: %s', worker.__dict__)
-    q = queue.Queue()
-    worker.start_test(q)
+    grabber_q = queue.Queue()
+    worker.start_test(grabber_q)
     time.sleep(10)
     logger.info('test finishing...')
     worker.end_test()
-    logger.info('Queue size after test: %s', q.qsize())
-    logger.info('Sample size: %s', q.get())
+    logger.info('Queue size after test: %s', grabber_q.qsize())
+    logger.info('Sample size: %s', grabber_q.get())
     logger.info('test finished')
 
 if __name__ == "__main__":

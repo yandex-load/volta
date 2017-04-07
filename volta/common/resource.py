@@ -186,7 +186,7 @@ class HttpOpener(object):
     def download_file(self):
         hasher = hashlib.md5()
         hasher.update(self.hash)
-        tmpfile_path = "/tmp/%s" % hasher.hexdigest()
+        tmpfile_path = "/tmp/%s.apk" % hasher.hexdigest()
         if os.path.exists(tmpfile_path):
             logger.info(
                 "Resource %s has already been downloaded to %s . Using it..",

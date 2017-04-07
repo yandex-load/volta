@@ -63,9 +63,9 @@ class VoltaBoxBinary(VoltaBox):
             ),
             results
         )
-        logger.info('Starting grab thread')
+        logger.info('Starting grab thread...')
         self.pipeline.start()
-        logger.info('Waiting grabber thread finish...')
+        logger.debug('Waiting grabber thread finish...')
 
     def end_test(self):
         self.reader.close()

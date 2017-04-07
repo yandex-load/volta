@@ -6,8 +6,11 @@ class VoltaBox(object):
         """ parse config stage """
         pass
 
-    def start_test(self):
-        """ Grab stage """
+    def start_test(self, results):
+        """ Grab stage
+        Args:
+            `results` - should be an object, answers to .put() and .get(), e.g. queue.Queue()
+        """
         raise NotImplementedError("Abstract method needs to be overridden")
 
     def end_test(self):
@@ -28,11 +31,11 @@ class Phone(object):
         pass
 
     def prepare(self):
-        """ install apps """
+        """ install apps, unplug device """
         raise NotImplementedError("Abstract method needs to be overridden")
 
     def start(self):
-        """ unplug device and start volta and make sync w/ flashlight """
+        """ make sync w/ flashlight """
         raise NotImplementedError("Abstract method needs to be overridden")
 
     def run_test(self):

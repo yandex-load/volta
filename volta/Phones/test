@@ -1,0 +1,493 @@
+--------- beginning of main
+12-31 19:47:53.656  4345  5083 E Drive.UninstallOperation: Package still installed ru.yandex.mobile.metrica
+12-31 19:47:53.670  5556  5556 I Finsky  : [1] com.google.android.finsky.utils.PermissionPolicies$PermissionPolicyService.onStartCommand(117): post-install permissions check for ru.yandex.mobile.metrica
+12-31 19:47:53.675  5556  5556 I Finsky  : [1] com.google.android.finsky.utils.bn.run(1302): Package state data is missing for ru.yandex.mobile.metrica
+12-31 19:47:53.681  5556  5556 W Finsky  : [1] com.google.android.finsky.FinskyApp.i(1556): No account configured on this device.
+12-31 19:47:53.686  3912  3912 I WearableService: Wear is not allowed to run on this device. Not starting Wear service.
+12-31 19:47:53.721  5556  5556 E Finsky  : [1] com.google.android.finsky.wear.bo.a(838): onConnectionFailed: ConnectionResult{statusCode=API_UNAVAILABLE, resolution=null, message=null}
+12-31 19:47:53.734  5556  5556 I Finsky  : [1] com.google.android.finsky.wear.WearSupportService.a(6396): Dropping command=send_installed_apps due to Gms not connected
+12-31 19:47:53.803  4115  7738 I UpdateIcingCorporaServi: Updating corpora: APPS=ru.yandex.mobile.metrica, CONTACTS=MAYBE
+--------- beginning of system
+12-31 19:47:53.826   866  3481 I BroadcastQueue: Delay finish: com.android.musicfx/.Compatibility$Receiver
+12-31 19:47:53.851   866   890 I BroadcastQueue: Resuming delayed broadcast
+12-31 19:47:53.863   866  3998 I BroadcastQueue: Delay finish: com.google.android.apps.photos/.experiments.phenotype.AppUpgradeBroadcastReceiver
+12-31 19:47:53.877   866   891 I BroadcastQueue: Resuming delayed broadcast
+12-31 19:47:53.977  3912  3912 E NetworkScheduler.SR: Invalid parameter app
+12-31 19:47:53.977  3912  3912 E NetworkScheduler.SR: Invalid package name : Perhaps you didn't include a PendingIntent in the extras?
+12-31 19:47:54.040  4345  7744 W IcingInternalCorpora: getNumBytesRead when not calculated.
+12-31 19:47:54.104  4115  7738 I UpdateIcingCorporaServi: UpdateCorporaTask done [took 301 ms] updated apps [took 301 ms] 
+12-31 19:47:54.133  4345  5083 I Icing   : Usage reports 0 indexed 0 rejected 0 imm upload false
+12-31 19:47:54.140  4345  5083 I Icing   : Usage reports 0 indexed 0 rejected 0 imm upload true
+12-31 19:47:54.147  4345  5083 I Icing   : Usage reports 0 indexed 0 rejected 0 imm upload false
+12-31 19:47:54.214  4345  5083 I Icing   : Usage reports 0 indexed 0 rejected 0 imm upload false
+12-31 19:47:54.227  4345  5083 I Icing   : Usage reports 0 indexed 0 rejected 0 imm upload false
+12-31 19:47:55.122  4345  7365 I Icing   : Indexing 09D1DA86E1514EA3CBB13C4ED1D8185D85563E15 from com.google.android.googlequicksearchbox
+12-31 19:47:55.231  4345  7365 I Icing   : Indexing done 09D1DA86E1514EA3CBB13C4ED1D8185D85563E15
+12-31 19:47:55.234  4345  7365 I Icing   : Indexing 9E3D10A8D0CDC521F9FBE80CCCFE0DA332506F28 from com.google.android.gms
+12-31 19:47:55.296  4345  7365 I Icing   : Indexing done 9E3D10A8D0CDC521F9FBE80CCCFE0DA332506F28
+12-31 19:47:56.812   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:48:01.518   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:48:01.552   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:48:01.553   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4996
+12-31 19:48:03.957  7749  7749 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+12-31 19:48:03.964  7749  7749 D AndroidRuntime: CheckJNI is OFF
+12-31 19:48:04.060  7749  7749 D ICU     : No timezone override file found: /data/misc/zoneinfo/current/icu/icu_tzdata.dat
+12-31 19:48:04.086  7749  7749 I Radio-JNI: register_android_hardware_Radio DONE
+12-31 19:48:04.097  7749  7749 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+12-31 19:48:04.104   866  3113 I ActivityManager: START u0 {flg=0x10000000 cmp=net.yandex.overload.lightning/.MainActivity} from uid 2000 on display 0
+12-31 19:48:04.130   866  3113 I ActivityManager: Start proc 7759:net.yandex.overload.lightning/u0a96 for activity net.yandex.overload.lightning/.MainActivity
+12-31 19:48:04.132  7759  7759 I art     : Late-enabling -Xcheck:jni
+12-31 19:48:04.134  7749  7749 D AndroidRuntime: Shutting down VM
+12-31 19:48:04.191  4046  4170 W OpenGLRenderer: Incorrectly called buildLayer on View: ShortcutAndWidgetContainer, destroying layer...
+12-31 19:48:04.192  7759  7759 W System  : ClassLoader referenced unknown path: /data/app/net.yandex.overload.lightning-2/lib/arm64
+12-31 19:48:04.206  7759  7759 I InstantRun: Instant Run Runtime started. Android package is net.yandex.overload.lightning, real application class is null.
+12-31 19:48:04.650  7759  7759 W System  : ClassLoader referenced unknown path: /data/app/net.yandex.overload.lightning-2/lib/arm64
+12-31 19:48:04.674   866   893 W ActivityManager: Activity pause timeout for ActivityRecord{a7137da u0 net.yandex.overload.lightning/.MainActivity t8}
+12-31 19:48:04.778  3095  3095 W asset   : Asset path /data/app/net.yandex.overload.lightning-1/base.apk is neither a directory nor file (type=1).
+12-31 19:48:04.778  3095  3095 E ResourcesManager: failed to add asset path /data/app/net.yandex.overload.lightning-1/base.apk
+12-31 19:48:04.778  3095  3095 W PackageManager: Failure retrieving resources for net.yandex.overload.lightning
+12-31 19:48:04.780  3095  3095 W asset   : Asset path /data/app/net.yandex.overload.lightning-1/base.apk is neither a directory nor file (type=1).
+12-31 19:48:04.780  3095  3095 E ResourcesManager: failed to add asset path /data/app/net.yandex.overload.lightning-1/base.apk
+12-31 19:48:04.780  3095  3095 W PackageManager: Failure retrieving resources for net.yandex.overload.lightning
+12-31 19:48:04.781  3095  3095 W asset   : Asset path /data/app/net.yandex.overload.lightning-1/base.apk is neither a directory nor file (type=1).
+12-31 19:48:04.781  3095  3095 E ResourcesManager: failed to add asset path /data/app/net.yandex.overload.lightning-1/base.apk
+12-31 19:48:04.781  3095  3095 W PackageManager: Failure retrieving resources for net.yandex.overload.lightning
+12-31 19:48:04.793  7759  7759 W art     : Before Android 4.1, method android.graphics.PorterDuffColorFilter android.support.graphics.drawable.VectorDrawableCompat.updateTintFilter(android.graphics.PorterDuffColorFilter, android.content.res.ColorStateList, android.graphics.PorterDuff$Mode) would have incorrectly overridden the package-private method in android.graphics.drawable.Drawable
+12-31 19:48:04.805  7759  7759 I CameraManagerGlobal: Connecting to camera service
+12-31 19:48:04.817   501  2917 I CameraService: onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=2
+12-31 19:48:04.819  7759  7759 I lightning: [VOLTA] 2870760548164 sync_rise 10
+12-31 19:48:05.821   501   501 I CameraService: onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=1
+12-31 19:48:05.823  7759  7759 I lightning: [VOLTA] 2871764387931 sync_fall 10
+12-31 19:48:06.560   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:48:06.732   501  2917 I CameraService: onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=2
+12-31 19:48:06.734  7759  7759 I lightning: [VOLTA] 2872675100809 sync_rise 8
+12-31 19:48:07.536   501   501 I CameraService: onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=1
+12-31 19:48:07.538  7759  7759 I lightning: [VOLTA] 2873479434142 sync_fall 8
+12-31 19:48:08.246   501  2917 I CameraService: onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=2
+12-31 19:48:08.247  7759  7759 I lightning: [VOLTA] 2874188727393 sync_rise 6
+12-31 19:48:08.668  5556  5593 W Finsky  : [289] com.google.android.finsky.FinskyApp.i(1556): No account configured on this device.
+12-31 19:48:08.671  5556  5593 I Finsky  : [289] com.google.android.finsky.c.e.run(1154): Replicating app states via AMAS.
+12-31 19:48:08.811  5556  5593 I Finsky  : [289] com.google.android.finsky.c.c.a(316): Completed 0 account content syncs with 0 successful.
+12-31 19:48:08.813  5556  5556 I Finsky  : [1] com.google.android.finsky.services.j.a(149): Installation state replication succeeded.
+12-31 19:48:08.848   501   501 I CameraService: onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=1
+12-31 19:48:08.849  7759  7759 I lightning: [VOLTA] 2874790522160 sync_fall 6
+12-31 19:48:09.357   501  2917 I CameraService: onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=2
+12-31 19:48:09.359  7759  7759 I lightning: [VOLTA] 2875300137315 sync_rise 4
+12-31 19:48:09.761   501   501 I CameraService: onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=1
+12-31 19:48:09.763  7759  7759 I lightning: [VOLTA] 2875704196912 sync_fall 4
+12-31 19:48:10.070   501  2917 I CameraService: onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=2
+12-31 19:48:10.073  7759  7759 I lightning: [VOLTA] 2876013921215 sync_rise 2
+12-31 19:48:10.274   501   501 I CameraService: onTorchStatusChangedLocked: Torch status changed for cameraId=0, newStatus=1
+12-31 19:48:10.277  7759  7759 I lightning: [VOLTA] 2876217829403 sync_fall 2
+12-31 19:48:11.258   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:48:11.284   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:48:11.284   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4998
+12-31 19:48:16.288   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:48:21.001   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:48:21.027   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:48:21.028   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4999
+12-31 19:48:26.030   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:48:30.732   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:48:30.766   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:48:30.766   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4997
+12-31 19:48:35.769   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:48:40.482   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:48:40.517   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:48:40.517   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4994
+12-31 19:48:40.540   866  2907 D WifiStateMachine: CMD_AUTO_CONNECT sup state DisconnectedState my state DisconnectedState nid=0 roam=false
+12-31 19:48:40.540   866  2907 D WifiStateMachine: CMD_AUTO_CONNECT will save config -> "Guests" nid=0
+12-31 19:48:40.679   866  7782 D WifiNetworkHistory: saving network history: "Guests"WPA_PSK gw: null Network Selection-status: NETWORK_SELECTION_ENABLED ephemeral=false choice:null link:0 status:1 nid:0 hasEverConnected: false
+12-31 19:48:40.680   866  7782 V WifiNetworkHistory: writeKnownNetworkHistory write config "Guests"WPA_PSK
+12-31 19:48:40.685   866  2907 D WifiStateMachine: CMD_AUTO_CONNECT did save config ->  nid=0
+12-31 19:48:40.687  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-SSID-REENABLED id=0 ssid="Guests"
+12-31 19:48:40.688   866  7783 D WifiNetworkHistory: saving network history: "Guests"WPA_PSK gw: null Network Selection-status: NETWORK_SELECTION_ENABLED ephemeral=false choice:null link:0 status:1 nid:0 hasEverConnected: false
+12-31 19:48:40.688   866  7783 V WifiNetworkHistory: writeKnownNetworkHistory write config "Guests"WPA_PSK
+12-31 19:48:40.688  3390  3390 I wpa_supplicant: wlan0: Trying to associate with SSID 'Guests'
+12-31 19:48:40.693   866  2907 D WifiStateMachine: Supplicant SSID reenable:ID: 0 SSID: "Guests" PROVIDER-NAME: null BSSID: null FQDN: null PRIO: 1 HIDDEN: false
+12-31 19:48:40.693   866  2907 D WifiStateMachine:  NetworkSelectionStatus NETWORK_SELECTION_ENABLED
+12-31 19:48:40.693   866  2907 D WifiStateMachine:  hasEverConnected: false
+12-31 19:48:40.693   866  2907 D WifiStateMachine: update time=12-31 19:48:40.548
+12-31 19:48:40.693   866  2907 D WifiStateMachine:  KeyMgmt: WPA_PSK Protocols: WPA RSN
+12-31 19:48:40.693   866  2907 D WifiStateMachine:  AuthAlgorithms:
+12-31 19:48:40.693   866  2907 D WifiStateMachine:  PairwiseCiphers: TKIP CCMP
+12-31 19:48:40.693   866  2907 D WifiStateMachine:  GroupCiphers: TKIP CCMP
+12-31 19:48:40.693   866  2907 D WifiStateMachine:  PSK: *
+12-31 19:48:40.693   866  2907 D WifiStateMachine: Enterprise config:
+12-31 19:48:40.693   866  2907 D WifiStateMachine: altsubject_match NULL
+12-31 19:48:40.693   866  2907 D WifiStateMachine: password <removed>
+12-31 19:48:40.693   866  2907 D WifiStateMachine: ca_path NULL
+12-31 19:48:40.693   866  2907 D WifiStateMachine: subject_match NULL
+12-31 19:48:40.693   866  2907 D WifiStateMachine: engine 0
+12-31 19:48:40.693   866  2907 D WifiStateMachine: client_cert NULL
+12-31 19:48:40.693   866  2907 D WifiStateMachine: anonymous_identity NULL
+12-31 19:48:40.693   866  2907 D WifiStateMachine: ca_cert NULL
+12-31 19:48:40.693   866  2907 D WifiStateMachine: identity NULL
+12-31 19:48:40.693   866  2907 D WifiStateMachine: domain_suffix_match NULL
+12-31 19:48:40.693   866  2907 D WifiStateMachine: key_id NULL
+12-31 19:48:40.693   866  2907 D WifiStateMachine: engine_id NULL
+12-31 19:48:40.693   866  2907 D WifiStateMachine: IP config:
+12-31 19:48:40.693   866  2907 D WifiStateMachine: IP assignment: DHCP
+12-31 19:48:40.693   866  2907 D WifiStateMachine: Proxy settings: NONE
+12-31 19:48:40.693   866  2907 D WifiStateMachine:  networkSelectionBSSID=cc:46:d6:09:4f:5b cuid=-1 cname=null luid=-1 lname=null lcuid=-1 userApproved=USER_APPROVED noInternetAccessExpected=false roamingFailureBlackListTimeMilli: 1000
+12-31 19:48:40.693   866  2907 D WifiStateMachine: triggeredLow: 0 triggeredBad: 0 triggeredNotHigh: 0
+12-31 19:48:40.693   866  2907 D WifiStateMachine: ticksLow: 0 ticksBad: 0 ticksNotHigh: 0
+12-31 19:48:40.693   866  2907 D WifiStateMachine: triggeredJoin: 0
+12-31 19:48:40.805  3390  3390 I wpa_supplicant: wlan0: Associated with cc:46:d6:09:4f:5b
+12-31 19:48:40.806  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-SUBNET-STATUS-UPDATE status=0
+12-31 19:48:44.705  4115  4115 I GrammarCompilationSvcCt: #startService for null, APP_NAMES.
+12-31 19:48:44.725  4115  7784 I ContextCompilationHandl: Compiling grammar for: en-US, type=APP_NAMES
+12-31 19:48:44.794  4345  5174 I Icing   : Query from com.google.android.googlequicksearchbox package restrict com.google.android.gms start 0 num 1000
+12-31 19:48:44.836  4345  7786 W IcingInternalCorpora: getNumBytesRead when not calculated.
+12-31 19:48:44.877  4345  5174 W Icing   : decaying future time: time may have changed.
+12-31 19:48:44.877  4345  5174 W Icing   : decaying future time: time may have changed.
+12-31 19:48:44.914  4115  7784 I ContextCompilationHandl: Recognition context unchanged for APP_NAMES en-US
+12-31 19:48:44.919  4345  7365 I Icing   : Usage reports 0 indexed 0 rejected 0 imm upload true
+12-31 19:48:44.927  4345  7365 I Icing   : Usage reports 0 indexed 0 rejected 0 imm upload true
+12-31 19:48:45.521  3390  3390 E wpa_supplicant: PNO: In assoc process
+12-31 19:48:45.523   866  2920 E SupplicantWifiScannerImpl: PNO state change to true failed
+12-31 19:48:45.523   866  2920 E SupplicantWifiScannerImpl: Pno scan failure received
+12-31 19:48:45.524   866  2920 W SupplicantWifiScannerImpl: No PNO scan running
+12-31 19:48:45.525   866  2907 E WifiConnectivityManager: PnoScanListener onFailure: reason: -1 description: pno scan failed
+12-31 19:48:46.433  4115  4115 I GrammarCompilationSvcCt: #startService for null, APP_NAMES.
+12-31 19:48:46.457  4115  7789 I ContextCompilationHandl: Compiling grammar for: en-US, type=APP_NAMES
+12-31 19:48:46.520  4345  6446 I Icing   : Query from com.google.android.googlequicksearchbox package restrict com.google.android.gms start 0 num 1000
+12-31 19:48:46.533  4345  4353 W SQLiteConnectionPool: A SQLiteConnection object for database '/data/user/0/com.google.android.gms/databases/metrics.db' was leaked!  Please fix your application to end transactions in progress properly and to close the database when it is no longer needed.
+12-31 19:48:46.534  4345  4353 W SQLiteConnectionPool: A SQLiteConnection object for database '/data/user/0/com.google.android.gms/databases/help_responses.db' was leaked!  Please fix your application to end transactions in progress properly and to close the database when it is no longer needed.
+12-31 19:48:46.534  4345  4353 W SQLiteConnectionPool: A SQLiteConnection object for database '/data/user/0/com.google.android.gms/databases/auto_complete_suggestions.db' was leaked!  Please fix your application to end transactions in progress properly and to close the database when it is no longer needed.
+12-31 19:48:46.553  4345  5083 I Icing   : Usage reports 0 indexed 0 rejected 0 imm upload true
+12-31 19:48:46.564  4345  5083 I Icing   : Usage reports 0 indexed 0 rejected 0 imm upload true
+12-31 19:48:46.569  4345  6446 W Icing   : decaying future time: time may have changed.
+12-31 19:48:46.569  4345  6446 W Icing   : decaying future time: time may have changed.
+12-31 19:48:46.599  4115  7789 I ContextCompilationHandl: Recognition context unchanged for APP_NAMES en-US
+12-31 19:48:50.530   866  2907 E WifiScanner: listener cannot be found
+12-31 19:48:50.537  3390  3390 E wpa_supplicant: PNO: In assoc process
+12-31 19:48:50.538   866  2920 E SupplicantWifiScannerImpl: PNO state change to true failed
+12-31 19:48:50.538   866  2920 E SupplicantWifiScannerImpl: Failed to start PNO scan
+12-31 19:48:50.540   866  2920 W SupplicantWifiScannerImpl: No PNO scan running
+12-31 19:48:50.541   866  2907 E WifiConnectivityManager: PnoScanListener onFailure: reason: -1 description: pno scan failed
+12-31 19:48:51.263  3390  3390 I wpa_supplicant: wlan0: Authentication with cc:46:d6:09:4f:5b timed out.
+12-31 19:48:51.363  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-DISCONNECTED bssid=cc:46:d6:09:4f:5b reason=3 locally_generated=1
+12-31 19:48:51.370  3390  3390 I wpa_supplicant: wlan0: WPA: 4-Way Handshake failed - pre-shared key may be incorrect
+12-31 19:48:51.371  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-SSID-TEMP-DISABLED id=0 ssid="Guests" auth_failures=1 duration=10 reason=WRONG_KEY
+12-31 19:48:51.453  2907  2907 W WifiStateMachin: type=1400 audit(0.0:69): avc: denied { syslog_read } for scontext=u:r:system_server:s0 tcontext=u:r:kernel:s0 tclass=system permissive=0
+12-31 19:48:51.457   866  2907 D wifi    : no kernel logs
+12-31 19:48:51.460   866  2907 E WifiStateMachine: Supplicant SSID temporary disabled:ID: 0 SSID: "Guests" PROVIDER-NAME: null BSSID: null FQDN: null PRIO: 1 HIDDEN: false
+12-31 19:48:51.460   866  2907 E WifiStateMachine:  NetworkSelectionStatus NETWORK_SELECTION_ENABLED
+12-31 19:48:51.460   866  2907 E WifiStateMachine:  hasEverConnected: false
+12-31 19:48:51.460   866  2907 E WifiStateMachine: update time=12-31 19:48:40.548
+12-31 19:48:51.460   866  2907 E WifiStateMachine:  KeyMgmt: WPA_PSK Protocols: WPA RSN
+12-31 19:48:51.460   866  2907 E WifiStateMachine:  AuthAlgorithms:
+12-31 19:48:51.460   866  2907 E WifiStateMachine:  PairwiseCiphers: TKIP CCMP
+12-31 19:48:51.460   866  2907 E WifiStateMachine:  GroupCiphers: TKIP CCMP
+12-31 19:48:51.460   866  2907 E WifiStateMachine:  PSK: *
+12-31 19:48:51.460   866  2907 E WifiStateMachine: Enterprise config:
+12-31 19:48:51.460   866  2907 E WifiStateMachine: altsubject_match NULL
+12-31 19:48:51.460   866  2907 E WifiStateMachine: password <removed>
+12-31 19:48:51.460   866  2907 E WifiStateMachine: ca_path NULL
+12-31 19:48:51.460   866  2907 E WifiStateMachine: subject_match NULL
+12-31 19:48:51.460   866  2907 E WifiStateMachine: engine 0
+12-31 19:48:51.460   866  2907 E WifiStateMachine: client_cert NULL
+12-31 19:48:51.460   866  2907 E WifiStateMachine: anonymous_identity NULL
+12-31 19:48:51.460   866  2907 E WifiStateMachine: ca_cert NULL
+12-31 19:48:51.460   866  2907 E WifiStateMachine: identity NULL
+12-31 19:48:51.460   866  2907 E WifiStateMachine: domain_suffix_match NULL
+12-31 19:48:51.460   866  2907 E WifiStateMachine: key_id NULL
+12-31 19:48:51.460   866  2907 E WifiStateMachine: engine_id NULL
+12-31 19:48:51.460   866  2907 E WifiStateMachine: IP config:
+12-31 19:48:51.460   866  2907 E WifiStateMachine: IP assignment: DHCP
+12-31 19:48:51.460   866  2907 E WifiStateMachine: Proxy settings: NONE
+12-31 19:48:51.460   866  2907 E WifiStateMachine:  networkSelectionBSSID=cc:46:d6:09:4f:5b cuid=-1 cname=null luid=-1 lname=null lcuid=-1 userApproved=USER_APPROVED noInternetAccessExpected=false roamingFailureBlackListTimeMilli: 1000
+12-31 19:48:51.460   866  2907 E WifiStateMachine: triggeredLow: 0 triggeredBad: 0 triggeredNotHigh: 0
+12-31 19:48:51.460   866  2907 E WifiStateMachine: ticksLow: 0 ticksBad: 0 ticksNotHigh: 0
+12-31 19:48:51.460   866  2907 E WifiStateMachine: triggeredJoin: 0
+12-31 19:48:51.463   866  3389 I WifiHAL : Fate Tx-Rx: Packet fate stats stop received
+12-31 19:48:53.835  4115  4115 I GrammarCompilationSvcCt: #startService for null, APP_NAMES.
+12-31 19:48:53.858  4115  7793 I ContextCompilationHandl: Compiling grammar for: en-US, type=APP_NAMES
+12-31 19:48:53.950  4345  7794 W IcingInternalCorpora: getNumBytesRead when not calculated.
+12-31 19:48:53.972  4345  5174 I Icing   : Query from com.google.android.googlequicksearchbox package restrict com.google.android.gms start 0 num 1000
+12-31 19:48:54.023  4345  7365 I Icing   : Usage reports 0 indexed 0 rejected 0 imm upload true
+12-31 19:48:54.035  4345  7365 I Icing   : Usage reports 0 indexed 0 rejected 0 imm upload true
+12-31 19:48:54.043  4345  5174 W Icing   : decaying future time: time may have changed.
+12-31 19:48:54.043  4345  5174 W Icing   : decaying future time: time may have changed.
+12-31 19:48:54.070  4115  7793 I ContextCompilationHandl: Recognition context unchanged for APP_NAMES en-US
+12-31 19:48:55.545   866  2907 E WifiScanner: listener cannot be found
+12-31 19:48:55.555   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:49:00.264   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:49:00.301   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:49:00.301   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4995
+12-31 19:49:00.324   866  2907 D WifiStateMachine: CMD_AUTO_CONNECT sup state DisconnectedState my state DisconnectedState nid=0 roam=false
+12-31 19:49:00.324   866  2907 D WifiStateMachine: CMD_AUTO_CONNECT will save config -> "Guests" nid=0
+12-31 19:49:00.330   866  2754 I nanohub : osLog: [BMI160] accSetRate: rate=51200, latency=250000000, state=5
+12-31 19:49:00.332   866  2754 I nanohub : osLog: [BMI160] accSetRate: rate=51200, latency=250000000, state=3
+12-31 19:49:00.367   866  7798 D WifiNetworkHistory: saving network history: "Guests"WPA_PSK gw: null Network Selection-status: NETWORK_SELECTION_ENABLED ephemeral=false choice:null link:0 status:2 nid:0 hasEverConnected: false
+12-31 19:49:00.368   866  7798 V WifiNetworkHistory: writeKnownNetworkHistory write config "Guests"WPA_PSK
+12-31 19:49:00.377   866  2907 D WifiStateMachine: CMD_AUTO_CONNECT did save config ->  nid=0
+12-31 19:49:00.381  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-SSID-REENABLED id=0 ssid="Guests"
+12-31 19:49:00.381   866  7799 D WifiNetworkHistory: saving network history: "Guests"WPA_PSK gw: null Network Selection-status: NETWORK_SELECTION_ENABLED ephemeral=false choice:null link:0 status:2 nid:0 hasEverConnected: false
+12-31 19:49:00.381   866  7799 V WifiNetworkHistory: writeKnownNetworkHistory write config "Guests"WPA_PSK
+12-31 19:49:00.382  3390  3390 I wpa_supplicant: wlan0: Trying to associate with SSID 'Guests'
+12-31 19:49:00.387   866  2907 D WifiStateMachine: Supplicant SSID reenable:ID: 0 SSID: "Guests" PROVIDER-NAME: null BSSID: null FQDN: null PRIO: 1 HIDDEN: false
+12-31 19:49:00.387   866  2907 D WifiStateMachine:  NetworkSelectionStatus NETWORK_SELECTION_ENABLED
+12-31 19:49:00.387   866  2907 D WifiStateMachine:  hasEverConnected: false
+12-31 19:49:00.387   866  2907 D WifiStateMachine: update time=12-31 19:49:00.335
+12-31 19:49:00.387   866  2907 D WifiStateMachine:  KeyMgmt: WPA_PSK Protocols: WPA RSN
+12-31 19:49:00.387   866  2907 D WifiStateMachine:  AuthAlgorithms:
+12-31 19:49:00.387   866  2907 D WifiStateMachine:  PairwiseCiphers: TKIP CCMP
+12-31 19:49:00.387   866  2907 D WifiStateMachine:  GroupCiphers: TKIP CCMP
+12-31 19:49:00.387   866  2907 D WifiStateMachine:  PSK: *
+12-31 19:49:00.387   866  2907 D WifiStateMachine: Enterprise config:
+12-31 19:49:00.387   866  2907 D WifiStateMachine: altsubject_match NULL
+12-31 19:49:00.387   866  2907 D WifiStateMachine: password <removed>
+12-31 19:49:00.387   866  2907 D WifiStateMachine: ca_path NULL
+12-31 19:49:00.387   866  2907 D WifiStateMachine: subject_match NULL
+12-31 19:49:00.387   866  2907 D WifiStateMachine: engine 0
+12-31 19:49:00.387   866  2907 D WifiStateMachine: client_cert NULL
+12-31 19:49:00.387   866  2907 D WifiStateMachine: anonymous_identity NULL
+12-31 19:49:00.387   866  2907 D WifiStateMachine: ca_cert NULL
+12-31 19:49:00.387   866  2907 D WifiStateMachine: identity NULL
+12-31 19:49:00.387   866  2907 D WifiStateMachine: domain_suffix_match NULL
+12-31 19:49:00.387   866  2907 D WifiStateMachine: key_id NULL
+12-31 19:49:00.387   866  2907 D WifiStateMachine: engine_id NULL
+12-31 19:49:00.387   866  2907 D WifiStateMachine: IP config:
+12-31 19:49:00.387   866  2907 D WifiStateMachine: IP assignment: DHCP
+12-31 19:49:00.387   866  2907 D WifiStateMachine: Proxy settings: NONE
+12-31 19:49:00.387   866  2907 D WifiStateMachine:  networkSelectionBSSID=cc:46:d6:09:4f:5b cuid=-1 cname=null luid=-1 lname=null lcuid=-1 userApproved=USER_APPROVED noInternetAccessExpected=false roamingFailureBlackListTimeMilli: 1000
+12-31 19:49:00.387   866  2907 D WifiStateMachine: triggeredLow: 0 triggeredBad: 0 triggeredNotHigh: 0
+12-31 19:49:00.387   866  2907 D WifiStateMachine: ticksLow: 0 ticksBad: 0 ticksNotHigh: 0
+12-31 19:49:00.387   866  2907 D WifiStateMachine: triggeredJoin: 0
+12-31 19:49:00.465  3390  3390 I wpa_supplicant: wlan0: Associated with cc:46:d6:09:4f:5b
+12-31 19:49:00.466  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-SUBNET-STATUS-UPDATE status=0
+12-31 19:49:03.469   866  3389 I WifiHAL : Fate Tx-Rx: Packet fate stats stop received
+12-31 19:49:03.470  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-DISCONNECTED bssid=cc:46:d6:09:4f:5b reason=15
+12-31 19:49:03.470  3390  3390 I wpa_supplicant: wlan0: WPA: 4-Way Handshake failed - pre-shared key may be incorrect
+12-31 19:49:03.470  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-SSID-TEMP-DISABLED id=0 ssid="Guests" auth_failures=1 duration=10 reason=WRONG_KEY
+12-31 19:49:03.478   866  2907 E WifiStateMachine: Supplicant SSID temporary disabled:ID: 0 SSID: "Guests" PROVIDER-NAME: null BSSID: null FQDN: null PRIO: 1 HIDDEN: false
+12-31 19:49:03.478   866  2907 E WifiStateMachine:  NetworkSelectionStatus NETWORK_SELECTION_ENABLED
+12-31 19:49:03.478   866  2907 E WifiStateMachine:  hasEverConnected: false
+12-31 19:49:03.478   866  2907 E WifiStateMachine: update time=12-31 19:49:00.335
+12-31 19:49:03.478   866  2907 E WifiStateMachine:  KeyMgmt: WPA_PSK Protocols: WPA RSN
+12-31 19:49:03.478   866  2907 E WifiStateMachine:  AuthAlgorithms:
+12-31 19:49:03.478   866  2907 E WifiStateMachine:  PairwiseCiphers: TKIP CCMP
+12-31 19:49:03.478   866  2907 E WifiStateMachine:  GroupCiphers: TKIP CCMP
+12-31 19:49:03.478   866  2907 E WifiStateMachine:  PSK: *
+12-31 19:49:03.478   866  2907 E WifiStateMachine: Enterprise config:
+12-31 19:49:03.478   866  2907 E WifiStateMachine: altsubject_match NULL
+12-31 19:49:03.478   866  2907 E WifiStateMachine: password <removed>
+12-31 19:49:03.478   866  2907 E WifiStateMachine: ca_path NULL
+12-31 19:49:03.478   866  2907 E WifiStateMachine: subject_match NULL
+12-31 19:49:03.478   866  2907 E WifiStateMachine: engine 0
+12-31 19:49:03.478   866  2907 E WifiStateMachine: client_cert NULL
+12-31 19:49:03.478   866  2907 E WifiStateMachine: anonymous_identity NULL
+12-31 19:49:03.478   866  2907 E WifiStateMachine: ca_cert NULL
+12-31 19:49:03.478   866  2907 E WifiStateMachine: identity NULL
+12-31 19:49:03.478   866  2907 E WifiStateMachine: domain_suffix_match NULL
+12-31 19:49:03.478   866  2907 E WifiStateMachine: key_id NULL
+12-31 19:49:03.478   866  2907 E WifiStateMachine: engine_id NULL
+12-31 19:49:03.478   866  2907 E WifiStateMachine: IP config:
+12-31 19:49:03.478   866  2907 E WifiStateMachine: IP assignment: DHCP
+12-31 19:49:03.478   866  2907 E WifiStateMachine: Proxy settings: NONE
+12-31 19:49:03.478   866  2907 E WifiStateMachine:  networkSelectionBSSID=cc:46:d6:09:4f:5b cuid=-1 cname=null luid=-1 lname=null lcuid=-1 userApproved=USER_APPROVED noInternetAccessExpected=false roamingFailureBlackListTimeMilli: 1000
+12-31 19:49:03.478   866  2907 E WifiStateMachine: triggeredLow: 0 triggeredBad: 0 triggeredNotHigh: 0
+12-31 19:49:03.478   866  2907 E WifiStateMachine: ticksLow: 0 ticksBad: 0 ticksNotHigh: 0
+12-31 19:49:03.478   866  2907 E WifiStateMachine: triggeredJoin: 0
+12-31 19:49:05.313   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:49:06.684   866  2754 I nanohub : osLog: [BMI160] accSetRate: rate=51200, latency=-256, state=3
+12-31 19:49:10.023   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:49:10.047   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:49:10.047   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4998
+12-31 19:49:10.058   866  2907 D WifiStateMachine: CMD_AUTO_CONNECT sup state DisconnectedState my state DisconnectedState nid=0 roam=false
+12-31 19:49:10.058   866  2907 D WifiStateMachine: CMD_AUTO_CONNECT will save config -> "Guests" nid=0
+12-31 19:49:10.087   866  7804 D WifiNetworkHistory: saving network history: "Guests"WPA_PSK gw: null Network Selection-status: NETWORK_SELECTION_ENABLED ephemeral=false choice:null link:0 status:2 nid:0 hasEverConnected: false
+12-31 19:49:10.087   866  7804 V WifiNetworkHistory: writeKnownNetworkHistory write config "Guests"WPA_PSK
+12-31 19:49:10.096   866  2907 D WifiStateMachine: CMD_AUTO_CONNECT did save config ->  nid=0
+12-31 19:49:10.100  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-SSID-REENABLED id=0 ssid="Guests"
+12-31 19:49:10.100   866  7805 D WifiNetworkHistory: saving network history: "Guests"WPA_PSK gw: null Network Selection-status: NETWORK_SELECTION_ENABLED ephemeral=false choice:null link:0 status:2 nid:0 hasEverConnected: false
+12-31 19:49:10.100   866  7805 V WifiNetworkHistory: writeKnownNetworkHistory write config "Guests"WPA_PSK
+12-31 19:49:10.100  3390  3390 I wpa_supplicant: wlan0: Trying to associate with SSID 'Guests'
+12-31 19:49:10.105   866  2907 D WifiStateMachine: Supplicant SSID reenable:ID: 0 SSID: "Guests" PROVIDER-NAME: null BSSID: null FQDN: null PRIO: 1 HIDDEN: false
+12-31 19:49:10.105   866  2907 D WifiStateMachine:  NetworkSelectionStatus NETWORK_SELECTION_ENABLED
+12-31 19:49:10.105   866  2907 D WifiStateMachine:  hasEverConnected: false
+12-31 19:49:10.105   866  2907 D WifiStateMachine: update time=12-31 19:49:10.065
+12-31 19:49:10.105   866  2907 D WifiStateMachine:  KeyMgmt: WPA_PSK Protocols: WPA RSN
+12-31 19:49:10.105   866  2907 D WifiStateMachine:  AuthAlgorithms:
+12-31 19:49:10.105   866  2907 D WifiStateMachine:  PairwiseCiphers: TKIP CCMP
+12-31 19:49:10.105   866  2907 D WifiStateMachine:  GroupCiphers: TKIP CCMP
+12-31 19:49:10.105   866  2907 D WifiStateMachine:  PSK: *
+12-31 19:49:10.105   866  2907 D WifiStateMachine: Enterprise config:
+12-31 19:49:10.105   866  2907 D WifiStateMachine: altsubject_match NULL
+12-31 19:49:10.105   866  2907 D WifiStateMachine: password <removed>
+12-31 19:49:10.105   866  2907 D WifiStateMachine: ca_path NULL
+12-31 19:49:10.105   866  2907 D WifiStateMachine: subject_match NULL
+12-31 19:49:10.105   866  2907 D WifiStateMachine: engine 0
+12-31 19:49:10.105   866  2907 D WifiStateMachine: client_cert NULL
+12-31 19:49:10.105   866  2907 D WifiStateMachine: anonymous_identity NULL
+12-31 19:49:10.105   866  2907 D WifiStateMachine: ca_cert NULL
+12-31 19:49:10.105   866  2907 D WifiStateMachine: identity NULL
+12-31 19:49:10.105   866  2907 D WifiStateMachine: domain_suffix_match NULL
+12-31 19:49:10.105   866  2907 D WifiStateMachine: key_id NULL
+12-31 19:49:10.105   866  2907 D WifiStateMachine: engine_id NULL
+12-31 19:49:10.105   866  2907 D WifiStateMachine: IP config:
+12-31 19:49:10.105   866  2907 D WifiStateMachine: IP assignment: DHCP
+12-31 19:49:10.105   866  2907 D WifiStateMachine: Proxy settings: NONE
+12-31 19:49:10.105   866  2907 D WifiStateMachine:  networkSelectionBSSID=cc:46:d6:09:4f:5b cuid=-1 cname=null luid=-1 lname=null lcuid=-1 userApproved=USER_APPROVED noInternetAccessExpected=false roamingFailureBlackListTimeMilli: 1000
+12-31 19:49:10.105   866  2907 D WifiStateMachine: triggeredLow: 0 triggeredBad: 0 triggeredNotHigh: 0
+12-31 19:49:10.105   866  2907 D WifiStateMachine: ticksLow: 0 ticksBad: 0 ticksNotHigh: 0
+12-31 19:49:10.105   866  2907 D WifiStateMachine: triggeredJoin: 0
+12-31 19:49:10.190  3390  3390 I wpa_supplicant: wlan0: Associated with cc:46:d6:09:4f:5b
+12-31 19:49:10.191  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-SUBNET-STATUS-UPDATE status=0
+12-31 19:49:13.350  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-DISCONNECTED bssid=cc:46:d6:09:4f:5b reason=15
+12-31 19:49:13.350   866  3389 I WifiHAL : Fate Tx-Rx: Packet fate stats stop received
+12-31 19:49:13.350  3390  3390 I wpa_supplicant: wlan0: WPA: 4-Way Handshake failed - pre-shared key may be incorrect
+12-31 19:49:13.351  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-SSID-TEMP-DISABLED id=0 ssid="Guests" auth_failures=1 duration=10 reason=WRONG_KEY
+12-31 19:49:13.358   866  2907 E WifiStateMachine: Supplicant SSID temporary disabled:ID: 0 SSID: "Guests" PROVIDER-NAME: null BSSID: null FQDN: null PRIO: 1 HIDDEN: false
+12-31 19:49:13.358   866  2907 E WifiStateMachine:  NetworkSelectionStatus NETWORK_SELECTION_ENABLED
+12-31 19:49:13.358   866  2907 E WifiStateMachine:  hasEverConnected: false
+12-31 19:49:13.358   866  2907 E WifiStateMachine: update time=12-31 19:49:10.065
+12-31 19:49:13.358   866  2907 E WifiStateMachine:  KeyMgmt: WPA_PSK Protocols: WPA RSN
+12-31 19:49:13.358   866  2907 E WifiStateMachine:  AuthAlgorithms:
+12-31 19:49:13.358   866  2907 E WifiStateMachine:  PairwiseCiphers: TKIP CCMP
+12-31 19:49:13.358   866  2907 E WifiStateMachine:  GroupCiphers: TKIP CCMP
+12-31 19:49:13.358   866  2907 E WifiStateMachine:  PSK: *
+12-31 19:49:13.358   866  2907 E WifiStateMachine: Enterprise config:
+12-31 19:49:13.358   866  2907 E WifiStateMachine: altsubject_match NULL
+12-31 19:49:13.358   866  2907 E WifiStateMachine: password <removed>
+12-31 19:49:13.358   866  2907 E WifiStateMachine: ca_path NULL
+12-31 19:49:13.358   866  2907 E WifiStateMachine: subject_match NULL
+12-31 19:49:13.358   866  2907 E WifiStateMachine: engine 0
+12-31 19:49:13.358   866  2907 E WifiStateMachine: client_cert NULL
+12-31 19:49:13.358   866  2907 E WifiStateMachine: anonymous_identity NULL
+12-31 19:49:13.358   866  2907 E WifiStateMachine: ca_cert NULL
+12-31 19:49:13.358   866  2907 E WifiStateMachine: identity NULL
+12-31 19:49:13.358   866  2907 E WifiStateMachine: domain_suffix_match NULL
+12-31 19:49:13.358   866  2907 E WifiStateMachine: key_id NULL
+12-31 19:49:13.358   866  2907 E WifiStateMachine: engine_id NULL
+12-31 19:49:13.358   866  2907 E WifiStateMachine: IP config:
+12-31 19:49:13.358   866  2907 E WifiStateMachine: IP assignment: DHCP
+12-31 19:49:13.358   866  2907 E WifiStateMachine: Proxy settings: NONE
+12-31 19:49:13.358   866  2907 E WifiStateMachine:  networkSelectionBSSID=cc:46:d6:09:4f:5b cuid=-1 cname=null luid=-1 lname=null lcuid=-1 userApproved=USER_APPROVED noInternetAccessExpected=false roamingFailureBlackListTimeMilli: 1000
+12-31 19:49:13.358   866  2907 E WifiStateMachine: triggeredLow: 0 triggeredBad: 0 triggeredNotHigh: 0
+12-31 19:49:13.358   866  2907 E WifiStateMachine: ticksLow: 0 ticksBad: 0 ticksNotHigh: 0
+12-31 19:49:13.358   866  2907 E WifiStateMachine: triggeredJoin: 0
+12-31 19:49:15.056   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:49:19.764   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:49:19.798   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:49:19.798   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4997
+12-31 19:49:19.814   866  2907 D WifiStateMachine: CMD_AUTO_CONNECT sup state DisconnectedState my state DisconnectedState nid=0 roam=false
+12-31 19:49:19.815   866  2907 D WifiStateMachine: CMD_AUTO_CONNECT will save config -> "Guests" nid=0
+12-31 19:49:19.854   866  7807 D WifiNetworkHistory: saving network history: "Guests"WPA_PSK gw: null Network Selection-status: NETWORK_SELECTION_ENABLED ephemeral=false choice:null link:0 status:2 nid:0 hasEverConnected: false
+12-31 19:49:19.854   866  7807 V WifiNetworkHistory: writeKnownNetworkHistory write config "Guests"WPA_PSK
+12-31 19:49:19.866   866  2907 D WifiStateMachine: CMD_AUTO_CONNECT did save config ->  nid=0
+12-31 19:49:19.870  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-SSID-REENABLED id=0 ssid="Guests"
+12-31 19:49:19.870   866  7808 D WifiNetworkHistory: saving network history: "Guests"WPA_PSK gw: null Network Selection-status: NETWORK_SELECTION_ENABLED ephemeral=false choice:null link:0 status:2 nid:0 hasEverConnected: false
+12-31 19:49:19.870   866  7808 V WifiNetworkHistory: writeKnownNetworkHistory write config "Guests"WPA_PSK
+12-31 19:49:19.870  3390  3390 I wpa_supplicant: wlan0: Trying to associate with SSID 'Guests'
+12-31 19:49:19.875   866  2907 D WifiStateMachine: Supplicant SSID reenable:ID: 0 SSID: "Guests" PROVIDER-NAME: null BSSID: null FQDN: null PRIO: 1 HIDDEN: false
+12-31 19:49:19.875   866  2907 D WifiStateMachine:  NetworkSelectionStatus NETWORK_SELECTION_ENABLED
+12-31 19:49:19.875   866  2907 D WifiStateMachine:  hasEverConnected: false
+12-31 19:49:19.875   866  2907 D WifiStateMachine: update time=12-31 19:49:19.824
+12-31 19:49:19.875   866  2907 D WifiStateMachine:  KeyMgmt: WPA_PSK Protocols: WPA RSN
+12-31 19:49:19.875   866  2907 D WifiStateMachine:  AuthAlgorithms:
+12-31 19:49:19.875   866  2907 D WifiStateMachine:  PairwiseCiphers: TKIP CCMP
+12-31 19:49:19.875   866  2907 D WifiStateMachine:  GroupCiphers: TKIP CCMP
+12-31 19:49:19.875   866  2907 D WifiStateMachine:  PSK: *
+12-31 19:49:19.875   866  2907 D WifiStateMachine: Enterprise config:
+12-31 19:49:19.875   866  2907 D WifiStateMachine: altsubject_match NULL
+12-31 19:49:19.875   866  2907 D WifiStateMachine: password <removed>
+12-31 19:49:19.875   866  2907 D WifiStateMachine: ca_path NULL
+12-31 19:49:19.875   866  2907 D WifiStateMachine: subject_match NULL
+12-31 19:49:19.875   866  2907 D WifiStateMachine: engine 0
+12-31 19:49:19.875   866  2907 D WifiStateMachine: client_cert NULL
+12-31 19:49:19.875   866  2907 D WifiStateMachine: anonymous_identity NULL
+12-31 19:49:19.875   866  2907 D WifiStateMachine: ca_cert NULL
+12-31 19:49:19.875   866  2907 D WifiStateMachine: identity NULL
+12-31 19:49:19.875   866  2907 D WifiStateMachine: domain_suffix_match NULL
+12-31 19:49:19.875   866  2907 D WifiStateMachine: key_id NULL
+12-31 19:49:19.875   866  2907 D WifiStateMachine: engine_id NULL
+12-31 19:49:19.875   866  2907 D WifiStateMachine: IP config:
+12-31 19:49:19.875   866  2907 D WifiStateMachine: IP assignment: DHCP
+12-31 19:49:19.875   866  2907 D WifiStateMachine: Proxy settings: NONE
+12-31 19:49:19.875   866  2907 D WifiStateMachine:  networkSelectionBSSID=cc:46:d6:09:4f:5b cuid=-1 cname=null luid=-1 lname=null lcuid=-1 userApproved=USER_APPROVED noInternetAccessExpected=false roamingFailureBlackListTimeMilli: 1000
+12-31 19:49:19.875   866  2907 D WifiStateMachine: triggeredLow: 0 triggeredBad: 0 triggeredNotHigh: 0
+12-31 19:49:19.875   866  2907 D WifiStateMachine: ticksLow: 0 ticksBad: 0 ticksNotHigh: 0
+12-31 19:49:19.875   866  2907 D WifiStateMachine: triggeredJoin: 0
+12-31 19:49:19.951  3390  3390 I wpa_supplicant: wlan0: Associated with cc:46:d6:09:4f:5b
+12-31 19:49:19.952  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-SUBNET-STATUS-UPDATE status=0
+12-31 19:49:24.803  3390  3390 E wpa_supplicant: PNO: In assoc process
+12-31 19:49:24.805   866  2920 E SupplicantWifiScannerImpl: PNO state change to true failed
+12-31 19:49:24.805   866  2920 E SupplicantWifiScannerImpl: Pno scan failure received
+12-31 19:49:24.806   866  2920 W SupplicantWifiScannerImpl: No PNO scan running
+12-31 19:49:24.807   866  2907 E WifiConnectivityManager: PnoScanListener onFailure: reason: -1 description: pno scan failed
+12-31 19:49:29.813   866  2907 E WifiScanner: listener cannot be found
+12-31 19:49:29.820  3390  3390 E wpa_supplicant: PNO: In assoc process
+12-31 19:49:29.821   866  2920 E SupplicantWifiScannerImpl: PNO state change to true failed
+12-31 19:49:29.821   866  2920 E SupplicantWifiScannerImpl: Failed to start PNO scan
+12-31 19:49:29.823   866  2920 W SupplicantWifiScannerImpl: No PNO scan running
+12-31 19:49:29.823   866  2907 E WifiConnectivityManager: PnoScanListener onFailure: reason: -1 description: pno scan failed
+12-31 19:49:29.954  3390  3390 I wpa_supplicant: wlan0: Authentication with cc:46:d6:09:4f:5b timed out.
+12-31 19:49:30.053  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-DISCONNECTED bssid=cc:46:d6:09:4f:5b reason=3 locally_generated=1
+12-31 19:49:30.054  3390  3390 I wpa_supplicant: wlan0: WPA: 4-Way Handshake failed - pre-shared key may be incorrect
+12-31 19:49:30.054  3390  3390 I wpa_supplicant: wlan0: CTRL-EVENT-SSID-TEMP-DISABLED id=0 ssid="Guests" auth_failures=1 duration=10 reason=WRONG_KEY
+12-31 19:49:30.120  2907  2907 W WifiStateMachin: type=1400 audit(0.0:70): avc: denied { syslog_read } for scontext=u:r:system_server:s0 tcontext=u:r:kernel:s0 tclass=system permissive=0
+12-31 19:49:30.124   866  2907 D wifi    : no kernel logs
+12-31 19:49:30.126   866  3389 I WifiHAL : Fate Tx-Rx: Packet fate stats stop received
+12-31 19:49:30.129   866  2907 E WifiStateMachine: Supplicant SSID temporary disabled:- DSBLE ID: 0 SSID: "Guests" PROVIDER-NAME: null BSSID: null FQDN: null PRIO: 1 HIDDEN: false
+12-31 19:49:30.129   866  2907 E WifiStateMachine:  NetworkSelectionStatus NETWORK_SELECTION_TEMPORARY_DISABLED
+12-31 19:49:30.129   866  2907 E WifiStateMachine:  mNetworkSelectionDisableReason NETWORK_SELECTION_DISABLED_AUTHENTICATION_FAILURE
+12-31 19:49:30.129   866  2907 E WifiStateMachine: NETWORK_SELECTION_DISABLED_AUTHENTICATION_FAILURE counter:5
+12-31 19:49:30.129   866  2907 E WifiStateMachine:  hasEverConnected: false
+12-31 19:49:30.129   866  2907 E WifiStateMachine: update time=12-31 19:49:19.824
+12-31 19:49:30.129   866  2907 E WifiStateMachine:  KeyMgmt: WPA_PSK Protocols: WPA RSN
+12-31 19:49:30.129   866  2907 E WifiStateMachine:  AuthAlgorithms:
+12-31 19:49:30.129   866  2907 E WifiStateMachine:  PairwiseCiphers: TKIP CCMP
+12-31 19:49:30.129   866  2907 E WifiStateMachine:  GroupCiphers: TKIP CCMP
+12-31 19:49:30.129   866  2907 E WifiStateMachine:  PSK: *
+12-31 19:49:30.129   866  2907 E WifiStateMachine: Enterprise config:
+12-31 19:49:30.129   866  2907 E WifiStateMachine: altsubject_match NULL
+12-31 19:49:30.129   866  2907 E WifiStateMachine: password <removed>
+12-31 19:49:30.129   866  2907 E WifiStateMachine: ca_path NULL
+12-31 19:49:30.129   866  2907 E WifiStateMachine: subject_match NULL
+12-31 19:49:30.129   866  2907 E WifiStateMachine: engine 0
+12-31 19:49:30.129   866  2907 E WifiStateMachine: client_cert NULL
+12-31 19:49:30.129   866  2907 E WifiStateMachine: anonymous_identity NULL
+12-31 19:49:30.129   866  2907 E WifiStateMachine: ca_cert NULL
+12-31 19:49:30.129   866  2907 E WifiStateMachine: identity NULL
+12-31 19:49:30.129   866  2907 E WifiStateMachine: domain_suffix_match NULL
+12-31 19:49:30.129   866  2907 E WifiStateMachine: key_id NULL
+12-31 19:49:30.129   866  2907 E WifiStateMachine: engine_id NULL
+12-31 19:49:30.129   866  2907 E WifiStateMachine: IP config:
+12-31 19:49:30.129   866  2907 E WifiStateMachine: IP assignment: DHCP
+12-31 19:49:30.129   866  2907 E WifiStateMachine: Proxy settings: NONE
+12-31 19:49:30.129   866  2907 E WifiStateMachine:  networkSelectionBSSID=cc:46:d6:09:4f:5b
+12-31 19:49:30.129   866  2907 E WifiStateMachine:  blackListed: 14sec  cuid=-1 cname=null luid=-1 lname=null lcuid=-1 userApproved=USER_APPROVED noInternetAccessExpected=false roamingFailureBlackListTimeMilli: 1000
+12-31 19:49:30.129   866  2907 E WifiStateMachine: triggeredLow: 0 triggeredBad: 0 triggeredNotHigh: 0
+12-31 19:49:30.129   866  2907 E WifiStateMachine: ticksLow: 0 ticksBad: 0 ticksNotHigh: 0
+12-31 19:49:30.129   866  2907 E WifiStateMachine: triggeredJoin: 0
+12-31 19:49:34.828   866  2907 E WifiScanner: listener cannot be found
+12-31 19:49:34.837   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:49:39.552   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:49:39.579   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:49:39.579   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4998
+12-31 19:49:44.585   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:49:49.305   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:49:49.331   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:49:49.331   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4998
+12-31 19:49:54.336   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:49:59.042   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:49:59.071   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:49:59.071   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4998
+12-31 19:50:04.082   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:50:08.781   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:50:08.822   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:50:08.823   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4997
+12-31 19:50:13.825   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:50:18.535   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:50:18.569   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:50:18.569   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4996
+12-31 19:50:23.572   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:50:28.281   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:50:28.312   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:50:28.313   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4998
+12-31 19:50:33.316   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from false to true
+12-31 19:50:38.030   866  2920 W AlarmManager: Unrecognized alarm listener com.android.server.wifi.scanner.SupplicantWifiScannerImpl$3@61aacda
+12-31 19:50:38.058   866  2920 D SupplicantWifiScannerImpl: Changed PNO state from true to false
+12-31 19:50:38.058   866  2920 D SupplicantWifiScannerImpl: Start PNO timer with delay 4997

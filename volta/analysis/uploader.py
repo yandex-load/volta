@@ -143,6 +143,7 @@ class CurrentsWorker(object):
             df = reader.binary_to_df()
         else:
             df = reader.plaintext_to_df()
+        logger.debug('Df: %s', df)
         start = datetime.datetime.utcfromtimestamp(self.sync)
         index_freq = "{value}{units}".format(
             value = int(10 ** 6 / self.samplerate),
@@ -263,9 +264,9 @@ class FileReader(object):
             np.fromfile(
                 self.filename,
                 dtype=np.uint16
-            ).astype(np.float32) * self.slope + self.offset
+            ).astype(np.float32) * (5000./1024) * self.slope + self.offset
         )
-        return df[0][256:]
+        return df[0]
 
     def plaintext_to_df(self):
         df = pd.read_csv(
@@ -370,7 +371,7 @@ def run():
         '-k', '--slope',
         help='slope, electrical current metric multiplier, `k` in linear y=kx+b function',
         type=float,
-        default=float(5000/2**12)
+        default=1
     )
     parser.add_argument(
         '-b', '--offset',
