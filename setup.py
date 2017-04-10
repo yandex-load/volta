@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='volta',
-    version='0.0.87',
+    version='0.0.88',
     description='yandex package for mobile energy consumption measurements',
     longer_description='''
 yandex package for mobile energy consumption measurements
@@ -55,6 +55,9 @@ yandex package for mobile energy consumption measurements
         'volta.analysis': [
             '*.db',
         ],
+        'volta.Phones': [
+            'binary/*.apk'
+        ]
     },
     data_files=[
         ('/usr/local/bin', ['volta/reader/serial-reader']),

@@ -26,7 +26,7 @@ class Phone(object):
     """ Phone interface
     Parent class for phones
     """
-    def __init__(self, config, volta):
+    def __init__(self, config):
         """ parse config stage """
         pass
 

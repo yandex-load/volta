@@ -163,7 +163,8 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
                     self.write_message(format_message(u'Таск в Лунапарке не найден!'
                                                       u'В стартреке нужно нажать в таске '
                                                       u'"Действие->Нагрузочное тестирование"', 'message'))
-                    raise RuntimeError('Не найден таск: %s' % msg['config'])
+                    self.write_message(format_message(u'Тест продолжается без заливки данных!', 'message'))
+                    config['upload'] = None
                 self.perform_test(config)
             elif msg["message"] == "done":
                 self.wait = False
