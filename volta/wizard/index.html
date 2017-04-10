@@ -22,7 +22,7 @@
                     config.component = document.getElementById('component').value;
                     config.task = document.getElementById('task').value;
                     config.events = document.getElementById('events').checked;
-                    config.upload = document.getElementById('upload').checked;
+                    config.upload = true;
                     config.binary = document.getElementById('binary').checked;
 
                     json_cfg = JSON.stringify({
@@ -86,10 +86,6 @@
                     <div class="row">
                         <input id="binary" name="binary" type="checkbox" label="binary">
                         <label for="binary">Прошивка коробочки 10kHz? (Не трогайте, если не знаете что это)</label>
-                    </div>
-                    <div class="row">
-                        <input id="upload" name="upload" type="checkbox" label="upload" checked>
-                        <label for="upload">Залить логи в Лунапарк?</label>
                     </div>
                     <div class="row">
                         <button onclick="WizardWebSocket();" class="btn btn-primary btn-lg">Run Wizard</button>
