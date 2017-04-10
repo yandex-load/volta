@@ -10,6 +10,7 @@ import argparse
 import re
 import os
 import pwd
+from shutil import copyfile
 
 from volta.analysis.sync import sync, torch_status
 

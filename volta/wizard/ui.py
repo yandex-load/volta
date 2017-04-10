@@ -13,6 +13,7 @@ import time
 import json
 import requests
 
+from requests import ConnectionError
 from pkg_resources import resource_filename
 
 from volta.analysis.wizard import VoltaWorker, EventPoller, PhoneWorker, create_work_dirs
@@ -146,9 +147,13 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
                 'binary': config['binary'],
                 'job_config': config
             }
-            jobid = uploader.main(args)
-            self.write_message(format_message(u'%s' % jobid, 'results'))
-            self.wait_user_action(u'Тест завершился!')
+            try:
+                jobid = uploader.main(args)
+                self.write_message(format_message(u'%s' % jobid, 'results'))
+                self.wait_user_action(u'Тест завершился!')
+            except ConnectionError:
+                self.write_message(format_message(u'Нет соединения с Лунапарком!', 'results'))
+                self.wait_user_action(u'Тест завершился, но логи НЕ закачаны в Лунапарк!')
         # work finished, closing the connection
         time.sleep(3)
         self.close()
@@ -163,8 +168,8 @@ class WizardWebSocket(tornado.websocket.WebSocketHandler):
                     self.write_message(format_message(u'Таск в Лунапарке не найден!'
                                                       u'В стартреке нужно нажать в таске '
                                                       u'"Действие->Нагрузочное тестирование"', 'message'))
-                    self.write_message(format_message(u'Тест продолжается без заливки данных!', 'message'))
-                    config['upload'] = None
+                    self.write_message(format_message(u'Тест продолжается без заливки данных !', 'message'))
+                    # raise RuntimeError('Не найден таск: %s' % msg['config'])
                 self.perform_test(config)
             elif msg["message"] == "done":
                 self.wait = False
