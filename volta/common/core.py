@@ -1,12 +1,41 @@
 import logging
 import queue
 import time
+import signal
 
 from volta import Boxes
 from volta import Phones
 
 
 logger = logging.getLogger(__name__)
+
+
+
+def signal_handler(sig, frame):
+    """ required for non-tty python runs to interrupt """
+    logger.warning("Got signal %s, going to stop", sig)
+    raise KeyboardInterrupt()
+
+def ignore_handler(sig, frame):
+    logger.warning("Got signal %s, ignoring", sig)
+
+def set_sig_handler():
+    uncatchable = ['SIG_DFL', 'SIGSTOP', 'SIGKILL']
+    ignore = ['SIGCHLD', 'SIGCLD']
+    all_sig = [s for s in dir(signal) if s.startswith("SIG")]
+    for sig_name in ignore:
+        try:
+            sig_num = getattr(signal, sig_name)
+            signal.signal(sig_num, ignore_handler)
+        except Exception:
+            pass
+    for sig_name in [s for s in all_sig if s not in (uncatchable + ignore)]:
+        try:
+            sig_num = getattr(signal, sig_name)
+            signal.signal(sig_num, signal_handler)
+        except Exception as ex:
+            logger.error("Can't set handler for %s, %s", sig_name, ex)
+
 
 
 class Factory(object):
@@ -53,15 +82,16 @@ class Core(object):
         6) Uploader
         """
         factory = Factory()
-        self.volta = Factory.detect_volta(factory, self.config.get('volta', None))
-        self.phone = Factory.detect_phone(factory, self.config.get('phone', None))
+        self.volta = factory.detect_volta(self.config.get('volta', None))
+        self.phone = factory.detect_phone(self.config.get('phone', None))
         self.grabber_q = queue.Queue()
+        self.phone_q = queue.Queue()
         self.phone.prepare()
 
     def start_test(self):
         logger.info('Starting test...')
         self.volta.start_test(self.grabber_q)
-        self.phone.start()
+        self.phone.start(self.phone_q)
 
         logger.info('Starting test apps and waiting for finish...')
         # TODO remove this -> phone.run_test() should be here instead of sleeps
@@ -71,6 +101,12 @@ class Core(object):
         logger.info('Finishing test...')
         self.volta.end_test()
         self.phone.end()
+
+        logger.info('Phone qsize: %s', self.phone.phone_q.qsize())
+        try:
+            logger.info('Phone smaple:\n%s', self.phone.phone_q.get_nowait())
+        except queue.Empty:
+            pass
 
 
     def post_process(self):
@@ -110,12 +146,17 @@ def main():
             'duration': 15
         }
     }
-    core = Core(sample_cfg)
-    core.configure()
-    core.start_test()
-    core.end_test()
-    core.post_process()
+    try:
+        core = Core(sample_cfg)
+        core.configure()
+        core.start_test()
+        core.end_test()
+        core.post_process()
+
+    except KeyboardInterrupt:
+        raise RuntimeError('stopped')
 
 
 if __name__ == "__main__":
+    set_sig_handler()
     main()

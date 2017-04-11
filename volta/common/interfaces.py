@@ -34,7 +34,7 @@ class Phone(object):
         """ install apps, unplug device """
         raise NotImplementedError("Abstract method needs to be overridden")
 
-    def start(self):
+    def start(self, results):
         """ make sync w/ flashlight """
         raise NotImplementedError("Abstract method needs to be overridden")
 

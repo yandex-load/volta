@@ -6,8 +6,10 @@ import queue
 import pkg_resources
 import numpy as np
 import pandas as pd
+import subprocess
+import datetime
 from volta.common.interfaces import Phone
-from volta.common.util import execute
+from volta.common.util import execute, Drain, popen
 from volta.common.resource import manager as resource
 from volta.Boxes.box_binary import VoltaBoxBinary
 
@@ -23,11 +25,14 @@ class AndroidPhone(Phone):
         self.lightning_apk_class = config.get('lightning_class', 'net.yandex.overload.lightning')
         self.lightning_apk_fname = None
         self.unplug_type = config.get('unplug_type', 'manual')
+
         self.test_apks = config.get('test_apks', '').split()
         self.test_class = config.get('test_class', '')
         self.test_package = config.get('test_package', '')
         self.test_runner = config.get('test_runner', '')
 
+        self.logcat_stdout_reader = None
+        self.logcat_stderr_reader = None
 
     def prepare(self):
         """
@@ -54,20 +59,37 @@ class AndroidPhone(Phone):
         # clean logcat
         execute("adb -s {device_id} logcat -c".format(device_id=self.source))
 
-        # unplug device
+        # unplug device or start logcat
         if self.unplug_type == 'manual':
             logger.info('Detach the phone %s from USB and press enter to continue...', self.source)
             raw_input()
 
-    def start(self):
+
+    def start(self, phone_q):
         """
         pipeline:
+            if unplug_type is auto:
+                start adb logcat
+                start reader threads
             start lightning flashes
         """
-
+        self.phone_q = phone_q
         if self.unplug_type == 'manual':
             logger.info("It's time to start flashlight app!")
             return
+        else:
+            cmd = "adb -s {device_id} logcat".format(device_id=self.source)
+            logger.info("Execute : %s", cmd)
+            self.logcat_process = popen(cmd)
+
+            self.logcat_reader_stdout = LogcatReader(self.logcat_process.stdout)
+            self.drain_logcat_stdout = Drain(self.logcat_reader_stdout, self.phone_q)
+            self.drain_logcat_stdout.start()
+
+            self.phone_q_err=queue.Queue()
+            self.logcat_reader_stderr = LogcatReader(self.logcat_process.stderr)
+            self.drain_logcat_stderr = Drain(self.logcat_reader_stderr, self.phone_q_err)
+            self.drain_logcat_stderr.start()
 
         # start flashes app
         execute(
@@ -106,35 +128,77 @@ class AndroidPhone(Phone):
             logger.warning("Plug the phone in and press `enter` to continue...")
             raw_input()
 
-        _, stdout, stderr = execute(
-            "adb -s {device_id} logcat -d".format(device_id=self.source), catch_out=True
-        )
-        logger.debug('Recieved %d logcat data', len(stdout))
+            _, stdout, stderr = execute(
+                "adb -s {device_id} logcat -d".format(device_id=self.source), catch_out=True
+            )
+            logger.debug('Recieved %d logcat data', len(stdout))
+            self.phone_q.put(string_to_df(stdout))
+        elif self.unplug_type == 'auto':
+            self.logcat_reader_stdout.close()
+            self.logcat_reader_stderr.close()
+            self.logcat_process.kill()
+            self.drain_logcat_stdout.close()
+            self.drain_logcat_stderr.close()
 
-        q = queue.Queue()
-        for data in LogcatReader(stdout):
-            q.put(data)
-        logger.info('Logcat qsize: %s',  q.qsize())
-        logger.info('Logcat sample: %s',  q.get_nowait())
-        return q
 
-
-def string_to_np(data):
-    start_time = time.time()
-    chunk = np.fromstring(data, sep='\t')
-    logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
-    return chunk
+def string_to_df(chunk):
+    results = []
+    for line in chunk.split('\n'):
+        if line.startswith('----'):
+            continue
+        data = line.split(' ')
+        if len(data) > 2:
+            month_day, time = data[0], data[1]
+            if month_day != '' or time != '':
+                ts = "{year}-{month_day} {time}".format(
+                    year=datetime.datetime.now().year,
+                    month_day=month_day,
+                    time=time
+                )
+            else:
+                ts = None
+            message = " ".join(data[2:])
+            results.append([ts, message])
+    if results:
+        df = pd.DataFrame(results, columns=['ts', 'message'])
+    else:
+        df = None
+    return df
 
 
 class LogcatReader(object):
-    def __init__(self, data):
-        self.data = data.split('\n')
-        logger.debug('Logcat data: %s', self.data)
+    """
+    Read chunks from source
+    """
+
+    def __init__(self, source, cache_size=1024):
+        self.closed = False
+        self.cache_size = cache_size
+        self.source = source
+        self.buffer = ""
+
+    def _read_chunk(self):
+        data = self.source.read(self.cache_size)
+        if data:
+            parts = data.rsplit('\n', 1)
+            if len(parts) > 1:
+                ready_chunk = self.buffer + parts[0] + '\n'
+                self.buffer = parts[1]
+                return string_to_df(ready_chunk)
+            else:
+                self.buffer += parts[0]
+        else:
+            self.buffer += self.source.readline()
+        return None
 
     def __iter__(self):
-        # TODO: read bulk and return chunks step-by-step
-        for chunk in self.data:
-            yield string_to_np(chunk)
+        while not self.closed:
+            yield self._read_chunk()
+        yield self._read_chunk()
+
+    def close(self):
+        self.closed = True
+
 
 
 # ==================================================
@@ -164,10 +228,11 @@ def main():
     logger.debug('volta args: %s', volta.__dict__)
     logger.debug('phone args: %s', phone.__dict__)
     grabber_q = queue.Queue()
+    phone_q = queue.Queue()
     phone.prepare()
     logger.info('prepare finished!')
     volta.start_test(grabber_q)
-    phone.start()
+    phone.start(phone_q)
     time.sleep(15)
     logger.info('finishing test')
     phone.end()
