@@ -102,16 +102,15 @@ class Core(object):
         self.volta.end_test()
         self.phone.end()
 
-        logger.info('Phone qsize: %s', self.phone.phone_q.qsize())
-        try:
-            logger.info('Phone smaple:\n%s', self.phone.phone_q.get_nowait())
-        except queue.Empty:
-            pass
-
-
     def post_process(self):
         logger.info('Post process...')
 
+        logger.debug('Phone qsize: %s', self.phone.phone_q.qsize())
+        try:
+            logger.debug('Phone smaple:\n%s', self.phone.phone_q.get_nowait())
+        except queue.Empty:
+            pass
+        
         logger.info('Finished!')
 
 
