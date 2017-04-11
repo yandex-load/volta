@@ -94,7 +94,8 @@ class Core(object):
         self.phone.start(self.phone_q)
 
         logger.info('Starting test apps and waiting for finish...')
-        # TODO remove this -> phone.run_test() should be here instead of sleeps
+        self.phone.run_test()
+        # TODO remove this -> phone.run_test() should be here instead of sleeps & remove meta.duration
         time.sleep(self.config['meta'].get('duration', 60))
 
     def end_test(self):
@@ -110,7 +111,7 @@ class Core(object):
             logger.debug('Phone smaple:\n%s', self.phone.phone_q.get_nowait())
         except queue.Empty:
             pass
-        
+
         logger.info('Finished!')
 
 
@@ -138,6 +139,11 @@ def main():
             #'unplug_type': 'manual',
             'unplug_type': 'auto',
             'source': '00dc3419957ba583',
+            'test_apks': 'http://highload-metrica.s3.mds.yandex.net/test-be19404d-de02-4c05-92f1-e2cb3873609f.apk '
+                         'http://highload-metrica.s3.mds.yandex.net/app-e19ab4f6-f56e-4a72-a702-61e1527b1da7.apk',
+            'test_package': 'ru.yandex.mobile.metrica.test',
+            'test_class': 'ru.yandex.metrica.test.highload.LittleTests',
+            'test_runner': 'android.support.test.runner.AndroidJUnitRunner'
         },
         'uploader': {
         },
@@ -153,7 +159,7 @@ def main():
         core.post_process()
 
     except KeyboardInterrupt:
-        raise RuntimeError('stopped')
+        core.end_test()
 
 
 if __name__ == "__main__":

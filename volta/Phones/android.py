@@ -93,8 +93,7 @@ class AndroidPhone(Phone):
 
         # start flashes app
         execute(
-            "adb -s {device_id} shell am start "
-            "-n {package}/{runner}.MainActivity".format(
+            "adb -s {device_id} shell am start -n {package}/{runner}.MainActivity".format(
                 device_id=self.source,
                 package=self.lightning_apk_class,
                 runner=self.lightning_apk_class
