@@ -63,6 +63,7 @@ class AndroidPhone(Phone):
         # unplug device or start logcat
         if self.unplug_type == 'manual':
             logger.info('Detach the phone %s from USB and press enter to continue...', self.source)
+            # TODO make API and remove this
             raw_input()
 
 
@@ -123,6 +124,7 @@ class AndroidPhone(Phone):
 
         if self.unplug_type == 'manual':
             logger.warning("Plug the phone in and press `enter` to continue...")
+            # TODO make API and remove this
             raw_input()
 
             _, stdout, stderr = execute(
