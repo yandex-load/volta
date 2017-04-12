@@ -95,8 +95,6 @@ class Core(object):
 
         logger.info('Starting test apps and waiting for finish...')
         self.phone.run_test()
-        # TODO remove this -> phone.run_test() should be here instead of sleeps & remove meta.duration
-        time.sleep(self.config['meta'].get('duration', 60))
 
     def end_test(self):
         logger.info('Finishing test...')
@@ -146,18 +144,16 @@ def main():
             'test_runner': 'android.support.test.runner.AndroidJUnitRunner'
         },
         'uploader': {
-        },
-        'meta': {
-            'duration': 15
         }
     }
+
     try:
         core = Core(sample_cfg)
         core.configure()
         core.start_test()
+        time.sleep(60)
         core.end_test()
         core.post_process()
-
     except KeyboardInterrupt:
         core.end_test()
 
