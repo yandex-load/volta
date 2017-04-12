@@ -4,9 +4,7 @@ import logging
 import time
 import queue
 import pkg_resources
-import numpy as np
 import pandas as pd
-import subprocess
 import datetime
 from volta.common.interfaces import Phone
 from volta.common.util import execute, Drain, popen
@@ -15,6 +13,11 @@ from volta.Boxes.box_binary import VoltaBoxBinary
 
 
 logger = logging.getLogger(__name__)
+
+# adb install howto:
+#   (-r: replace existing application)
+#   (-d: allow version code downgrade)
+#   (-t: allow test packages)
 
 
 class AndroidPhone(Phone):
@@ -46,10 +49,6 @@ class AndroidPhone(Phone):
         # install lightning
         self.lightning_apk_fname = resource.get_opener(self.lightning_apk_path).get_filename
         logger.info('Installing lightning apk...')
-        # adb install
-        #   (-r: replace existing application)
-        #   (-d: allow version code downgrade)
-        #   (-t: allow test packages)
         execute("adb -s {device_id} install -r -d -t {apk}".format(device_id=self.source, apk=self.lightning_apk_fname))
 
         # install apks
@@ -171,11 +170,11 @@ def string_to_df(chunk):
         # skip headers
         if line.startswith('----'):
             continue
+        # split line and try to make timestamp - find month, day, time and add current year
         data = line.split(' ')
         if len(data) > 2:
             month_day, time = data[0], data[1]
             if month_day != '' or time != '':
-                # add current year to ts, android logcat doesn't have that by-default
                 ts = "{year}-{month_day} {time}".format(
                     year=datetime.datetime.now().year,
                     month_day=month_day,

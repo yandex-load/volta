@@ -40,7 +40,7 @@ def set_sig_handler():
 
 class Factory(object):
     def __init__(self):
-        """ find VoltaBox """
+        """ find VoltaBox and Phone """
         self.voltas = {
             '500hz': Boxes.VoltaBox500Hz,
             'binary': Boxes.VoltaBoxBinary,
@@ -70,7 +70,9 @@ class Core(object):
     def __init__(self, config):
         """ parse config, @type:dict """
         self.config = config
-        self.grabber_q = None
+        self.factory = Factory()
+        self.grabber_q = queue.Queue()
+        self.phone_q = queue.Queue()
 
     def configure(self):
         """
@@ -81,11 +83,8 @@ class Core(object):
         5) Sync
         6) Uploader
         """
-        factory = Factory()
-        self.volta = factory.detect_volta(self.config.get('volta', None))
-        self.phone = factory.detect_phone(self.config.get('phone', None))
-        self.grabber_q = queue.Queue()
-        self.phone_q = queue.Queue()
+        self.volta = self.factory.detect_volta(self.config.get('volta', None))
+        self.phone = self.factory.detect_phone(self.config.get('phone', None))
         self.phone.prepare()
 
     def start_test(self):
@@ -151,7 +150,7 @@ def main():
         core = Core(sample_cfg)
         core.configure()
         core.start_test()
-        time.sleep(60)
+        time.sleep(30)
         core.end_test()
         core.post_process()
     except KeyboardInterrupt:
