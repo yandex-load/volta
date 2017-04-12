@@ -108,7 +108,7 @@ class Core(object):
 
         logger.debug('Phone qsize: %s', self.phone.phone_q.qsize())
         try:
-            logger.debug('Phone smaple:\n%s', self.phone.phone_q.get_nowait())
+            logger.debug('Phone sample:\n%s', self.phone.phone_q.get_nowait())
         except queue.Empty:
             pass
 
