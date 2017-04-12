@@ -20,19 +20,20 @@ logger = logging.getLogger(__name__)
 class AndroidPhone(Phone):
     def __init__(self, config):
         Phone.__init__(self, config)
+        self.logcat_stdout_reader = None
+        self.logcat_stderr_reader = None
+        # mandatory options
         self.source = config.get('source', '00dc3419957ba583')
+        self.unplug_type = config.get('unplug_type', 'manual')
+        # lightning app configuration
         self.lightning_apk_path = config.get('lightning', pkg_resources.resource_filename('volta.Phones', 'binary/lightning.apk'))
         self.lightning_apk_class = config.get('lightning_class', 'net.yandex.overload.lightning')
         self.lightning_apk_fname = None
-        self.unplug_type = config.get('unplug_type', 'manual')
-
+        # test app configuration
         self.test_apks = config.get('test_apks', '').split()
         self.test_class = config.get('test_class', '')
         self.test_package = config.get('test_package', '')
         self.test_runner = config.get('test_runner', '')
-
-        self.logcat_stdout_reader = None
-        self.logcat_stderr_reader = None
 
     def prepare(self):
         """
@@ -68,61 +69,58 @@ class AndroidPhone(Phone):
     def start(self, phone_q):
         """
         pipeline:
+            if uplug_type is manual:
+                remind user to start flashlight app
             if unplug_type is auto:
-                start adb logcat
-                start reader threads
-            start lightning flashes
+                start async logcat reader
+                start lightning flashes
         """
         self.phone_q = phone_q
+
         if self.unplug_type == 'manual':
             logger.info("It's time to start flashlight app!")
             return
-        else:
-            cmd = "adb -s {device_id} logcat".format(device_id=self.source)
-            logger.info("Execute : %s", cmd)
-            self.logcat_process = popen(cmd)
 
-            self.logcat_reader_stdout = LogcatReader(self.logcat_process.stdout)
-            self.drain_logcat_stdout = Drain(self.logcat_reader_stdout, self.phone_q)
-            self.drain_logcat_stdout.start()
-
-            self.phone_q_err=queue.Queue()
-            self.logcat_reader_stderr = LogcatReader(self.logcat_process.stderr)
-            self.drain_logcat_stderr = Drain(self.logcat_reader_stderr, self.phone_q_err)
-            self.drain_logcat_stderr.start()
-
-        # start flashes app
-        execute(
-            "adb -s {device_id} shell am start -n {package}/{runner}.MainActivity".format(
-                device_id=self.source,
-                package=self.lightning_apk_class,
-                runner=self.lightning_apk_class
+        if self.unplug_type == 'auto':
+            self.__start_async_logcat()
+            # start flashes app
+            execute(
+                "adb -s {device_id} shell am start -n {package}/{runner}.MainActivity".format(
+                    device_id=self.source,
+                    package=self.lightning_apk_class,
+                    runner=self.lightning_apk_class
+                )
             )
-        )
+            return
 
     def run_test(self):
         """
-        run apk
+        run apk or return if test is manual
         """
 
         if self.unplug_type == 'manual':
             return
 
-        execute(
-            "adb shell am instrument -w -e class {test_class} {test_package}/{test_runner}".format(
-                test_class=self.test_class,
-                test_package=self.test_package,
-                test_runner=self.test_runner
+        if self.unplug_type == 'auto':
+            execute(
+                "adb shell am instrument -w -e class {test_class} {test_package}/{test_runner}".format(
+                    test_class=self.test_class,
+                    test_package=self.test_package,
+                    test_runner=self.test_runner
+                )
             )
-        )
+            return
 
     def end(self):
         """
-        plug device
-        get logs from device
+        pipeline:
+            if uplug_type is manual:
+                ask user to plug device in
+                get logcat dump from device
+            if unplug_type is auto:
+                stop async logcat process, readers and queues
         """
 
-        # plug device in if manual test
         if self.unplug_type == 'manual':
             logger.warning("Plug the phone in and press `enter` to continue...")
             raw_input()
@@ -131,24 +129,51 @@ class AndroidPhone(Phone):
                 "adb -s {device_id} logcat -d".format(device_id=self.source), catch_out=True
             )
             logger.debug('Recieved %d logcat data', len(stdout))
-            self.phone_q.put(string_to_df(stdout))
-        elif self.unplug_type == 'auto':
+            self.phone_q.put(
+                string_to_df(stdout)
+            )
+            return
+
+        if self.unplug_type == 'auto':
             self.logcat_reader_stdout.close()
             self.logcat_reader_stderr.close()
             self.logcat_process.kill()
             self.drain_logcat_stdout.close()
             self.drain_logcat_stderr.close()
+            return
+
+
+    def __start_async_logcat(self):
+        """
+        Start logcat read in subprocess and make threads to read its stdout/stderr to queues
+
+        """
+        cmd = "adb -s {device_id} logcat".format(device_id=self.source)
+        logger.debug("Execute : %s", cmd)
+        self.logcat_process = popen(cmd)
+
+        self.logcat_reader_stdout = LogcatReader(self.logcat_process.stdout)
+        self.drain_logcat_stdout = Drain(self.logcat_reader_stdout, self.phone_q)
+        self.drain_logcat_stdout.start()
+
+        self.phone_q_err=queue.Queue()
+        self.logcat_reader_stderr = LogcatReader(self.logcat_process.stderr)
+        self.drain_logcat_stderr = Drain(self.logcat_reader_stderr, self.phone_q_err)
+        self.drain_logcat_stderr.start()
 
 
 def string_to_df(chunk):
     results = []
+    df = None
     for line in chunk.split('\n'):
+        # skip headers
         if line.startswith('----'):
             continue
         data = line.split(' ')
         if len(data) > 2:
             month_day, time = data[0], data[1]
             if month_day != '' or time != '':
+                # add current year to ts, android logcat doesn't have that by-default
                 ts = "{year}-{month_day} {time}".format(
                     year=datetime.datetime.now().year,
                     month_day=month_day,
@@ -160,8 +185,6 @@ def string_to_df(chunk):
             results.append([ts, message])
     if results:
         df = pd.DataFrame(results, columns=['ts', 'message'])
-    else:
-        df = None
     return df
 
 
@@ -172,7 +195,7 @@ class LogcatReader(object):
 
     def __init__(self, source, cache_size=1024):
         self.closed = False
-        self.cache_size = cache_size
+        self.cache_size = cache_size # read from pipe blocks waiting for equal block if cache size is large
         self.source = source
         self.buffer = ""
 
