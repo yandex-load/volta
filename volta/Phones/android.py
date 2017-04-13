@@ -167,26 +167,15 @@ def string_to_df(chunk):
     results = []
     df = None
     for line in chunk.split('\n'):
-        if line:
-            # skip headers
-            if line.startswith('----'):
-                continue
-            # split line and try to make timestamp - find month, day, time and add current year
-            # input date format: TODO
-            # output date format: 2017-12-28 13:07:47.123
-            data = line.split(' ')
-            if len(data) > 2:
-                month_day, time = data[0], data[1]
-                if month_day != '' or time != '':
-                    ts = "{year}-{month_day} {time}".format(
-                        year=datetime.datetime.now().year,
-                        month_day=month_day,
-                        time=time
-                    )
-                else:
-                    ts = None
-                message = " ".join(data[2:])
-                results.append([ts, message])
+        try:
+            # input date format: 12-31 19:03:52.460  3795  4110 W GCM     : Mismatched messenger
+
+            ts = datetime.datetime.strptime(line[:18], '%m-%d %H:%M:%S.%f').replace(year=datetime.datetime.now().year)
+            message = line[33:]
+        except:
+            pass
+        else:
+            results.append([ts, message])
     if results:
         df = pd.DataFrame(results, columns=['ts', 'message'])
     return df

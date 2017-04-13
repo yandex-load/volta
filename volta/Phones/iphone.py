@@ -75,26 +75,19 @@ def string_to_df(chunk):
     results = []
     df = None
     for line in chunk.split('\n'):
-        if line:
-            try:
-                # split line and try to make timestamp - find month, day, time and add current year
-                # input date format: Dec 28 12:19:06
-                # output date format: 2017-12-28 13:07:47
-                mon, day, time = line[:3], line[4:6], line[7:15]
-                message = line[15:]
-                if mon != '' or time != '':
-                    ts = "{year}-{mon}-{day} {time}".format(
-                        year=datetime.datetime.now().year,
-                        mon=datetime.datetime.strptime(mon, '%b').month,
-                        day=day,
-                        time=time
-                    )
-                else:
-                    ts = None
-            except:
-                pass
-            else:
-                results.append([ts, message])
+        try:
+            # input format:
+            # Apr 13 14:17:18 Benders-iPhone kernel(AppleBiometricSensor)[0] <Debug>: exit
+            ts = datetime.datetime.strptime(
+                line[:15], '%b %d %H:%M:%S'
+            ).replace(
+                year=datetime.datetime.now().year
+            )
+            message = line[15:]
+        except:
+            pass
+        else:
+            results.append([ts, message])
     if results:
         df = pd.DataFrame(results, columns=['ts', 'message'])
     return df

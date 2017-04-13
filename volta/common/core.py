@@ -48,7 +48,7 @@ class Factory(object):
         }
         self.phones = {
             'android': Phones.AndroidPhone,
-            'iphone': None
+            'iphone': Phones.iPhone,
         }
 
     def detect_volta(self, config):
@@ -105,7 +105,7 @@ class Core(object):
 
         logger.debug('Phone qsize: %s', self.phone.phone_q.qsize())
         try:
-            logger.debug('Phone sample:\n%s', self.phone.phone_q.get_nowait())
+            logger.info('Phone sample:\n%s', self.phone.phone_q.get_nowait())
         except queue.Empty:
             pass
 
@@ -133,11 +133,14 @@ def main():
         },
         'phone': {
             'type': 'android',
+            #'type': 'iphone',
             #'unplug_type': 'manual',
             'unplug_type': 'auto',
-            'source': '00dc3419957ba583',
-            'test_apks': 'http://highload-metrica.s3.mds.yandex.net/test-be19404d-de02-4c05-92f1-e2cb3873609f.apk '
-                         'http://highload-metrica.s3.mds.yandex.net/app-e19ab4f6-f56e-4a72-a702-61e1527b1da7.apk',
+            'source': '00dc3419957ba583', # nexus 5X
+            #'source': '0x6382910F98C26', # iphone 6
+            'test_apps': 'http://highload-metrica.s3.mds.yandex.net/test-be19404d-de02-4c05-92f1-e2cb3873609f.apk '
+                         'http://highload-metrica.s3.mds.yandex.net/app-e19ab4f6-f56e-4a72-a702-61e1527b1da7.apk', #android
+            #'test_apps': '/Users/netort/Downloads/yandexnavigatorproduction-iphoneos_2887_dev_debug.ipa', #iphone
             'test_package': 'ru.yandex.mobile.metrica.test',
             'test_class': 'ru.yandex.metrica.test.highload.LittleTests',
             'test_runner': 'android.support.test.runner.AndroidJUnitRunner'
@@ -150,7 +153,7 @@ def main():
         core = Core(sample_cfg)
         core.configure()
         core.start_test()
-        time.sleep(30)
+        time.sleep(15)
         core.end_test()
         core.post_process()
     except KeyboardInterrupt:
