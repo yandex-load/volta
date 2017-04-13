@@ -33,7 +33,7 @@ class AndroidPhone(Phone):
         self.lightning_apk_class = config.get('lightning_class', 'net.yandex.overload.lightning')
         self.lightning_apk_fname = None
         # test app configuration
-        self.test_apks = config.get('test_apks', '').split()
+        self.test_apps = config.get('test_apps', '').split()
         self.test_class = config.get('test_class', '')
         self.test_package = config.get('test_package', '')
         self.test_runner = config.get('test_runner', '')
@@ -52,7 +52,7 @@ class AndroidPhone(Phone):
         execute("adb -s {device_id} install -r -d -t {apk}".format(device_id=self.source, apk=self.lightning_apk_fname))
 
         # install apks
-        for apk in self.test_apks:
+        for apk in self.test_apps:
             apk_fname = resource.get_opener(apk).get_filename
             execute("adb -s {device_id} install -r -d -t {apk}".format(device_id=self.source, apk=apk_fname))
 
@@ -167,23 +167,26 @@ def string_to_df(chunk):
     results = []
     df = None
     for line in chunk.split('\n'):
-        # skip headers
-        if line.startswith('----'):
-            continue
-        # split line and try to make timestamp - find month, day, time and add current year
-        data = line.split(' ')
-        if len(data) > 2:
-            month_day, time = data[0], data[1]
-            if month_day != '' or time != '':
-                ts = "{year}-{month_day} {time}".format(
-                    year=datetime.datetime.now().year,
-                    month_day=month_day,
-                    time=time
-                )
-            else:
-                ts = None
-            message = " ".join(data[2:])
-            results.append([ts, message])
+        if line:
+            # skip headers
+            if line.startswith('----'):
+                continue
+            # split line and try to make timestamp - find month, day, time and add current year
+            # input date format: TODO
+            # output date format: 2017-12-28 13:07:47.123
+            data = line.split(' ')
+            if len(data) > 2:
+                month_day, time = data[0], data[1]
+                if month_day != '' or time != '':
+                    ts = "{year}-{month_day} {time}".format(
+                        year=datetime.datetime.now().year,
+                        month_day=month_day,
+                        time=time
+                    )
+                else:
+                    ts = None
+                message = " ".join(data[2:])
+                results.append([ts, message])
     if results:
         df = pd.DataFrame(results, columns=['ts', 'message'])
     return df
@@ -240,7 +243,7 @@ def main():
     }
     cfg_phone = {
         'source': '00dc3419957ba583',
-        'test_apks': 'http://highload-metrica.s3.mds.yandex.net/test-be19404d-de02-4c05-92f1-e2cb3873609f.apk '
+        'test_apps': 'http://highload-metrica.s3.mds.yandex.net/test-be19404d-de02-4c05-92f1-e2cb3873609f.apk '
                 'http://highload-metrica.s3.mds.yandex.net/app-e19ab4f6-f56e-4a72-a702-61e1527b1da7.apk',
         'test_package': 'ru.yandex.mobile.metrica.test',
         'test_class': 'ru.yandex.metrica.test.highload.LittleTests',
