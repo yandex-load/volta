@@ -29,14 +29,10 @@ class iPhone(Phone):
     def start(self, phone_q):
         """
         pipeline:
-            if unplug_type is auto:
-                start async logcat reader
+            start async logcat reader
         """
         self.phone_q = phone_q
-
-        if self.unplug_type == 'auto':
-            self.__start_async_log()
-            return
+        self.__start_async_log()
 
     def run_test(self):
         return
@@ -44,21 +40,14 @@ class iPhone(Phone):
     def end(self):
         """
         pipeline:
-            if unplug_type is auto:
-                stop async logcat process, readers and queues
+            stop async logcat process, readers and queues
         """
 
-        if self.unplug_type == 'manual':
-            return
-
-        if self.unplug_type == 'auto':
-            self.log_reader_stdout.close()
-            self.log_reader_stderr.close()
-            self.log_process.kill()
-            self.drain_log_stdout.close()
-            self.drain_log_stderr.close()
-            return
-
+        self.log_reader_stdout.close()
+        self.log_reader_stderr.close()
+        self.log_process.kill()
+        self.drain_log_stdout.close()
+        self.drain_log_stderr.close()
 
     def __start_async_log(self):
         """
