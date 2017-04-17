@@ -5,10 +5,10 @@ import signal
 
 from volta import Boxes
 from volta import Phones
+from volta.common.eventshandler import EventsParser
 
 
 logger = logging.getLogger(__name__)
-
 
 
 def signal_handler(sig, frame):
@@ -16,8 +16,10 @@ def signal_handler(sig, frame):
     logger.warning("Got signal %s, going to stop", sig)
     raise KeyboardInterrupt()
 
+
 def ignore_handler(sig, frame):
     logger.warning("Got signal %s, ignoring", sig)
+
 
 def set_sig_handler():
     uncatchable = ['SIG_DFL', 'SIGSTOP', 'SIGKILL']
@@ -35,7 +37,6 @@ def set_sig_handler():
             signal.signal(sig_num, signal_handler)
         except Exception as ex:
             logger.error("Can't set handler for %s, %s", sig_name, ex)
-
 
 
 class Factory(object):
@@ -76,12 +77,13 @@ class Core(object):
 
     def configure(self):
         """
-        1) VoltaFactory
-        2) PhoneFactory
-        3) EventLogParser
-        4) MetricsExtractor
-        5) Sync
-        6) Uploader
+        1) VoltaFactory - VOLTA-87
+        2) PhoneFactory - VOLTA-120 / VOLTA-131
+        3) EventLogParser - VOLTA-129
+        # TODO
+        4) MetricsExtractor -
+        5) Sync -
+        6) Uploader -
         """
         self.volta = self.factory.detect_volta(self.config.get('volta', None))
         self.phone = self.factory.detect_phone(self.config.get('phone', None))
@@ -102,16 +104,16 @@ class Core(object):
 
     def post_process(self):
         logger.info('Post process...')
+        events_q = queue.Queue()
+        sync_q = queue.Queue()
+        events_parser = EventsParser(self.phone_q, events_q, sync_q)
+        events_parser.run()
+        for _ in range(events_q.qsize()):
+            logger.info('Events: %s', events_q.get_nowait())
 
-        logger.debug('Phone qsize: %s', self.phone.phone_q.qsize())
-        try:
-            logger.info('Volta sample:\n%s', self.grabber_q.get_nowait())
-            logger.info('Phone sample:\n%s', self.phone_q.get_nowait())
-        except queue.Empty:
-            pass
-
+        for _ in range(sync_q.qsize()):
+            logger.info('Sync: %s', sync_q.get_nowait())
         logger.info('Finished!')
-
 
 
 
@@ -149,12 +151,12 @@ def main():
             # 'source': '0x6382910F98C26', # iphone 6
         },
     }
-    
+
     core = Core(sample_cfg)
     try:
         core.configure()
         core.start_test()
-        time.sleep(15)
+        time.sleep(5)
         core.end_test()
         core.post_process()
     except KeyboardInterrupt:
