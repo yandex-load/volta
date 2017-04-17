@@ -13,14 +13,19 @@ logger = logging.getLogger(__name__)
 class EventsParser(threading.Thread):
     """
     reads source queue, parse message and sort events/sync messages to separate queues.
-    
+
     Returns: puts (Timedata, parsed_message_dict) tuple into appropriate queue.
     """
     def __init__(self, source, events, sync):
         super(EventsParser, self).__init__()
         self.source = source
-        self.events = events
-        self.sync = sync
+        self.destination = {
+            'sync': sync,
+            'event': events,
+            'metric': events,
+            'fragment': events,
+            'unknown': events,
+        }
         self._finished = threading.Event()
         self._interrupted = threading.Event()
 
@@ -34,10 +39,11 @@ class EventsParser(threading.Thread):
                 for row in df.itertuples():
                     ts = row.ts
                     parsed_message = self.__parse_event(row.message)
-                    if parsed_message['type'] == 'sync':
-                        self.sync.put((ts, parsed_message))
+                    mtype = parsed_message['type']
+                    if mtype in self.destination:
+                        self.destination[mtype].put((ts, parsed_message))
                     else:
-                        self.events.put((ts, parsed_message))
+                        logger.warning('Unknown event type!')
             if self._interrupted.is_set():
                 break
         self._finished.set()
