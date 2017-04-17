@@ -4,7 +4,23 @@ import queue as q
 import logging
 import re
 import threading
-import datetime
+
+
+re_ = re.compile(r"""
+    ^(?P<app>\S+)
+    \s+
+    \[volta\]
+    \s+
+    (?P<nanotime>\S+)
+    \s+
+    (?P<type>\S+)
+    \s+
+    (?P<tag>\S+)
+    \s+
+    (?P<message>.*?)
+    $
+    """, re.X
+)
 
 
 logger = logging.getLogger(__name__)
@@ -14,7 +30,7 @@ class EventsParser(threading.Thread):
     """
     reads source queue, parse message and sort events/sync messages to separate queues.
 
-    Returns: puts (Timedata, parsed_message_dict) tuple into appropriate queue.
+    Returns: puts df into appropriate destination queue.
     """
     def __init__(self, source, events, sync):
         super(EventsParser, self).__init__()
@@ -36,45 +52,35 @@ class EventsParser(threading.Thread):
             except q.Empty:
                 break
             else:
-                for row in df.itertuples():
-                    ts = row.ts
-                    parsed_message = self.__parse_event(row.message)
-                    mtype = parsed_message['type']
-                    if mtype in self.destination:
-                        self.destination[mtype].put((ts, parsed_message))
-                    else:
-                        logger.warning('Unknown event type!')
+                for group in df.apply(self.__parse_event, axis=1).groupby('type'):
+                    if group[0] in self.destination:
+                        self.destination[group[0]].put(group[1])
             if self._interrupted.is_set():
                 break
         self._finished.set()
 
-    def __parse_event(self, data):
-        re_ = re.compile(r"""
-            ^(?P<app>\S+)
-            \s+
-            \[[voltaVOLTA]\S+?\]
-            \s+
-            (?P<nanotime>\S+)
-            \s+
-            (?P<type>\S+)
-            \s+
-            (?P<tag>\S+)
-            \s+
-            (?P<message>.*?)
-            $
-            """, re.X
-        )
-        match = re_.match(data)
+    def __parse_event(self, row):
+        match = re_.match(row.message)
         if match:
-            return match.groupdict()
+            row["app"] = match.group('app')
+            row["nanotime"] = match.group('nanotime')
+            row["type"] = match.group('type')
+            row["tag"] = match.group('tag')
+            row["message"] = match.group('message')
+            return row
         else:
-            return {'message': data, 'type': 'unknown'}
+            row["type"] = 'unknown'
+            row["message"] = row.message
+            return row
 
     def wait(self, timeout=None):
         self._finished.wait(timeout=timeout)
 
     def close(self):
         self._interrupted.set()
+
+
+
 
 # =====================================
 def main():
