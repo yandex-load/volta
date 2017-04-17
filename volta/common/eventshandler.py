@@ -6,6 +6,8 @@ import re
 import threading
 
 
+# data sample: lightning: [volta] 12345678 fragment TagFragment start
+# following regexp grabs 'app name', 'nanotime', 'type', 'tag' and 'message' from sample above
 re_ = re.compile(r"""
     ^(?P<app>\S+)
     \s+
@@ -19,7 +21,7 @@ re_ = re.compile(r"""
     \s+
     (?P<message>.*?)
     $
-    """, re.X
+    """, re.VERBOSE | re.IGNORECASE
 )
 
 
@@ -55,6 +57,8 @@ class EventsParser(threading.Thread):
                 for group in df.apply(self.__parse_event, axis=1).groupby('type'):
                     if group[0] in self.destination:
                         self.destination[group[0]].put(group[1])
+                    else:
+                        logger.warning('Unknown event type! %s. Message: %s', group[0], group[1], exc_info=True)
             if self._interrupted.is_set():
                 break
         self._finished.set()
@@ -112,6 +116,8 @@ def main():
     # message for SyncParser                 app: [volta] {nt} sync {tag} {rise/fall}
     test_data.append([datetime.datetime.now(), 'lightning: [VOLTA] 12345678 sync TagSync rise'])
     test_data.append([datetime.datetime.now(), 'lightning: [volta] 12345678 sync TagSync fall'])
+    # wrong type
+    test_data.append([datetime.datetime.now(), 'Brokenlightning: [VOLTA] 12345678 sync1 TagSyncBroken riseBroken'])
 
     df = pd.DataFrame(test_data, columns=['ts', 'message'])
     phone_q.put(df)
