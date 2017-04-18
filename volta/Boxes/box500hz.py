@@ -68,7 +68,7 @@ class VoltaBox500Hz(VoltaBox):
 def string_to_np(data):
     start_time = time.time()
     chunk = np.fromstring(data, dtype=float, sep='\n')
-    logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
+    # logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
     return chunk
 
 
@@ -125,7 +125,9 @@ def main():
     logger.info('test finishing...')
     worker.end_test()
     logger.info('Queue size after test: %s', grabber_q.qsize())
-    logger.info('Sample size: %s', grabber_q.get())
+    logger.info('Sample: %s', grabber_q.get())
+    logger.info('Sample: %s', grabber_q.get())
+    logger.info('Sample: %s', grabber_q.get())
     logger.info('test finished')
 
 if __name__ == "__main__":

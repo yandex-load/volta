@@ -5,6 +5,7 @@ import numpy as np
 import subprocess
 import os
 import shlex
+import datetime
 
 box_columns = ['current']
 
@@ -71,7 +72,9 @@ class TimeChopper(object):
                     ready_sample = self.buffer[:self.slice_size]
                     to_buffer = self.buffer[self.slice_size:]
                     self.buffer = to_buffer
-                    yield pd.DataFrame(data=ready_sample, columns=box_columns)
+                    df = pd.DataFrame(data=ready_sample, columns=box_columns)
+                    df['ts'] = datetime.datetime.utcnow()
+                    yield df
 
 
 def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
