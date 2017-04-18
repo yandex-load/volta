@@ -70,7 +70,7 @@ def string_to_np(data):
     start_time = datetime.datetime.utcnow()
     chunk = np.fromstring(data, dtype=float, sep='\n')
     # logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
-    return (start_time, chunk)
+    return chunk
 
 
 class BoxPlainTextReader(object):

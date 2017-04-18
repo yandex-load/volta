@@ -64,20 +64,23 @@ class TimeChopper(object):
 
     def __iter__(self):
         logger.debug('Chopper slicing data w/ %s ratio, slice size will be %s', self.chop_ratio, self.slice_size)
-        for start_time, chunk in self.source:
+        start_time = datetime.datetime.utcnow()
+        sample_num = 0
+        for chunk in self.source:
             if chunk is not None:
                 logger.debug('Chopper got %s data', len(chunk))
                 self.buffer = np.append(self.buffer, chunk)
                 while len(self.buffer) > self.slice_size:
                     ready_sample = self.buffer[:self.slice_size]
-                    to_buffer = self.buffer[self.slice_size:]
-                    self.buffer = to_buffer
+                    self.buffer = self.buffer[self.slice_size:]
                     df = pd.DataFrame(data=ready_sample, columns=box_columns)
                     idx = "{value}{units}".format(
                         value = int(10 ** 6 / self.sample_rate),
                         units = "us"
                     )
-                    df['ts'] = pd.date_range(start_time, periods=len(ready_sample), freq=idx)
+                    current_ts = start_time + datetime.timedelta(sample_num * (1./self.sample_rate))
+                    df['ts'] = pd.date_range(current_ts, periods=len(ready_sample), freq=idx)
+                    sample_num = sample_num + len(ready_sample)
                     yield df
 
 
