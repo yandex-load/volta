@@ -77,8 +77,8 @@ class VoltaBoxBinary(VoltaBox):
 def string_to_np(data):
     start_time = time.time()
     chunk = np.fromstring(data, dtype=np.uint16).astype(np.float32)
-    logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
-    return chunk
+    # logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
+    return (start_time, chunk)
 
 
 class BoxBinaryReader(object):
