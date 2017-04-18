@@ -53,6 +53,7 @@ class Drain(threading.Thread):
 class TimeChopper(object):
     """
     Group incoming chunks into dataframe by sample rate w/ chop_ratio
+    adds utc timestamp from start test w/ assigned frequency
     """
 
     def __init__(self, source, sample_rate, chop_ratio=1.0):
