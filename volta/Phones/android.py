@@ -169,7 +169,6 @@ def string_to_df(chunk):
     for line in chunk.split('\n'):
         try:
             # input date format: 12-31 19:03:52.460  3795  4110 W GCM     : Mismatched messenger
-
             ts = datetime.datetime.strptime(line[:18], '%m-%d %H:%M:%S.%f').replace(year=datetime.datetime.now().year)
             message = line[33:]
         except:
@@ -228,7 +227,8 @@ def main():
         format='%(asctime)s [%(levelname)s] [Volta Phone Android] %(filename)s:%(lineno)d %(message)s')
     logger.info("Volta Phone Anroid")
     cfg_volta = {
-        'source': '/dev/cu.wchusbserial1410'
+        'source': '/dev/cu.wchusbserial1410',
+        'type': '500hz'
     }
     cfg_phone = {
         'source': '00dc3419957ba583',

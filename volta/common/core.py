@@ -108,8 +108,8 @@ class Core(object):
         sync_q = queue.Queue()
         events_parser = EventsParser(self.phone_q, events_q, sync_q)
         events_parser.run()
-        for _ in range(events_q.qsize()):
-            logger.info('Events: %s', events_q.get_nowait())
+        # for _ in range(events_q.qsize()):
+        #    logger.info('Events: %s', events_q.get_nowait())
 
         for _ in range(sync_q.qsize()):
             logger.info('Sync: %s', sync_q.get_nowait())

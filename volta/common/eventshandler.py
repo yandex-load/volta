@@ -54,11 +54,11 @@ class EventsParser(threading.Thread):
             except q.Empty:
                 break
             else:
-                for group in df.apply(self.__parse_event, axis=1).groupby('type'):
-                    if group[0] in self.destination:
-                        self.destination[group[0]].put(group[1])
+                for type, data in df.apply(self.__parse_event, axis=1).groupby('type'):
+                    if type in self.destination:
+                        self.destination[type].put(data)
                     else:
-                        logger.warning('Unknown event type! %s. Message: %s', group[0], group[1], exc_info=True)
+                        logger.warning('Unknown event type! %s. Message: %s', type, data, exc_info=True)
             if self._interrupted.is_set():
                 break
         self._finished.set()
