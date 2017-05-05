@@ -45,3 +45,19 @@ class Phone(object):
     def end(self):
         """ stop volta, plug device and get logs """
         raise NotImplementedError("Abstract method needs to be overridden")
+
+
+class DataListener(object):
+    """
+    Listener interface
+    """
+
+    def __init__(self, out_file):
+        pass
+
+    def add_data(self, data):
+        raise NotImplementedError("Abstract method needs to be overridden")
+
+    def close(self):
+        """ close open files """
+        raise NotImplementedError("Abstract method needs to be overridden")

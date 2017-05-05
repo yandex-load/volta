@@ -1,13 +1,10 @@
 """ Binary Volta box
 """
-import serial
 import logging
-import queue
-import pandas as pd
+import Queue as queue
 import time
 import numpy as np
 import json
-import datetime
 from volta.common.interfaces import VoltaBox
 from volta.common.util import Drain, TimeChopper
 from volta.common.resource import manager as resource
@@ -76,9 +73,8 @@ class VoltaBoxBinary(VoltaBox):
 
 
 def string_to_np(data):
-    start_time = datetime.datetime.utcnow()
     chunk = np.fromstring(data, dtype=np.uint16).astype(np.float32)
-    # logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
+    # logger.debug("Chunk decode time: %.2fms", (time.time() - datetime.datetime.utcnow()) * 1000)
     return chunk
 
 

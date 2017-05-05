@@ -5,12 +5,10 @@ import numpy as np
 import subprocess
 import os
 import shlex
-import datetime
-
-box_columns = ['current']
 
 
 logger = logging.getLogger(__name__)
+
 
 def popen(cmnd):
     return subprocess.Popen(
@@ -53,7 +51,7 @@ class Drain(threading.Thread):
 class TimeChopper(object):
     """
     Group incoming chunks into dataframe by sample rate w/ chop_ratio
-    adds utc timestamp from start test w/ assigned frequency
+    adds utc timestamp from start test w/ offset and assigned frequency
     """
 
     def __init__(self, source, sample_rate, chop_ratio=1.0):
@@ -65,7 +63,6 @@ class TimeChopper(object):
 
     def __iter__(self):
         logger.debug('Chopper slicing data w/ %s ratio, slice size will be %s', self.chop_ratio, self.slice_size)
-        start_time = datetime.datetime.utcnow()
         sample_num = 0
         for chunk in self.source:
             if chunk is not None:
@@ -74,15 +71,17 @@ class TimeChopper(object):
                 while len(self.buffer) > self.slice_size:
                     ready_sample = self.buffer[:self.slice_size]
                     self.buffer = self.buffer[self.slice_size:]
-                    df = pd.DataFrame(data=ready_sample, columns=box_columns)
+                    df = pd.DataFrame(data=ready_sample, columns=['current'])
                     idx = "{value}{units}".format(
                         value = int(10 ** 6 / self.sample_rate),
                         units = "us"
                     )
-                    current_ts = start_time + datetime.timedelta(sample_num * (1./self.sample_rate))
-                    df['ts'] = pd.date_range(current_ts, periods=len(ready_sample), freq=idx)
+                    # add time offset to start time in order to determine current timestamp and make date_range for df
+                    current_ts = int((sample_num * (1./self.sample_rate)) * 10 ** 9)
+                    df['uts'] = pd.date_range(current_ts, periods=len(ready_sample), freq=idx).astype(np.int64) // 1000
                     sample_num = sample_num + len(ready_sample)
                     yield df
+
 
 
 def execute(cmd, shell=False, poll_period=1.0, catch_out=False):

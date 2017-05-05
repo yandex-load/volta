@@ -46,19 +46,27 @@ class EventsParser(threading.Thread):
         }
         self._finished = threading.Event()
         self._interrupted = threading.Event()
+        self.log_uts_start = None
+        self.sys_uts_start = None
 
     def run(self):
         for _ in range(self.source.qsize()):
             try:
                 df = self.source.get_nowait()
+                # detect syslog ts start
+                if not self.sys_uts_start:
+                    self.sys_uts_start = df['sys_uts'][0]
+                    logger.debug('sys uts start detected: %s', self.sys_uts_start)
             except q.Empty:
                 break
             else:
-                for type, data in df.apply(self.__parse_event, axis=1).groupby('type'):
-                    if type in self.destination:
-                        self.destination[type].put(data)
-                    else:
-                        logger.warning('Unknown event type! %s. Message: %s', type, data, exc_info=True)
+                if df is not None:
+                    for type, data in df.apply(self.__parse_event, axis=1).groupby('type'):
+                        if type in self.destination:
+                            data['sys_uts'] = data['sys_uts'].map(lambda x: ((x - self.sys_uts_start)))
+                            self.destination[type].put(data)
+                        else:
+                            logger.warning('Unknown event type! %s. Message: %s', type, data, exc_info=True)
             if self._interrupted.is_set():
                 break
         self._finished.set()
@@ -67,7 +75,19 @@ class EventsParser(threading.Thread):
         match = re_.match(row.message)
         if match:
             row["app"] = match.group('app')
-            row["nanotime"] = match.group('nanotime')
+            try:
+                # convert nanotime to us
+                log_ts = int(int(match.group('nanotime')) // 1000)
+
+                # detect log ts start
+                if not self.log_uts_start:
+                    self.log_uts_start = log_ts
+                    logger.debug('log uts start detected: %s', self.log_uts_start)
+                    row["log_uts"] = 0
+                else:
+                    row["log_uts"] = log_ts - self.log_uts_start
+            except:
+                logger.warning('Trash logtimestamp found: %s', row)
             row["type"] = match.group('type')
             row["tag"] = match.group('tag')
             row["message"] = match.group('message')
@@ -128,13 +148,13 @@ def main():
     events_worker.run()
     for _ in range(events_q.qsize()):
         try:
-            logger.info('Events: %s', events_q.get_nowait())
+            logger.info('Events sample:\n %s', events_q.get_nowait())
         except q.Empty:
             pass
 
     for _ in range(sync_q.qsize()):
         try:
-            logger.info('Sync: %s', sync_q.get_nowait())
+            logger.info('Sync sample:\n %s', sync_q.get_nowait())
         except q.Empty:
             pass
 

@@ -1,15 +1,14 @@
 """ 500Hz Volta Box
 """
-import serial
 import logging
-import queue
-import pandas as pd
+import queue as q
 import time
 import numpy as np
-import datetime
+
 from volta.common.interfaces import VoltaBox
 from volta.common.util import Drain, TimeChopper
 from volta.common.resource import manager as resource
+
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +66,8 @@ class VoltaBox500Hz(VoltaBox):
 
 
 def string_to_np(data):
-    start_time = datetime.datetime.utcnow()
     chunk = np.fromstring(data, dtype=float, sep='\n')
-    # logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
+    # logger.debug("Chunk decode time: %.2fms", (time.time() - datetime.datetime.utcnow()) * 1000)
     return chunk
 
 
@@ -120,15 +118,15 @@ def main():
     }
     worker = VoltaBox500Hz(cfg)
     logger.info('worker args: %s', worker.__dict__)
-    grabber_q = queue.Queue()
+    grabber_q = q.Queue()
     worker.start_test(grabber_q)
     time.sleep(10)
     logger.info('test finishing...')
     worker.end_test()
     logger.info('Queue size after test: %s', grabber_q.qsize())
-    logger.info('Sample: %s', grabber_q.get())
-    logger.info('Sample: %s', grabber_q.get())
-    logger.info('Sample: %s', grabber_q.get())
+    logger.info('1st sample:\n %s', grabber_q.get())
+    logger.info('2nd sample:\n %s', grabber_q.get())
+    logger.info('3rd sample:\n %s', grabber_q.get())
     logger.info('test finished')
 
 if __name__ == "__main__":

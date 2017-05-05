@@ -1,11 +1,14 @@
 import logging
-import queue
+import queue as q
 import time
 import signal
+import datetime
 
 from volta import Boxes
 from volta import Phones
 from volta.common.eventshandler import EventsParser
+from volta.common.interfaces import DataListener
+from volta.Sync.sync import SyncFinder
 
 
 logger = logging.getLogger(__name__)
@@ -21,6 +24,7 @@ def ignore_handler(sig, frame):
     logger.warning("Got signal %s, ignoring", sig)
 
 
+# TODO: move this to (non-existent atm) console worker
 def set_sig_handler():
     uncatchable = ['SIG_DFL', 'SIGSTOP', 'SIGKILL']
     ignore = ['SIGCHLD', 'SIGCLD']
@@ -71,9 +75,12 @@ class Core(object):
     def __init__(self, config):
         """ parse config, @type:dict """
         self.config = config
+        self.listeners = []
         self.factory = Factory()
-        self.grabber_q = queue.Queue()
-        self.phone_q = queue.Queue()
+        self.grabber_q = q.Queue()
+        self.phone_q = q.Queue()
+        self.test_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
+        self.sync = None
 
     def configure(self):
         """
@@ -81,12 +88,11 @@ class Core(object):
         2) PhoneFactory - VOLTA-120 / VOLTA-131
         3) EventLogParser - VOLTA-129
         # TODO
-        4) MetricsExtractor -
-        5) Sync -
-        6) Uploader -
+        4) Sync - VOLTA-133
+        5) Uploader -
         """
-        self.volta = self.factory.detect_volta(self.config.get('volta', None))
-        self.phone = self.factory.detect_phone(self.config.get('phone', None))
+        self.volta = self.factory.detect_volta(self.config.get('volta', {}))
+        self.phone = self.factory.detect_phone(self.config.get('phone', {}))
         self.phone.prepare()
 
     def start_test(self):
@@ -104,16 +110,45 @@ class Core(object):
 
     def post_process(self):
         logger.info('Post process...')
-        events_q = queue.Queue()
-        sync_q = queue.Queue()
-        events_parser = EventsParser(self.phone_q, events_q, sync_q)
-        events_parser.run()
-        # for _ in range(events_q.qsize()):
-        #    logger.info('Events: %s', events_q.get_nowait())
+        self.events_q = q.Queue()
+        self.sync_q = q.Queue()
 
-        for _ in range(sync_q.qsize()):
-            logger.info('Sync: %s', sync_q.get_nowait())
+        events_parser = EventsParser(self.phone_q, self.events_q, self.sync_q)
+        events_parser.run()
+
+        # TODO make util.Tee and pass separate queue to sync and uploader
+        self.sync = SyncFinder(
+            self.config.get('sync', {}),
+            self.sync_q,
+            self.grabber_q,
+            self.volta.sample_rate
+        )
+
+        sync_data = self.sync.find_sync_points()
+
         logger.info('Finished!')
+
+
+
+class FileListener(DataListener):
+    """
+    Default listener - saves data to file
+    """
+
+    def __init__(self, fname):
+        DataListener.__init__(self, fname)
+        self.fname = open(fname, 'w')
+
+    def add_data(self, data):
+        self.fname.write((data))
+        self.fname.write('\n')
+        self.fname.flush()
+
+    def close(self):
+        """ close open files """
+        if self.fname:
+            self.fname.close()
+
 
 
 
@@ -130,15 +165,17 @@ def main():
         format='%(asctime)s [%(levelname)s] [Volta Core] %(filename)s:%(lineno)d %(message)s')
     logger.info("Volta Core init")
     sample_cfg = {
+        'work_dir': './logs/',
         'volta': {
             'type': '500hz',
-            'source': '/dev/cu.wchusbserial1410',
+            'source': '/dev/cu.wchusbserial1420',
         },
         'phone': {
             # android
             'type': 'android',
             'unplug_type': 'auto',
-            'source': '00dc3419957ba583',
+            #'source': '00dc3419957ba583', # old
+            'source': '01e345da733a4764', # new
             'test_apps': 'http://highload-metrica.s3.mds.yandex.net/test-be19404d-de02-4c05-92f1-e2cb3873609f.apk '
                          'http://highload-metrica.s3.mds.yandex.net/app-e19ab4f6-f56e-4a72-a702-61e1527b1da7.apk',
             'test_package': 'ru.yandex.mobile.metrica.test',
@@ -147,16 +184,18 @@ def main():
 
             # iphone
             # 'type': 'iphone',
-            # 'unplug_type': 'manual',
             # 'source': '0x6382910F98C26', # iphone 6
         },
+        'sync': {
+            'search_interval': 30
+        }
     }
 
     core = Core(sample_cfg)
     try:
         core.configure()
         core.start_test()
-        time.sleep(5)
+        time.sleep(10)
         core.end_test()
         core.post_process()
     except KeyboardInterrupt:

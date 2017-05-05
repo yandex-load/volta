@@ -2,12 +2,12 @@
 """
 import logging
 import time
-import queue
+import queue as q
 import pandas as pd
 import datetime
+
 from volta.common.interfaces import Phone
 from volta.common.util import Drain, popen
-from volta.Boxes.box_binary import VoltaBoxBinary
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class iPhone(Phone):
         self.path_to_util = "/Applications/Apple\ Configurator\ 2.app/Contents/MacOS/"
         # mandatory options
         self.source = config.get('source', '0x6382910F98C26')
-        self.unplug_type = config.get('unplug_type', 'auto')
+        # self.unplug_type = config.get('unplug_type', 'auto')
 
     def prepare(self):
         return
@@ -65,7 +65,7 @@ class iPhone(Phone):
         self.drain_log_stdout = Drain(self.log_reader_stdout, self.phone_q)
         self.drain_log_stdout.start()
 
-        self.phone_q_err=queue.Queue()
+        self.phone_q_err=q.Queue()
         self.log_reader_stderr = LogReader(self.log_process.stderr)
         self.drain_log_stderr = Drain(self.log_reader_stderr, self.phone_q_err)
         self.drain_log_stderr.start()
@@ -76,20 +76,21 @@ def string_to_df(chunk):
     df = None
     for line in chunk.split('\n'):
         try:
+            # TODO regexp should be here, just like in eventshandler
             # input format:
             # Apr 13 14:17:18 Benders-iPhone kernel(AppleBiometricSensor)[0] <Debug>: exit
-            ts = datetime.datetime.strptime(
-                line[:15], '%b %d %H:%M:%S'
-            ).replace(
-                year=datetime.datetime.now().year
+            ts = datetime.datetime.strptime(line[:15], '%b %d %H:%M:%S').replace(year=datetime.datetime.now().year)
+            sys_uts = int(
+                (ts-datetime.datetime(1970,1,1)).total_seconds() * 10 ** 6
             )
             message = line[15:]
         except:
+            logger.error('cfgutil log parsing exception', exc_info=True)
             pass
         else:
-            results.append([ts, message])
+            results.append([sys_uts, message])
     if results:
-        df = pd.DataFrame(results, columns=['ts', 'message'])
+        df = pd.DataFrame(results, columns=['sys_uts', 'message'])
     return df
 
 
@@ -141,24 +142,27 @@ def main():
         format='%(asctime)s [%(levelname)s] [Volta Phone iPhone] %(filename)s:%(lineno)d %(message)s')
     logger.info("Volta Phone iPhone")
     cfg_volta = {
-        'source': '/dev/cu.wchusbserial1410',
+        'source': '/dev/cu.wchusbserial1420',
+        'type': '500hz'
     }
     cfg_phone = {
         'source': '0x6382910F98C26',
         'type': 'iphone',
         'unplug_type': 'auto',
     }
-    volta = VoltaBoxBinary(cfg_volta)
+    from volta.common.core import Factory
+    factory = Factory()
+    volta = factory.detect_volta(cfg_volta)
     phone = iPhone(cfg_phone)
     logger.debug('volta args: %s', volta.__dict__)
     logger.debug('phone args: %s', phone.__dict__)
-    grabber_q = queue.Queue()
-    phone_q = queue.Queue()
+    grabber_q = q.Queue()
+    phone_q = q.Queue()
     phone.prepare()
     logger.info('prepare finished!')
     volta.start_test(grabber_q)
     phone.start(phone_q)
-    time.sleep(15)
+    time.sleep(5)
     logger.info('finishing test')
     phone.end()
     logger.info('test finished')
