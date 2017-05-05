@@ -74,7 +74,6 @@ class VoltaBoxBinary(VoltaBox):
 
 def string_to_np(data):
     chunk = np.fromstring(data, dtype=np.uint16).astype(np.float32)
-    # logger.debug("Chunk decode time: %.2fms", (time.time() - datetime.datetime.utcnow()) * 1000)
     return chunk
 
 
