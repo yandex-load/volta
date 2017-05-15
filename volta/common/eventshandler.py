@@ -4,6 +4,7 @@ import queue as q
 import logging
 import re
 import threading
+import time
 
 
 logger = logging.getLogger(__name__)
@@ -50,23 +51,28 @@ class EventsParser(threading.Thread):
         self.sys_uts_start = None
 
     def run(self):
-        for _ in range(self.source.qsize()):
-            try:
-                df = self.source.get_nowait()
-                # detect syslog ts start
-                if not self.sys_uts_start:
-                    self.sys_uts_start = df['sys_uts'][0]
-                    logger.debug('sys uts start detected: %s', self.sys_uts_start)
-            except q.Empty:
-                break
-            else:
-                if df is not None:
-                    for type, data in df.apply(self.__parse_event, axis=1).groupby('type'):
-                        if type in self.destination:
-                            data['sys_uts'] = data['sys_uts'].map(lambda x: ((x - self.sys_uts_start)))
-                            self.destination[type].put(data)
-                        else:
-                            logger.warning('Unknown event type! %s. Message: %s', type, data, exc_info=True)
+        while not self._interrupted.is_set():
+            for _ in range(self.source.qsize()):
+                try:
+                    df = self.source.get_nowait()
+                    # detect syslog ts start
+                    if not self.sys_uts_start:
+                        self.sys_uts_start = df.index[0]
+                        logger.debug('sys uts start detected: %s', self.sys_uts_start)
+                except q.Empty:
+                    break
+                else:
+                    if df is not None:
+                        for type, data in df.apply(self.__parse_event, axis=1).groupby('type'):
+                            if type in self.destination:
+                                data.index = data.index.map(lambda x: ((x - self.sys_uts_start)))
+                                data.index.name = 'sys_uts'
+                                self.destination[type].put(data)
+                            else:
+                                logger.warning('Unknown event type! %s. Message: %s', type, data, exc_info=True)
+                if self._interrupted.is_set():
+                    break
+            time.sleep(1)
             if self._interrupted.is_set():
                 break
         self._finished.set()
@@ -94,6 +100,9 @@ class EventsParser(threading.Thread):
             return row
         else:
             row["type"] = 'unknown'
+            row["tag"] = None
+            row["log_uts"] = None
+            row["app"] = None
             row["message"] = row.message
             return row
 

@@ -1,10 +1,12 @@
 import threading
 import pandas as pd
-import logging
 import numpy as np
+import queue as q
+import logging
 import subprocess
 import os
 import shlex
+import time
 
 
 logger = logging.getLogger(__name__)
@@ -79,6 +81,7 @@ class TimeChopper(object):
                     # add time offset to start time in order to determine current timestamp and make date_range for df
                     current_ts = int((sample_num * (1./self.sample_rate)) * 10 ** 9)
                     df['uts'] = pd.date_range(current_ts, periods=len(ready_sample), freq=idx).astype(np.int64) // 1000
+                    df.set_index('uts', inplace=True)
                     sample_num = sample_num + len(ready_sample)
                     yield df
 
@@ -116,3 +119,40 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
     returncode = process.returncode
     log.debug("Process exit code: %s", returncode)
     return returncode, stdout, stderr
+
+
+class Tee(threading.Thread):
+    """
+    Read queue contents and put its contents to list of queues
+    """
+
+    def __init__(self, source, destination, type):
+        super(Tee, self).__init__()
+        self.source = source
+        self.destination = destination
+        self.type = type
+        self._finished = threading.Event()
+        self._interrupted = threading.Event()
+
+    def run(self):
+        while not self._interrupted.is_set():
+            for _ in range(self.source.qsize()):
+                try:
+                    item = self.source.get_nowait()
+                except q.Queue.empty:
+                    break
+                else:
+                    for destination in self.destination:
+                        destination.put(item, self.type)
+                    if self._interrupted.is_set():
+                        break
+            if self._interrupted.is_set():
+                break
+            time.sleep(1)
+        self._finished.set()
+
+    def wait(self, timeout=None):
+        self._finished.wait(timeout=timeout)
+
+    def close(self):
+        self._interrupted.set()

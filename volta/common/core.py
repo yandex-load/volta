@@ -8,10 +8,19 @@ from volta import Boxes
 from volta import Phones
 from volta.common.eventshandler import EventsParser
 from volta.common.interfaces import DataListener
+from volta.common.util import Tee
 from volta.Sync.sync import SyncFinder
-
+#from volta.Uploader.uploader import Uploader
 
 logger = logging.getLogger(__name__)
+
+
+# system time is index everywhere
+output_fmt = {
+    'currents': ['current'],
+    'sync': ['log_uts', 'type', 'app', 'tag', 'message', 'value'],
+    'events': ['log_uts', 'type', 'app', 'tag', 'message', 'value'],
+}
 
 
 def signal_handler(sig, frame):
@@ -41,6 +50,8 @@ def set_sig_handler():
             signal.signal(sig_num, signal_handler)
         except Exception as ex:
             logger.error("Can't set handler for %s, %s", sig_name, ex)
+# =========================================
+
 
 
 class Factory(object):
@@ -75,12 +86,21 @@ class Core(object):
     def __init__(self, config):
         """ parse config, @type:dict """
         self.config = config
-        self.listeners = []
         self.factory = Factory()
         self.grabber_q = q.Queue()
+        self.grabber_listeners = []
+        self.sync_listeners = []
+        self.event_listeners = []
         self.phone_q = q.Queue()
+        self.start_time = None
+        # TODO: should be configurable by config
         self.test_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
-        self.sync = None
+        self.currents_fname = "currents_{id}.data".format(id=self.test_id)
+        self.events_fname = "events_{id}.data".format(id=self.test_id)
+        self.sync_fname = "syncs_{id}.data".format(id=self.test_id)
+
+        self.artifacts = []
+
 
     def configure(self):
         """
@@ -89,45 +109,98 @@ class Core(object):
         3) EventLogParser - VOLTA-129
         # TODO
         4) Sync - VOLTA-133
-        5) Uploader -
+        5) Uploader - VOLTA-144
         """
         self.volta = self.factory.detect_volta(self.config.get('volta', {}))
         self.phone = self.factory.detect_phone(self.config.get('phone', {}))
         self.phone.prepare()
 
+        # setup sync and its listeners
+        self.sync_finder = SyncFinder(
+            self.config.get('sync', {}),
+            self.volta.sample_rate
+        )
+        self.sync_listeners.append(self.sync_finder)
+        self.grabber_listeners.append(self.sync_finder)
+        sync_f = FileListener(self.sync_fname)
+        self.artifacts.append(sync_f)
+        self.sync_listeners.append(sync_f)
+
+        # setup grabber listeners
+        grabber_f = FileListener(self.currents_fname)
+        self.artifacts.append(grabber_f)
+        self.grabber_listeners.append(grabber_f)
+
+        # setup events listeners
+        events_f = FileListener(self.events_fname)
+        self.artifacts.append(events_f)
+        self.event_listeners.append(events_f)
+
+
     def start_test(self):
         logger.info('Starting test...')
+        self.start_time = time.time()
+
         self.volta.start_test(self.grabber_q)
         self.phone.start(self.phone_q)
 
         logger.info('Starting test apps and waiting for finish...')
         self.phone.run_test()
 
+        self.events_q = q.Queue()
+        self.sync_q = q.Queue()
+
+        # process phone queue thread
+        self.events_parser = EventsParser(self.phone_q, self.events_q, self.sync_q)
+        self.events_parser.start()
+
+        # process sync events thread
+        self.process_sync_events = Tee(
+            self.sync_q,
+            self.sync_listeners,
+            'sync'
+        )
+        self.process_sync_events.start()
+
+        # process currents thread
+        self.process_currents = Tee(
+            self.grabber_q,
+            self.grabber_listeners,
+            'currents'
+        )
+        self.process_currents.start()
+
+        # process events thread
+        self.process_events = Tee(
+            self.events_q,
+            self.event_listeners,
+            'events'
+        )
+        self.process_events.start()
+
+
     def end_test(self):
         logger.info('Finishing test...')
         self.volta.end_test()
         self.phone.end()
+        self.events_parser.close()
+
+        self.process_events.close()
+        self.process_currents.close()
+        self.process_sync_events.close()
 
     def post_process(self):
         logger.info('Post process...')
-        self.events_q = q.Queue()
-        self.sync_q = q.Queue()
-
-        events_parser = EventsParser(self.phone_q, self.events_q, self.sync_q)
-        events_parser.run()
-
-        # TODO make util.Tee and pass separate queue to sync and uploader
-        self.sync = SyncFinder(
-            self.config.get('sync', {}),
-            self.sync_q,
-            self.grabber_q,
-            self.volta.sample_rate
-        )
-
-        sync_data = self.sync.find_sync_points()
-
+        for artifact in self.artifacts:
+            artifact.close()
+        try:
+            meta_data = self.sync_finder.find_sync_points()
+        except ValueError:
+            logger.error('Unable to sync due to lack of electrical currents data', exc_info=True)
+            meta_data = {}
+        meta_data['start'] = self.start_time
+        logger.info('meta: %s', meta_data)
         logger.info('Finished!')
-
 
 
 class FileListener(DataListener):
@@ -139,9 +212,9 @@ class FileListener(DataListener):
         DataListener.__init__(self, fname)
         self.fname = open(fname, 'w')
 
-    def add_data(self, data):
+    def put(self, df, type):
+        data = df.to_csv(sep='\t', header=False, columns=output_fmt.get(type, []))
         self.fname.write((data))
-        self.fname.write('\n')
         self.fname.flush()
 
     def close(self):

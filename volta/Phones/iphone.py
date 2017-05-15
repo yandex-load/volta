@@ -91,6 +91,7 @@ def string_to_df(chunk):
             results.append([sys_uts, message])
     if results:
         df = pd.DataFrame(results, columns=['sys_uts', 'message'])
+        df.set_index('sys_uts', inplace=True)
     return df
 
 

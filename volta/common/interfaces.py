@@ -55,7 +55,7 @@ class DataListener(object):
     def __init__(self, out_file):
         pass
 
-    def add_data(self, data):
+    def put(self, data, type):
         raise NotImplementedError("Abstract method needs to be overridden")
 
     def close(self):
