@@ -123,7 +123,7 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
 
 class Tee(threading.Thread):
     """
-    Read queue contents and put its contents to list of queues
+    Drain a queue and put its contents to list of destinations
     """
 
     def __init__(self, source, destination, type):

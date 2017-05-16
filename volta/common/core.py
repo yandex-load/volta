@@ -3,10 +3,11 @@ import queue as q
 import time
 import signal
 import datetime
+import os
 
 from volta import Boxes
 from volta import Phones
-from volta.common.eventshandler import EventsParser
+from volta.common.eventshandler import EventsRouter
 from volta.common.interfaces import DataListener
 from volta.common.util import Tee
 from volta.Sync.sync import SyncFinder
@@ -18,8 +19,11 @@ logger = logging.getLogger(__name__)
 # system time is index everywhere
 output_fmt = {
     'currents': ['current'],
-    'sync': ['log_uts', 'type', 'app', 'tag', 'message', 'value'],
-    'events': ['log_uts', 'type', 'app', 'tag', 'message', 'value'],
+    'sync': ['log_uts', 'app', 'tag', 'message'],
+    'event': ['log_uts', 'app', 'tag', 'message'],
+    'metric': ['log_uts', 'app', 'tag', 'value'],
+    'fragment': ['log_uts', 'app', 'tag', 'message'],
+    'unknown': ['message']
 }
 
 
@@ -88,26 +92,35 @@ class Core(object):
         self.config = config
         self.factory = Factory()
         self.grabber_q = q.Queue()
-        self.grabber_listeners = []
-        self.sync_listeners = []
-        self.event_listeners = []
         self.phone_q = q.Queue()
+        self.grabber_listeners = []
+        self.event_listeners = {
+            'event': [],
+            'sync': [],
+            'fragment': [],
+            'metric': [],
+            'unknown': []
+        }
         self.start_time = None
-        # TODO: should be configurable by config
-        self.test_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
-        self.currents_fname = "currents_{id}.data".format(id=self.test_id)
-        self.events_fname = "events_{id}.data".format(id=self.test_id)
-        self.sync_fname = "syncs_{id}.data".format(id=self.test_id)
-
         self.artifacts = []
-
+        self.test_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
+        # TODO: should be configurable by config
+        if not os.path.exists(self.test_id):
+            os.makedirs(self.test_id)
+        self.currents_fname = "{dir}/currents_{id}.data".format(dir=self.test_id, id=self.test_id)
+        self.event_fnames = {
+            'event': "{dir}/events_{id}.data".format(dir=self.test_id, id=self.test_id),
+            'sync': "{dir}/syncs_{id}.data".format(dir=self.test_id, id=self.test_id),
+            'fragment': "{dir}/fragments_{id}.data".format(dir=self.test_id, id=self.test_id),
+            'metric': "{dir}/metrics_{id}.data".format(dir=self.test_id, id=self.test_id),
+            'unknown': "{dir}/unknowns_{id}.data".format(dir=self.test_id, id=self.test_id)
+        }
 
     def configure(self):
         """
         1) VoltaFactory - VOLTA-87
         2) PhoneFactory - VOLTA-120 / VOLTA-131
         3) EventLogParser - VOLTA-129
-        # TODO
         4) Sync - VOLTA-133
         5) Uploader - VOLTA-144
         """
@@ -115,27 +128,28 @@ class Core(object):
         self.phone = self.factory.detect_phone(self.config.get('phone', {}))
         self.phone.prepare()
 
-        # setup sync and its listeners
+        # setup syncfinder
         self.sync_finder = SyncFinder(
             self.config.get('sync', {}),
             self.volta.sample_rate
         )
-        self.sync_listeners.append(self.sync_finder)
         self.grabber_listeners.append(self.sync_finder)
-        sync_f = FileListener(self.sync_fname)
-        self.artifacts.append(sync_f)
-        self.sync_listeners.append(sync_f)
+        self.event_listeners['sync'].append(self.sync_finder)
+        self._setup_filelisteners()
 
-        # setup grabber listeners
+    def _setup_filelisteners(self):
+        logger.debug('Creating file listeners...')
+        for type, fname in self.event_fnames.items():
+            logger.debug('file listener type: %s, fname: %s', type, fname)
+            f = FileListener(fname)
+            self.artifacts.append(f)
+            self.event_listeners[type].append(f)
+        logger.info('listeners: %s', self.event_listeners)
+
+        # grabber
         grabber_f = FileListener(self.currents_fname)
         self.artifacts.append(grabber_f)
         self.grabber_listeners.append(grabber_f)
-
-        # setup events listeners
-        events_f = FileListener(self.events_fname)
-        self.artifacts.append(events_f)
-        self.event_listeners.append(events_f)
-
 
     def start_test(self):
         logger.info('Starting test...')
@@ -147,20 +161,9 @@ class Core(object):
         logger.info('Starting test apps and waiting for finish...')
         self.phone.run_test()
 
-        self.events_q = q.Queue()
-        self.sync_q = q.Queue()
-
         # process phone queue thread
-        self.events_parser = EventsParser(self.phone_q, self.events_q, self.sync_q)
+        self.events_parser = EventsRouter(self.phone_q, self.event_listeners)
         self.events_parser.start()
-
-        # process sync events thread
-        self.process_sync_events = Tee(
-            self.sync_q,
-            self.sync_listeners,
-            'sync'
-        )
-        self.process_sync_events.start()
 
         # process currents thread
         self.process_currents = Tee(
@@ -170,24 +173,12 @@ class Core(object):
         )
         self.process_currents.start()
 
-        # process events thread
-        self.process_events = Tee(
-            self.events_q,
-            self.event_listeners,
-            'events'
-        )
-        self.process_events.start()
-
-
     def end_test(self):
         logger.info('Finishing test...')
         self.volta.end_test()
         self.phone.end()
         self.events_parser.close()
-
-        self.process_events.close()
         self.process_currents.close()
-        self.process_sync_events.close()
 
     def post_process(self):
         logger.info('Post process...')
@@ -196,7 +187,7 @@ class Core(object):
         try:
             meta_data = self.sync_finder.find_sync_points()
         except ValueError:
-            logger.error('Unable to sync due to lack of electrical currents data', exc_info=True)
+            logger.error('Unable to sync', exc_info=True)
             meta_data = {}
         meta_data['start'] = self.start_time
         logger.info('meta: %s', meta_data)
@@ -211,9 +202,15 @@ class FileListener(DataListener):
     def __init__(self, fname):
         DataListener.__init__(self, fname)
         self.fname = open(fname, 'w')
+        self.init_header = True
 
     def put(self, df, type):
-        data = df.to_csv(sep='\t', header=False, columns=output_fmt.get(type, []))
+        if self.init_header:
+            self.fname.write(';')
+            data = df.to_csv(sep='\t', header=True, columns=output_fmt.get(type, []))
+            self.init_header = False
+        else:
+            data = df.to_csv(sep='\t', header=False, columns=output_fmt.get(type, []))
         self.fname.write((data))
         self.fname.flush()
 

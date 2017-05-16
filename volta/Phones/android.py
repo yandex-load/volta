@@ -96,6 +96,24 @@ class AndroidPhone(Phone):
             )
             return
 
+    def __start_async_logcat(self):
+        """
+        Start logcat read in subprocess and make threads to read its stdout/stderr to queues
+
+        """
+        cmd = "adb -s {device_id} logcat".format(device_id=self.source)
+        logger.debug("Execute : %s", cmd)
+        self.logcat_process = popen(cmd)
+
+        self.logcat_reader_stdout = LogcatReader(self.logcat_process.stdout)
+        self.drain_logcat_stdout = Drain(self.logcat_reader_stdout, self.phone_q)
+        self.drain_logcat_stdout.start()
+
+        self.phone_q_err=q.Queue()
+        self.logcat_reader_stderr = LogcatReader(self.logcat_process.stderr)
+        self.drain_logcat_stderr = Drain(self.logcat_reader_stderr, self.phone_q_err)
+        self.drain_logcat_stderr.start()
+
     def run_test(self):
         """
         run apk or return if test is manual
@@ -145,25 +163,6 @@ class AndroidPhone(Phone):
             self.drain_logcat_stdout.close()
             self.drain_logcat_stderr.close()
             return
-
-
-    def __start_async_logcat(self):
-        """
-        Start logcat read in subprocess and make threads to read its stdout/stderr to queues
-
-        """
-        cmd = "adb -s {device_id} logcat".format(device_id=self.source)
-        logger.debug("Execute : %s", cmd)
-        self.logcat_process = popen(cmd)
-
-        self.logcat_reader_stdout = LogcatReader(self.logcat_process.stdout)
-        self.drain_logcat_stdout = Drain(self.logcat_reader_stdout, self.phone_q)
-        self.drain_logcat_stdout.start()
-
-        self.phone_q_err=q.Queue()
-        self.logcat_reader_stderr = LogcatReader(self.logcat_process.stderr)
-        self.drain_logcat_stderr = Drain(self.logcat_reader_stderr, self.phone_q_err)
-        self.drain_logcat_stderr.start()
 
 
 def string_to_df(chunk):

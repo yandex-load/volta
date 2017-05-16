@@ -5,6 +5,7 @@ import logging
 import re
 import threading
 import time
+import numpy as np
 
 
 logger = logging.getLogger(__name__)
@@ -29,22 +30,16 @@ re_ = re.compile(r"""
 )
 
 
-class EventsParser(threading.Thread):
+class EventsRouter(threading.Thread):
     """
     reads source queue, parse message and sort events/sync messages to separate queues.
 
     Returns: puts df into appropriate destination queue.
     """
-    def __init__(self, source, events, sync):
-        super(EventsParser, self).__init__()
+    def __init__(self, source, destination):
+        super(EventsRouter, self).__init__()
         self.source = source
-        self.destination = {
-            'sync': sync,
-            'event': events,
-            'metric': events,
-            'fragment': events,
-            'unknown': events,
-        }
+        self.router = destination
         self._finished = threading.Event()
         self._interrupted = threading.Event()
         self.log_uts_start = None
@@ -64,10 +59,13 @@ class EventsParser(threading.Thread):
                 else:
                     if df is not None:
                         for type, data in df.apply(self.__parse_event, axis=1).groupby('type'):
-                            if type in self.destination:
+                            if type in self.router:
                                 data.index = data.index.map(lambda x: ((x - self.sys_uts_start)))
                                 data.index.name = 'sys_uts'
-                                self.destination[type].put(data)
+                                if type == 'metric':
+                                    data['value'] = data['message'].astype(np.float64)
+                                for listener in self.router[type]:
+                                    listener.put(data, type)
                             else:
                                 logger.warning('Unknown event type! %s. Message: %s', type, data, exc_info=True)
                 if self._interrupted.is_set():
@@ -83,7 +81,7 @@ class EventsParser(threading.Thread):
             row["app"] = match.group('app')
             try:
                 # convert nanotime to us
-                log_ts = int(int(match.group('nanotime')) // 1000)
+                log_ts = int(match.group('nanotime')) // 1000
 
                 # detect log ts start
                 if not self.log_uts_start:
@@ -100,9 +98,6 @@ class EventsParser(threading.Thread):
             return row
         else:
             row["type"] = 'unknown'
-            row["tag"] = None
-            row["log_uts"] = None
-            row["app"] = None
             row["message"] = row.message
             return row
 
@@ -111,65 +106,3 @@ class EventsParser(threading.Thread):
 
     def close(self):
         self._interrupted.set()
-
-
-
-
-# =====================================
-def main():
-    import argparse
-    parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--debug', dest='debug', action='store_true', default=False)
-    args = parser.parse_args()
-
-    logging.basicConfig(
-        level="DEBUG" if args.debug else "INFO",
-        format='%(asctime)s [%(levelname)s] [Volta EventsHandler] %(filename)s:%(lineno)d %(message)s')
-    logger.info("Volta EventsHandler init")
-
-    phone_q = q.Queue()
-    import datetime
-    import pandas as pd
-
-    # test data:
-    test_data = []
-    # message for EventParser - common       message
-    test_data.append([datetime.datetime.now(), 'MessageEventParserCommon data'])
-    # message for EventParser - uncommon:    app: [volta] {nt} event {tag} {message}
-    test_data.append([datetime.datetime.now(), 'lightning: [volta] 12345678 event TagEventUncommon MessageEventParserUncommon data'])
-    # message for MetricParser:              app: [volta] {nt} metric {tag} {message}
-    test_data.append([datetime.datetime.now(), 'lightning: [volta] 12345678 metric TagMetric MessageMetricParser data'])
-    # messages for FragmentParser:           app: [volta] {nt} fragment {tag} {start/stop}
-    test_data.append([datetime.datetime.now(), 'lightning: [volta] 12345678 fragment TagFragment start'])
-    test_data.append([datetime.datetime.now(), 'lightning: [volta] 12345678 fragment TagFragment stop'])
-    # message for SyncParser                 app: [volta] {nt} sync {tag} {rise/fall}
-    test_data.append([datetime.datetime.now(), 'lightning: [VOLTA] 12345678 sync TagSync rise'])
-    test_data.append([datetime.datetime.now(), 'lightning: [volta] 12345678 sync TagSync fall'])
-    # wrong type
-    test_data.append([datetime.datetime.now(), 'Brokenlightning: [VOLTA] 12345678 syncbroken TagSyncBroken riseBroken'])
-
-    df = pd.DataFrame(test_data, columns=['ts', 'message'])
-    phone_q.put(df)
-
-    sync_q = q.Queue()
-    events_q = q.Queue()
-    events_worker = EventsParser(phone_q, events_q, sync_q)
-    events_worker.run()
-    for _ in range(events_q.qsize()):
-        try:
-            logger.info('Events sample:\n %s', events_q.get_nowait())
-        except q.Empty:
-            pass
-
-    for _ in range(sync_q.qsize()):
-        try:
-            logger.info('Sync sample:\n %s', sync_q.get_nowait())
-        except q.Empty:
-            pass
-
-
-if __name__ == "__main__":
-    main()
-
-
-

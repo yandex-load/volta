@@ -48,8 +48,12 @@ class SyncFinder(object):
     def find_sync_points(self):
         logger.info('Starting sync...')
 
-        self.__prepare_sync_df()
+        if len(self.sync_df) == 0:
+            raise ValueError('No sync events found!')
+
         logger.debug('Sync df contents:\n %s', self.sync_df)
+        self.__prepare_sync_df()
+        logger.debug('Sync df after preparation:\n %s', self.sync_df)
         logger.debug('Sync stage volta currents dataframe:\n %s', self.volta_sync_stage_df)
 
         if len(self.volta_sync_stage_df) < (self.search_interval * self.sample_rate):
@@ -71,9 +75,9 @@ class SyncFinder(object):
 
         sync = {}
         # offset volta -> system uts
-        sync['sys_uts_offset'] = volta_to_sync_offset_uts - self.sync_df[self.sync_df.message > 0].iloc[0].name
+        sync['sys_uts_offset'] = int(volta_to_sync_offset_uts - self.sync_df[self.sync_df.message > 0].iloc[0].name)
         # offset volta -> log uts
-        sync['log_uts_offset'] = volta_to_sync_offset_uts - self.sync_df[self.sync_df.message > 0].iloc[0]["log_uts"]
+        sync['log_uts_offset'] = int(volta_to_sync_offset_uts - self.sync_df[self.sync_df.message > 0].iloc[0]["log_uts"])
 
         sync['sync_sample'] = volta_to_sync_offset_sample
 
