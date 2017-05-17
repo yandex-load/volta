@@ -52,22 +52,13 @@ class EventsRouter(threading.Thread):
                     df = self.source.get_nowait()
                     # detect syslog ts start
                     if not self.sys_uts_start:
-                        self.sys_uts_start = df.index[0]
+                        self.sys_uts_start = df.sys_uts[0]
                         logger.debug('sys uts start detected: %s', self.sys_uts_start)
                 except q.Empty:
                     break
                 else:
                     if df is not None:
-                        for type, data in df.apply(self.__parse_event, axis=1).groupby('type'):
-                            if type in self.router:
-                                data.index = data.index.map(lambda x: ((x - self.sys_uts_start)))
-                                data.index.name = 'sys_uts'
-                                if type == 'metric':
-                                    data['value'] = data['message'].astype(np.float64)
-                                for listener in self.router[type]:
-                                    listener.put(data, type)
-                            else:
-                                logger.warning('Unknown event type! %s. Message: %s', type, data, exc_info=True)
+                        self.__route_data(df)
                 if self._interrupted.is_set():
                     break
             time.sleep(1)
@@ -75,31 +66,54 @@ class EventsRouter(threading.Thread):
                 break
         self._finished.set()
 
+    def __route_data(self, df):
+        """
+        Group data by 'type' and send it to listeners
+        Args:
+            df: pandas dataframe w/ phone events
+
+        Returns:
+            put data to listeners
+
+        """
+        for dtype, data in df.apply(self.__parse_event, axis=1).groupby('type'):
+            if dtype in self.router:
+                if dtype == 'metric':
+                    data.loc[:, ('value')] = data.message.astype(np.float64)
+                if dtype != 'unknown':
+                    data.loc[:, ('log_uts')] = data.log_uts.astype(np.int64)
+                data.loc[:, ('sys_uts')] = data.sys_uts.map(lambda x: ((x - self.sys_uts_start)))
+                [listener.put(data, dtype) for listener in self.router[dtype]]
+            else:
+                logger.warning('Unknown event type! %s. Message: %s', type, data, exc_info=True)
+
+
     def __parse_event(self, row):
+        """
+        Parse event entry and modify
+        """
         match = re_.match(row.message)
         if match:
             row["app"] = match.group('app')
             try:
                 # convert nanotime to us
                 log_ts = int(match.group('nanotime')) // 1000
-
                 # detect log ts start
                 if not self.log_uts_start:
                     self.log_uts_start = log_ts
                     logger.debug('log uts start detected: %s', self.log_uts_start)
                     row["log_uts"] = 0
                 else:
-                    row["log_uts"] = log_ts - self.log_uts_start
+                    row["log_uts"] = int(log_ts - self.log_uts_start)
             except:
                 logger.warning('Trash logtimestamp found: %s', row)
             row["type"] = match.group('type')
             row["tag"] = match.group('tag')
             row["message"] = match.group('message')
-            return row
         else:
             row["type"] = 'unknown'
             row["message"] = row.message
-            return row
+        return row
 
     def wait(self, timeout=None):
         self._finished.wait(timeout=timeout)

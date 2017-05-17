@@ -4,6 +4,7 @@ import time
 import signal
 import datetime
 import os
+import uuid
 
 from volta import Boxes
 from volta import Phones
@@ -11,19 +12,19 @@ from volta.common.eventshandler import EventsRouter
 from volta.common.interfaces import DataListener
 from volta.common.util import Tee
 from volta.Sync.sync import SyncFinder
-#from volta.Uploader.uploader import Uploader
+from volta.Uploader.uploader import DataUploader
 
 logger = logging.getLogger(__name__)
 
 
 # system time is index everywhere
-output_fmt = {
-    'currents': ['current'],
-    'sync': ['log_uts', 'app', 'tag', 'message'],
-    'event': ['log_uts', 'app', 'tag', 'message'],
-    'metric': ['log_uts', 'app', 'tag', 'value'],
-    'fragment': ['log_uts', 'app', 'tag', 'message'],
-    'unknown': ['message']
+file_output_fmt = {
+    'currents': ['uts', 'value'],
+    'sync': ['sys_uts', 'log_uts', 'app', 'tag', 'message'],
+    'event': ['sys_uts', 'log_uts', 'app', 'tag', 'message'],
+    'metric': ['sys_uts', 'log_uts', 'app', 'tag', 'value'],
+    'fragment': ['sys_uts', 'log_uts', 'app', 'tag', 'message'],
+    'unknown': ['sys_uts', 'message']
 }
 
 
@@ -103,17 +104,20 @@ class Core(object):
         }
         self.start_time = None
         self.artifacts = []
-        self.test_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
+        self.test_id = "{uuid}".format(
+            uuid=uuid.uuid4().hex)
+        logger.info('Test id: %s', self.test_id)
+        self.key_date = datetime.datetime.now().strftime("%Y-%m-%d")
         # TODO: should be configurable by config
-        if not os.path.exists(self.test_id):
-            os.makedirs(self.test_id)
-        self.currents_fname = "{dir}/currents_{id}.data".format(dir=self.test_id, id=self.test_id)
+        if not os.path.exists(self.key_date):
+            os.makedirs(self.key_date)
+        self.currents_fname = "{dir}/currents_{id}.data".format(dir=self.key_date, id=self.test_id)
         self.event_fnames = {
-            'event': "{dir}/events_{id}.data".format(dir=self.test_id, id=self.test_id),
-            'sync': "{dir}/syncs_{id}.data".format(dir=self.test_id, id=self.test_id),
-            'fragment': "{dir}/fragments_{id}.data".format(dir=self.test_id, id=self.test_id),
-            'metric': "{dir}/metrics_{id}.data".format(dir=self.test_id, id=self.test_id),
-            'unknown': "{dir}/unknowns_{id}.data".format(dir=self.test_id, id=self.test_id)
+            'event': "{dir}/events_{id}.data".format(dir=self.key_date, id=self.test_id),
+            'sync': "{dir}/syncs_{id}.data".format(dir=self.key_date, id=self.test_id),
+            'fragment': "{dir}/fragments_{id}.data".format(dir=self.key_date, id=self.test_id),
+            'metric': "{dir}/metrics_{id}.data".format(dir=self.key_date, id=self.test_id),
+            'unknown': "{dir}/unknowns_{id}.data".format(dir=self.key_date, id=self.test_id)
         }
 
     def configure(self):
@@ -137,14 +141,17 @@ class Core(object):
         self.event_listeners['sync'].append(self.sync_finder)
         self._setup_filelisteners()
 
+        self.uploader = DataUploader(self.config.get('uploader', {}), self.test_id)
+        for type, fname in self.event_fnames.items():
+            self.event_listeners[type].append(self.uploader)
+        self.grabber_listeners.append(self.uploader)
+
     def _setup_filelisteners(self):
         logger.debug('Creating file listeners...')
         for type, fname in self.event_fnames.items():
-            logger.debug('file listener type: %s, fname: %s', type, fname)
             f = FileListener(fname)
             self.artifacts.append(f)
             self.event_listeners[type].append(f)
-        logger.info('listeners: %s', self.event_listeners)
 
         # grabber
         grabber_f = FileListener(self.currents_fname)
@@ -202,20 +209,25 @@ class FileListener(DataListener):
     def __init__(self, fname):
         DataListener.__init__(self, fname)
         self.fname = open(fname, 'w')
+        self.closed = None
         self.init_header = True
+        self.output_separator = '\t'
 
     def put(self, df, type):
-        if self.init_header:
-            self.fname.write(';')
-            data = df.to_csv(sep='\t', header=True, columns=output_fmt.get(type, []))
+        if not self.closed:
+            data = df.to_csv(
+                sep=self.output_separator,
+                header=self.init_header,
+                index=False,
+                columns=file_output_fmt.get(type, [])
+            )
             self.init_header = False
-        else:
-            data = df.to_csv(sep='\t', header=False, columns=output_fmt.get(type, []))
-        self.fname.write((data))
-        self.fname.flush()
+            self.fname.write((data))
+            self.fname.flush()
 
     def close(self):
         """ close open files """
+        self.closed = True
         if self.fname:
             self.fname.close()
 
@@ -235,7 +247,6 @@ def main():
         format='%(asctime)s [%(levelname)s] [Volta Core] %(filename)s:%(lineno)d %(message)s')
     logger.info("Volta Core init")
     sample_cfg = {
-        'work_dir': './logs/',
         'volta': {
             'type': '500hz',
             'source': '/dev/cu.wchusbserial1420',
@@ -258,6 +269,9 @@ def main():
         },
         'sync': {
             'search_interval': 30
+        },
+        'uploader': {
+            'address': 'https://lunapark.test.yandex-team.ru/api/volta'
         }
     }
 
@@ -265,7 +279,7 @@ def main():
     try:
         core.configure()
         core.start_test()
-        time.sleep(10)
+        time.sleep(20)
         core.end_test()
         core.post_process()
     except KeyboardInterrupt:

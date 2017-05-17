@@ -46,6 +46,11 @@ class SyncFinder(object):
                 self.volta_sync_stage_df = self.volta_sync_stage_df.append(data)
 
     def find_sync_points(self):
+        """
+        Make cross correlation and calculate offsets
+
+        Returns: dict w/ data
+        """
         logger.info('Starting sync...')
 
         if len(self.sync_df) == 0:
@@ -62,42 +67,50 @@ class SyncFinder(object):
         refsig = self.ref_signal(self.sync_df)
         logger.debug('Refsignal len: %s, Refsignal contents:\n %s', len(refsig), refsig)
 
-        cc = self.cross_correlate(self.volta_sync_stage_df['current'], refsig, (self.search_interval * self.sample_rate))
+        cc = self.cross_correlate(
+            self.volta_sync_stage_df['value'],
+            refsig,
+            (self.search_interval * self.sample_rate)
+        )
         logger.debug('Cross correlation: %s', cc)
 
-        # which volta sample is a first sync event
+        # [sample_offset] volta sample <-> first sync event
         volta_to_sync_offset_sample = np.argmax(cc)
-        logger.debug('Volta to syslog offset sample: %s', volta_to_sync_offset_sample)
+        logger.debug('[sample_offset] volta sample <-> first sync event: %s', volta_to_sync_offset_sample)
 
-        # which volta uts is a first sync event
-        volta_to_sync_offset_uts = self.volta_sync_stage_df.iloc[volta_to_sync_offset_sample].name
-        logger.debug('Sync point volta utimestamp: %s', volta_to_sync_offset_uts)
+        # [uts_offset] volta uts <-> first sync event
+        volta_to_sync_offset_uts = self.volta_sync_stage_df.iloc[volta_to_sync_offset_sample]['uts']
+        logger.debug('[uts_offset] volta uts <-> first sync event: %s', volta_to_sync_offset_uts)
 
         sync = {}
-        # offset volta -> system uts
-        sync['sys_uts_offset'] = int(volta_to_sync_offset_uts - self.sync_df[self.sync_df.message > 0].iloc[0].name)
-        # offset volta -> log uts
-        sync['log_uts_offset'] = int(volta_to_sync_offset_uts - self.sync_df[self.sync_df.message > 0].iloc[0]["log_uts"])
-
+        # [uts_offset] volta uts <-> phone system uts
+        sync['sys_uts_offset'] = int(
+            volta_to_sync_offset_uts - self.sync_df[self.sync_df.message > 0].iloc[0]['sys_uts']
+        )
+        # [uts_offset] volta uts <-> phone log uts
+        sync['log_uts_offset'] = int(
+            volta_to_sync_offset_uts - self.sync_df[self.sync_df.message > 0].iloc[0]["log_uts"]
+        )
         sync['sync_sample'] = volta_to_sync_offset_sample
-
         logger.info('Sync results: %s', sync)
         return sync
 
     def __prepare_sync_df(self):
         """
-        append dfs from sync queue, reset idx, map sync events and make offset
+        reset idx, drop excessive sync data, map sync events and make offset
         """
         # map messages
-        self.sync_df.message = self.sync_df.message.map({'rise': 1, 'fall': 0})
+        self.sync_df.loc[:, ('message')] = self.sync_df.message.map({'rise': 1, 'fall': 0})
+
+        self.sync_df.reset_index(inplace=True)
 
         # drop sync events after search interval - we don't need this
-        self.sync_df = self.sync_df[self.sync_df.index < self.sync_df.index[0] + (self.search_interval * 10 ** 6)]
+        self.sync_df = self.sync_df[self.sync_df.sys_uts < self.sync_df.sys_uts[0] + (self.search_interval * 10 ** 6)]
 
         # offset
-        self.sync_df['sample_offset'] = self.sync_df.index.map(
+        self.sync_df.loc[:, ('sample_offset')] = self.sync_df['sys_uts'].map(
             lambda x: (
-                (x - self.sync_df.index[0])
+                (x - self.sync_df['sys_uts'][0])
             ) * self.sample_rate // 10**6
         )
         return

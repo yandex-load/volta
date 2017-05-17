@@ -73,15 +73,15 @@ class TimeChopper(object):
                 while len(self.buffer) > self.slice_size:
                     ready_sample = self.buffer[:self.slice_size]
                     self.buffer = self.buffer[self.slice_size:]
-                    df = pd.DataFrame(data=ready_sample, columns=['current'])
+                    df = pd.DataFrame(data=ready_sample, columns=['value'])
                     idx = "{value}{units}".format(
                         value = int(10 ** 6 / self.sample_rate),
                         units = "us"
                     )
                     # add time offset to start time in order to determine current timestamp and make date_range for df
                     current_ts = int((sample_num * (1./self.sample_rate)) * 10 ** 9)
-                    df['uts'] = pd.date_range(current_ts, periods=len(ready_sample), freq=idx).astype(np.int64) // 1000
-                    df.set_index('uts', inplace=True)
+                    df.loc[:, ('uts')] = pd.date_range(current_ts, periods=len(ready_sample), freq=idx).astype(np.int64) // 1000
+                    #df.set_index('uts', inplace=True)
                     sample_num = sample_num + len(ready_sample)
                     yield df
 
