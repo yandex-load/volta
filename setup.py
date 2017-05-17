@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='volta',
-    version='0.0.90',
+    version='0.0.91',
     description='yandex package for mobile energy consumption measurements',
     longer_description='''
 yandex package for mobile energy consumption measurements
@@ -21,7 +21,8 @@ yandex package for mobile energy consumption measurements
         'requests',
         'pyserial',
         'progressbar2',
-        'pyusb'
+        'pyusb',
+        'pyyaml'
     ],
     setup_requires=[
         'pytest-runner',
@@ -39,6 +40,7 @@ yandex package for mobile energy consumption measurements
             'volta-wizard = volta.analysis.wizard:run',
             'volta-wizard-ui = volta.wizard.ui:main',
             'volta-realtime = volta.analysis.realtime:main',
+            'volta2 = volta.core.cli:main',
         ],
     },
     license='MPLv2',
