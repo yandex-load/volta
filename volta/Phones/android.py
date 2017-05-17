@@ -36,7 +36,7 @@ class AndroidPhone(Phone):
         self.lightning_apk_class = config.get('lightning_class', 'net.yandex.overload.lightning')
         self.lightning_apk_fname = None
         # test app configuration
-        self.test_apps = config.get('test_apps', '').split()
+        self.test_apps = config.get('test_apps', [])
         self.test_class = config.get('test_class', '')
         self.test_package = config.get('test_package', '')
         self.test_runner = config.get('test_runner', '')

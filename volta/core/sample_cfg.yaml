@@ -1,0 +1,23 @@
+volta:
+  type: '500hz'
+  source: '/dev/cu.wchusbserial1420'
+phone:
+  type: 'android'
+  unplug_type: 'auto'
+  source: '01e345da733a4764'
+  test_apps:
+    - 'http://highload-metrica.s3.mds.yandex.net/test-be19404d-de02-4c05-92f1-e2cb3873609f.apk'
+    - 'http://highload-metrica.s3.mds.yandex.net/app-e19ab4f6-f56e-4a72-a702-61e1527b1da7.apk'
+  test_package: 'ru.yandex.mobile.metrica.test'
+  test_class: 'ru.yandex.metrica.test.highload.LittleTests'
+  test_runner: 'android.support.test.runner.AndroidJUnitRunner'
+sync:
+  search_interval: 30
+uploader:
+  address: 'https://lunapark.test.yandex-team.ru/api/volta'
+meta:
+  app: 'testapp'
+  device_model: 'device model'
+  name: 'name'
+  dsc: 'dsc'
+  ver: 'ver'

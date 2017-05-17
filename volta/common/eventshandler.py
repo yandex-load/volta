@@ -92,6 +92,7 @@ class EventsRouter(threading.Thread):
         """
         Parse event entry and modify
         """
+        row.message = row.message.replace('\t', '__tab__')
         match = re_.match(row.message)
         if match:
             row["app"] = match.group('app')
