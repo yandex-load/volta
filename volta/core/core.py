@@ -184,18 +184,20 @@ class FileListener(DataListener):
         DataListener.__init__(self, fname)
         self.fname = open(fname, 'w')
         self.closed = None
-        self.init_header = True
         self.output_separator = '\t'
+        self.init_header = True
 
     def put(self, df, type):
         if not self.closed:
+            if self.init_header:
+                self.fname.write(str(file_output_fmt.get(type, [])))
+                self.init_header = False
             data = df.to_csv(
                 sep=self.output_separator,
-                header=self.init_header,
+                header=False,
                 index=False,
                 columns=file_output_fmt.get(type, [])
             )
-            self.init_header = False
             self.fname.write((data))
             self.fname.flush()
 

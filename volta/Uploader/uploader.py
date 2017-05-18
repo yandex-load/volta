@@ -38,7 +38,12 @@ class DataUploader(object):
         if type in self.data_types_to_tables:
             data.loc[:, ('key_date')] = self.key_date
             data.loc[:, ('test_id')] = self.test_id
-            data = data.to_csv(sep='\t', header=False, index=False, columns=clickhouse_output_fmt.get(type, []))
+            data = data.to_csv(
+                sep='\t',
+                header=False,
+                index=False,
+                columns=clickhouse_output_fmt.get(type, [])
+            )
             url = "{addr}/?query={query}".format(
                 addr=self.addr,
                 query="INSERT INTO {table} FORMAT TSV".format(table=self.data_types_to_tables[type])
@@ -51,6 +56,10 @@ class DataUploader(object):
         else:
             logger.warning('Unknown data type for DataUplaoder: %s', exc_info=True)
             return
+
+    def upload_meta(self, data):
+        # TODO
+        pass
 
     def close(self):
         pass

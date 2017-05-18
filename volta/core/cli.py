@@ -15,24 +15,30 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description='volta console worker')
     parser.add_argument('--debug', dest='debug', action='store_true', default=False)
-    parser.add_argument('--config', dest='config')
+    parser.add_argument('-c', '--config', dest='config')
     args = parser.parse_args()
 
     logging.basicConfig(
         level="DEBUG" if args.debug else "INFO",
         format='%(asctime)s [%(levelname)s] [Volta Core] %(filename)s:%(lineno)d %(message)s')
-    logger.info("Volta Core init")
 
     with open(args.config, 'r') as cfg:
         cfg_data = cfg.read()
-    cfg_dict = yaml.safe_load(cfg_data)
+    try:
+        cfg_dict = yaml.safe_load(cfg_data)
+    except:
+        logger.debug('Config file format not yaml or json...', exc_info=True)
+        raise RuntimeError('Unknown config file format. Malformed?')
+
     core = Core(cfg_dict)
+
     try:
         core.configure()
         core.start_test()
         time.sleep(20)
         core.end_test()
     except KeyboardInterrupt:
+        logger.info('Keyboard interrupt, trying graceful shutdown. Do not press interrupt again...')
         core.end_test()
     except:
         logger.error('Uncaught exception in core\n', exc_info=True)
