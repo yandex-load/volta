@@ -22,6 +22,8 @@ def main():
         level="DEBUG" if args.debug else "INFO",
         format='%(asctime)s [%(levelname)s] [Volta Core] %(filename)s:%(lineno)d %(message)s')
 
+    if not args.config:
+        raise RuntimeError('Empty config')
     with open(args.config, 'r') as cfg:
         cfg_data = cfg.read()
     try:

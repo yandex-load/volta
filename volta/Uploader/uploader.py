@@ -6,7 +6,6 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
-# system time is index everywhere
 clickhouse_output_fmt = {
     'currents': ['key_date', 'test_id', 'uts', 'value'],
     'sync': ['key_date', 'test_id', 'sys_uts', 'log_uts', 'app', 'tag', 'message'],

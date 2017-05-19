@@ -12,4 +12,8 @@ An [article](https://habrahabr.ru/company/yandex/blog/311046/) about the device 
 # Usage:  
 Install with ```pip install volta```, connect your device, run ```volta```.
 
+# Architecture:
+![Architecture scheme](/docs/architecture.png)
+[yEd scheme](/docs/architecture.graphml)
+
 Any questions to Alexey Lavrenuke <direvius@yandex-team.ru>.

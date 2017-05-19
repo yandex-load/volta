@@ -16,7 +16,6 @@ from volta.Uploader.uploader import DataUploader
 logger = logging.getLogger(__name__)
 
 
-# system time is index everywhere
 file_output_fmt = {
     'currents': ['uts', 'value'],
     'sync': ['sys_uts', 'log_uts', 'app', 'tag', 'message'],
@@ -65,6 +64,8 @@ class Core(object):
     def __init__(self, config):
         """ parse config, @type:dict """
         self.config = config
+        if not self.config:
+            raise RuntimeError('Empty config')
         self.factory = Factory()
         self.grabber_q = q.Queue()
         self.phone_q = q.Queue()
@@ -102,23 +103,28 @@ class Core(object):
         4) Sync - VOLTA-133
         5) Uploader - VOLTA-144
         """
-        self.volta = self.factory.detect_volta(self.config.get('volta', {}))
-        self.phone = self.factory.detect_phone(self.config.get('phone', {}))
-        self.phone.prepare()
+        if self.config.get('volta', {}):
+            self.volta = self.factory.detect_volta(self.config.get('volta'))
+        if self.config.get('phone', {}):
+            self.phone = self.factory.detect_phone(self.config.get('phone'))
+            self.phone.prepare()
 
-        # setup syncfinder
-        self.sync_finder = SyncFinder(
-            self.config.get('sync', {}),
-            self.volta.sample_rate
-        )
-        self.grabber_listeners.append(self.sync_finder)
-        self.event_listeners['sync'].append(self.sync_finder)
+        if self.config.get('sync', {}):
+            # setup syncfinder
+            self.sync_finder = SyncFinder(
+                self.config.get('sync'),
+                self.volta.sample_rate
+            )
+            self.grabber_listeners.append(self.sync_finder)
+            self.event_listeners['sync'].append(self.sync_finder)
+
+        if self.config.get('uploader', {}):
+            self.uploader = DataUploader(self.config.get('uploader', {}), self.test_id)
+            for type, fname in self.event_fnames.items():
+                self.event_listeners[type].append(self.uploader)
+            self.grabber_listeners.append(self.uploader)
+
         self._setup_filelisteners()
-
-        self.uploader = DataUploader(self.config.get('uploader', {}), self.test_id)
-        for type, fname in self.event_fnames.items():
-            self.event_listeners[type].append(self.uploader)
-        self.grabber_listeners.append(self.uploader)
 
     def _setup_filelisteners(self):
         logger.debug('Creating file listeners...')
@@ -136,42 +142,45 @@ class Core(object):
         logger.info('Starting test...')
         self.start_time = time.time()
 
-        self.volta.start_test(self.grabber_q)
-        self.phone.start(self.phone_q)
+        if self.config.get('volta', {}):
+            self.volta.start_test(self.grabber_q)
+            # process currents thread
+            self.process_currents = Tee(
+                self.grabber_q,
+                self.grabber_listeners,
+                'currents'
+            )
+            self.process_currents.start()
 
-        logger.info('Starting test apps and waiting for finish...')
-        self.phone.run_test()
-
-        # process phone queue thread
-        self.events_parser = EventsRouter(self.phone_q, self.event_listeners)
-        self.events_parser.start()
-
-        # process currents thread
-        self.process_currents = Tee(
-            self.grabber_q,
-            self.grabber_listeners,
-            'currents'
-        )
-        self.process_currents.start()
+        if self.config.get('phone', {}):
+            self.phone.start(self.phone_q)
+            logger.info('Starting test apps and waiting for finish...')
+            self.phone.run_test()
+            # process phone queue thread
+            self.events_parser = EventsRouter(self.phone_q, self.event_listeners)
+            self.events_parser.start()
 
     def end_test(self):
         logger.info('Finishing test...')
-        self.volta.end_test()
-        self.phone.end()
-        self.events_parser.close()
-        self.process_currents.close()
+        if self.config.get('volta', {}):
+            self.volta.end_test()
+            self.process_currents.close()
+        if self.config.get('phone', {}):
+            self.phone.end()
+            self.events_parser.close()
 
     def post_process(self):
         logger.info('Post process...')
         for artifact in self.artifacts:
             artifact.close()
-        try:
-            meta_data = self.sync_finder.find_sync_points()
-        except ValueError:
-            logger.error('Unable to sync', exc_info=True)
-            meta_data = {}
-        meta_data['start'] = self.start_time
-        logger.info('meta: %s', meta_data)
+        if self.config.get('sync', {}):
+            try:
+                meta_data = self.sync_finder.find_sync_points()
+            except ValueError:
+                logger.error('Unable to sync', exc_info=True)
+                meta_data = {}
+            meta_data['start'] = self.start_time
+            logger.info('meta: %s', meta_data)
         logger.info('Finished!')
 
 
@@ -191,6 +200,7 @@ class FileListener(DataListener):
         if not self.closed:
             if self.init_header:
                 self.fname.write(str(file_output_fmt.get(type, [])))
+                self.fname.write('\n')
                 self.init_header = False
             data = df.to_csv(
                 sep=self.output_separator,
