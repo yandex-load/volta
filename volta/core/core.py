@@ -8,22 +8,13 @@ import uuid
 from volta import Boxes
 from volta import Phones
 from volta.common.eventshandler import EventsRouter
-from volta.common.interfaces import DataListener
 from volta.common.util import Tee
 from volta.Sync.sync import SyncFinder
 from volta.Uploader.uploader import DataUploader
+from volta.Report.report import FileListener
+
 
 logger = logging.getLogger(__name__)
-
-
-file_output_fmt = {
-    'currents': ['uts', 'value'],
-    'sync': ['sys_uts', 'log_uts', 'app', 'tag', 'message'],
-    'event': ['sys_uts', 'log_uts', 'app', 'tag', 'message'],
-    'metric': ['sys_uts', 'log_uts', 'app', 'tag', 'value'],
-    'fragment': ['sys_uts', 'log_uts', 'app', 'tag', 'message'],
-    'unknown': ['sys_uts', 'message']
-}
 
 
 class Factory(object):
@@ -60,9 +51,16 @@ class Factory(object):
 
 class Core(object):
     """ Core
-    Core class, test performer """
+    Core class, test performer
+    """
     def __init__(self, config):
-        """ parse config, @type:dict """
+        """ Configures core, parse config
+
+        Parameters
+        ----------
+            config : dict
+                core configuration dict
+        """
         self.config = config
         if not self.config:
             raise RuntimeError('Empty config')
@@ -70,29 +68,23 @@ class Core(object):
         self.grabber_q = q.Queue()
         self.phone_q = q.Queue()
         self.grabber_listeners = []
-        self.event_listeners = {
-            'event': [],
-            'sync': [],
-            'fragment': [],
-            'metric': [],
-            'unknown': []
-        }
         self.start_time = None
         self.artifacts = []
-        self.test_id = "{uuid}".format(
-            uuid=uuid.uuid4().hex)
+        self.test_id = "{uuid}".format(uuid=uuid.uuid4().hex)
         logger.info('Test id: %s', self.test_id)
         self.key_date = datetime.datetime.now().strftime("%Y-%m-%d")
         # TODO: should be configurable by config
         if not os.path.exists(self.key_date):
             os.makedirs(self.key_date)
         self.currents_fname = "{dir}/currents_{id}.data".format(dir=self.key_date, id=self.test_id)
+        self.event_types = ['event', 'sync', 'fragment', 'metric', 'unknown']
+        self.event_listeners = {key:[] for key in self.event_types}
         self.event_fnames = {
-            'event': "{dir}/events_{id}.data".format(dir=self.key_date, id=self.test_id),
-            'sync': "{dir}/syncs_{id}.data".format(dir=self.key_date, id=self.test_id),
-            'fragment': "{dir}/fragments_{id}.data".format(dir=self.key_date, id=self.test_id),
-            'metric': "{dir}/metrics_{id}.data".format(dir=self.key_date, id=self.test_id),
-            'unknown': "{dir}/unknowns_{id}.data".format(dir=self.key_date, id=self.test_id)
+            key:"{dir}/{data}_{id}.data".format(
+                dir=self.key_date,
+                data=key,
+                id=self.test_id
+            ) for key in self.event_types
         }
 
     def configure(self):
@@ -110,16 +102,19 @@ class Core(object):
             self.phone.prepare()
 
         if self.config.get('sync', {}):
+            self.config['sync']['sample_rate'] = self.volta.sample_rate
             # setup syncfinder
             self.sync_finder = SyncFinder(
-                self.config.get('sync'),
-                self.volta.sample_rate
+                self.config.get('sync')
             )
             self.grabber_listeners.append(self.sync_finder)
             self.event_listeners['sync'].append(self.sync_finder)
 
         if self.config.get('uploader', {}):
-            self.uploader = DataUploader(self.config.get('uploader', {}), self.test_id)
+            uploader_cfg = self.config.get('uploader', {})
+            if not uploader_cfg.get('test_id'):
+                uploader_cfg['test_id'] = self.test_id
+            self.uploader = DataUploader(uploader_cfg)
             for type, fname in self.event_fnames.items():
                 self.event_listeners[type].append(self.uploader)
             self.grabber_listeners.append(self.uploader)
@@ -129,12 +124,14 @@ class Core(object):
     def _setup_filelisteners(self):
         logger.debug('Creating file listeners...')
         for type, fname in self.event_fnames.items():
-            f = FileListener(fname)
+            listener_config = {'fname': fname}
+            f = FileListener(listener_config)
             self.artifacts.append(f)
             self.event_listeners[type].append(f)
 
         # grabber
-        grabber_f = FileListener(self.currents_fname)
+        listener_config = {'fname': self.currents_fname}
+        grabber_f = FileListener(listener_config)
         self.artifacts.append(grabber_f)
         self.grabber_listeners.append(grabber_f)
 
@@ -182,38 +179,3 @@ class Core(object):
             meta_data['start'] = self.start_time
             logger.info('meta: %s', meta_data)
         logger.info('Finished!')
-
-
-class FileListener(DataListener):
-    """
-    Default listener - saves data to file
-    """
-
-    def __init__(self, fname):
-        DataListener.__init__(self, fname)
-        self.fname = open(fname, 'w')
-        self.closed = None
-        self.output_separator = '\t'
-        self.init_header = True
-
-    def put(self, df, type):
-        if not self.closed:
-            if self.init_header:
-                self.fname.write(str(file_output_fmt.get(type, [])))
-                self.fname.write('\n')
-                self.init_header = False
-            data = df.to_csv(
-                sep=self.output_separator,
-                header=False,
-                index=False,
-                columns=file_output_fmt.get(type, [])
-            )
-            self.fname.write((data))
-            self.fname.flush()
-
-    def close(self):
-        """ close open files """
-        self.closed = True
-        if self.fname:
-            self.fname.close()
-

@@ -1,28 +1,27 @@
 import logging
 import requests
 import datetime
+import uuid
+
+from volta.common.interfaces import DataListener
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
-clickhouse_output_fmt = {
-    'currents': ['key_date', 'test_id', 'uts', 'value'],
-    'sync': ['key_date', 'test_id', 'sys_uts', 'log_uts', 'app', 'tag', 'message'],
-    'event': ['key_date', 'test_id', 'sys_uts', 'log_uts', 'app', 'tag', 'message'],
-    'metric': ['key_date', 'test_id', 'sys_uts', 'log_uts', 'app', 'tag', 'value'],
-    'fragment': ['key_date', 'test_id', 'sys_uts', 'log_uts', 'app', 'tag', 'message'],
-    'unknown': ['key_date', 'test_id', 'sys_uts', 'message']
-}
-
-
 logger = logging.getLogger(__name__)
 
 
-class DataUploader(object):
-    def __init__(self, config, id):
+class DataUploader(DataListener):
+    """
+    Uploads data to clickhouse
+    have non-interface private method __upload_meta() for meta information upload
+    """
+    def __init__(self, config):
+        super(DataUploader, self).__init__(config)
         self.addr = config.get('address', 'https://lunapark.test.yandex-team.ru/api/volta')
-        self.test_id = id
+        self.test_id = config.get('test_id', "{uuid}".format(uuid=uuid.uuid4().hex))
+        self.key_date = datetime.datetime.now().strftime("%Y-%m-%d")
         self.data_types_to_tables = {
             'currents': 'volta.currents',
             'sync': 'volta.syncs',
@@ -31,7 +30,14 @@ class DataUploader(object):
             'fragment': 'volta.fragments',
             'unknown': 'volta.logentries'
         }
-        self.key_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        self.clickhouse_output_fmt = {
+            'currents': ['key_date', 'test_id', 'uts', 'value'],
+            'sync': ['key_date', 'test_id', 'sys_uts', 'log_uts', 'app', 'tag', 'message'],
+            'event': ['key_date', 'test_id', 'sys_uts', 'log_uts', 'app', 'tag', 'message'],
+            'metric': ['key_date', 'test_id', 'sys_uts', 'log_uts', 'app', 'tag', 'value'],
+            'fragment': ['key_date', 'test_id', 'sys_uts', 'log_uts', 'app', 'tag', 'message'],
+            'unknown': ['key_date', 'test_id', 'sys_uts', 'message']
+        }
 
     def put(self, data, type):
         if type in self.data_types_to_tables:
@@ -41,7 +47,7 @@ class DataUploader(object):
                 sep='\t',
                 header=False,
                 index=False,
-                columns=clickhouse_output_fmt.get(type, [])
+                columns=self.clickhouse_output_fmt.get(type, [])
             )
             url = "{addr}/?query={query}".format(
                 addr=self.addr,
@@ -56,7 +62,7 @@ class DataUploader(object):
             logger.warning('Unknown data type for DataUplaoder: %s', exc_info=True)
             return
 
-    def upload_meta(self, data):
+    def __upload_meta(self, data):
         # TODO
         pass
 

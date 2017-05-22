@@ -4,37 +4,21 @@ import numpy as np
 import pandas as pd
 from scipy import interpolate
 from scipy import signal
-import queue as q
 import logging
 
+from volta.common.interfaces import DataListener
 
 logger = logging.getLogger(__name__)
 
 
-class SyncFinder(object):
+class SyncFinder(DataListener):
     """
     Calculates sync points for volta current measurements and phone system logs
-
-    Parameters
-    ----------
-        config : dict
-            module configuration
-        sync_q : queue-like object, should be able to answer to put()/get_nowait()
-            contains pandas DataFrames w/ sync events
-        grabber_q : queue-like object, should be able to answer to put()/get_nowait()
-            contains pandas DataFrames w/ volta electrical current measurements events
-        sample_rate : int
-            volta box sample rate (depends on what type of volta box and software you use)
-
-    Returns
-    -------
-        dict
-            offsets for 'volta timestamp -> system log timestamp' and 'volta timestamp -> custom log timestamp'
-
     """
-    def __init__(self, config, sample_rate):
+    def __init__(self, config):
+        super(SyncFinder, self).__init__(config)
         self.search_interval = config.get('search_interval', 30)
-        self.sample_rate = sample_rate
+        self.sample_rate = config.get('sample_rate', 500)
         self.sync_df = pd.DataFrame()
         self.volta_sync_stage_df = pd.DataFrame()
 
@@ -47,9 +31,12 @@ class SyncFinder(object):
 
     def find_sync_points(self):
         """
-        Make cross correlation and calculate offsets
+        Cross correlation and calculate offsets
 
-        Returns: dict w/ data
+        Returns
+        -------
+            dict
+                offsets for 'volta timestamp -> system log timestamp' and 'volta timestamp -> custom log timestamp'
         """
         logger.info('Starting sync...')
 
