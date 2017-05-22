@@ -14,10 +14,23 @@ logger = logging.getLogger(__name__)
 
 
 class VoltaBox500Hz(VoltaBox):
+    """ VoltaBox500Hz - works with plain-text 500hz box, grabs data and stores data to queue
+
+    Attributes:
+        source (string): path to data source, should be able to be opened by resource manager
+            may be url, e.g. 'http://myhost.tld/path/to/file'
+            may be device, e.g. '/dev/cu.wchusbserial1420'
+            may be path to file, e.g. '/home/users/netort/path/to/file.data'
+        sample_rate (int): volta box sample rate - depends on software and which type of volta box you use
+        chop_ratio (int): chop ratio for incoming data, 1 means 1 second (500 for sample_rate 500)
+        baud_rate (int): baud rate for device if device specified in source
+        grab_timeout (int): timeout for grabber
+    """
+
     def __init__(self, config):
         VoltaBox.__init__(self, config)
-        self.sample_rate = config.get('sample_rate', 500)
         self.source = config.get('source', '/dev/cu.wchusbserial1420')
+        self.sample_rate = config.get('sample_rate', 500)
         self.chop_ratio = config.get('chop_ratio', 1)
         self.baud_rate = config.get('baud_rate', 115200)
         self.grab_timeout = config.get('grab_timeout', 1)
@@ -29,16 +42,14 @@ class VoltaBox500Hz(VoltaBox):
         logger.debug('Data source initialized: %s', self.data_source)
 
     def start_test(self, results):
-        """ pipeline
+        """ Grab stage - starts grabber thread and puts data to results queue
+        +clean up dirty buffer
+
+            pipeline
                 read source data ->
                 chop by samplerate w/ ratio ->
                 make pandas DataFrame ->
                 drain DataFrame to queue `results`
-        Args:
-            results: object answers to put() and get() methods
-
-        Returns:
-            puts pandas DataFrame to specified queue
         """
 
         # clean up dirty buffer

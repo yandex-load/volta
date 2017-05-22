@@ -1,30 +1,61 @@
 """ Android phone worker
 """
 import logging
-import time
+import re
 import queue as q
 import pkg_resources
-import pandas as pd
-import numpy as np
-import datetime
 
 from volta.common.interfaces import Phone
-from volta.common.util import execute, Drain, popen
+from volta.common.util import execute, Drain, popen, chunk_to_df, LogReader
 from volta.common.resource import manager as resource
 
 
 logger = logging.getLogger(__name__)
 
 
-class AndroidPhone(Phone):
-    """
-        adb help:
-            #   (-r: replace existing application)
-            #   (-d: allow version code downgrade)
-            #   (-t: allow test packages)
+android_logevent_re = re.compile(r"""
+    ^(?P<date>\S+)
+    \s+
+    (?P<time>\S+)
+    \s+
+    \S+
+    \s+
+    \S+
+    \s+
+    \S+
+    \s+
+    (?P<message>.*)
+    $
+    """, re.VERBOSE | re.IGNORECASE
+)
 
+
+class AndroidPhone(Phone):
+    """ Android phone worker class - work w/ phone, read phone logs, run test apps and store data
+
+    Attributes:
+        source (string): path to data source, phone id (adb devices)
+        unplug_type (string): type of test execution
+            `auto`: disable battery charge (by software) or use special USB cord limiting charge over USB
+            `manual`: disable phone from USB by your own hands during test exection and click your test
+        lightning_apk_path (string, optional): path to lightning app
+            may be url, e.g. 'http://myhost.tld/path/to/file'
+            may be path to file, e.g. '/home/users/netort/path/to/file.apk'
+        lightning_apk_class (string, optional): lightning class
+        test_apps (list, optional): list of apps to be installed to device for test
+        test_class (string, optional): app class to be started during test execution
+        test_package (string, optional): app package to be started during test execution
+        test_runner (string, optional): app runner to be started during test execution
+
+    Todo:
+        unplug_type manual - remove raw_input()
     """
+
     def __init__(self, config):
+        """
+        Args:
+            config (dict): module configuration data
+        """
         Phone.__init__(self, config)
         self.logcat_stdout_reader = None
         self.logcat_stderr_reader = None
@@ -32,7 +63,9 @@ class AndroidPhone(Phone):
         self.source = config.get('source', '00dc3419957ba583')
         self.unplug_type = config.get('unplug_type', 'manual')
         # lightning app configuration
-        self.lightning_apk_path = config.get('lightning', pkg_resources.resource_filename('volta.Phones', 'binary/lightning-new3.apk'))
+        self.lightning_apk_path = config.get('lightning', pkg_resources.resource_filename(
+            'volta.Phones', 'binary/lightning-new3.apk')
+        )
         self.lightning_apk_class = config.get('lightning_class', 'net.yandex.overload.lightning')
         self.lightning_apk_fname = None
         # test app configuration
@@ -42,7 +75,8 @@ class AndroidPhone(Phone):
         self.test_runner = config.get('test_runner', '')
 
     def prepare(self):
-        """
+        """ Phone preparements stage: install apps etc
+
         pipeline:
             install lightning
             install apks
@@ -69,16 +103,20 @@ class AndroidPhone(Phone):
             raw_input()
 
 
-    def start(self, phone_q):
-        """
+    def start(self, results):
+        """ Grab stage: starts log reader, make sync w/ flashlight
+
         pipeline:
             if uplug_type is manual:
                 remind user to start flashlight app
             if unplug_type is auto:
                 start async logcat reader
                 start lightning flashes
+
+        Args:
+            results (queue-like object): Phone should put there dataframes, format: ['sys_uts', 'message']
         """
-        self.phone_q = phone_q
+        self.phone_q = results
 
         if self.unplug_type == 'manual':
             logger.info("It's time to start flashlight app!")
@@ -97,26 +135,28 @@ class AndroidPhone(Phone):
             return
 
     def __start_async_logcat(self):
-        """
-        Start logcat read in subprocess and make threads to read its stdout/stderr to queues
-
-        """
+        """ Start logcat read in subprocess and make threads to read its stdout/stderr to queues """
         cmd = "adb -s {device_id} logcat".format(device_id=self.source)
         logger.debug("Execute : %s", cmd)
         self.logcat_process = popen(cmd)
 
-        self.logcat_reader_stdout = LogcatReader(self.logcat_process.stdout)
+        self.logcat_reader_stdout = LogReader(self.logcat_process.stdout, android_logevent_re)
         self.drain_logcat_stdout = Drain(self.logcat_reader_stdout, self.phone_q)
         self.drain_logcat_stdout.start()
 
         self.phone_q_err=q.Queue()
-        self.logcat_reader_stderr = LogcatReader(self.logcat_process.stderr)
+        self.logcat_reader_stderr = LogReader(self.logcat_process.stderr, android_logevent_re)
         self.drain_logcat_stderr = Drain(self.logcat_reader_stderr, self.phone_q_err)
         self.drain_logcat_stderr.start()
 
     def run_test(self):
-        """
-        run apk or return if test is manual
+        """ App stage: run app/phone tests,
+
+        pipeline:
+            if unplug_type is auto:
+                run test
+            if unplug_type is manual:
+                skip
         """
 
         if self.unplug_type == 'manual':
@@ -133,7 +173,8 @@ class AndroidPhone(Phone):
             return
 
     def end(self):
-        """
+        """ Stop test and grabbers
+
         pipeline:
             if uplug_type is manual:
                 ask user to plug device in
@@ -152,7 +193,7 @@ class AndroidPhone(Phone):
             )
             logger.debug('Recieved %d logcat data', len(stdout))
             self.phone_q.put(
-                string_to_df(stdout)
+                chunk_to_df(stdout, android_logevent_re)
             )
             return
 
@@ -163,67 +204,4 @@ class AndroidPhone(Phone):
             self.drain_logcat_stdout.close()
             self.drain_logcat_stderr.close()
             return
-
-
-def string_to_df(chunk):
-    results = []
-    df = None
-    for line in chunk.split('\n'):
-        if line:
-            # skip logcat headers
-            if line.startswith("---------"):
-                continue
-            try:
-                # TODO regexp should be here, just like in eventshandler
-                # input date format: 12-31 19:03:52.460  3795  4110 W GCM     : Mismatched messenger
-                ts = datetime.datetime.strptime(line[:18], '%m-%d %H:%M:%S.%f').replace(
-                    year=datetime.datetime.now().year
-                )
-                # unix timestamp in microseconds
-                sys_uts = int(
-                    (ts-datetime.datetime(1970,1,1)).total_seconds() * 10 ** 6
-                )
-                message = line[33:]
-            except:
-                logger.error('logcat parsing exception', exc_info=True)
-                pass
-            else:
-                results.append([sys_uts, message])
-    if results:
-        df = pd.DataFrame(results, columns=['sys_uts', 'message'], dtype=np.int64)
-    return df
-
-
-class LogcatReader(object):
-    """
-    Read chunks from source
-    """
-
-    def __init__(self, source, cache_size=1024):
-        self.closed = False
-        self.cache_size = cache_size # read from pipe blocks waiting for equal block if cache size is large
-        self.source = source
-        self.buffer = ""
-
-    def _read_chunk(self):
-        data = self.source.read(self.cache_size)
-        if data:
-            parts = data.rsplit('\n', 1)
-            if len(parts) > 1:
-                ready_chunk = self.buffer + parts[0] + '\n'
-                self.buffer = parts[1]
-                return string_to_df(ready_chunk)
-            else:
-                self.buffer += parts[0]
-        else:
-            self.buffer += self.source.readline()
-        return None
-
-    def __iter__(self):
-        while not self.closed:
-            yield self._read_chunk()
-        yield self._read_chunk()
-
-    def close(self):
-        self.closed = True
 

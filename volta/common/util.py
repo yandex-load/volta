@@ -7,6 +7,7 @@ import subprocess
 import os
 import shlex
 import time
+import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -156,3 +157,77 @@ class Tee(threading.Thread):
 
     def close(self):
         self._interrupted.set()
+
+
+class LogReader(object):
+    """ Read chunks from source and make dataframes
+
+    Attributes:
+        cache_size (int): size of block to read from source
+        source (string): path to data source
+
+    Returns:
+        pandas.DataFrame, fmt: ['sys_uts', 'message']
+    """
+
+    def __init__(self, source, regexp, cache_size=1024):
+        self.closed = False
+        self.cache_size = cache_size #
+        self.source = source
+        self.buffer = ""
+        self.regexp = regexp
+
+    def _read_chunk(self):
+        data = self.source.read(self.cache_size)
+        if data:
+            parts = data.rsplit('\n', 1)
+            if len(parts) > 1:
+                ready_chunk = self.buffer + parts[0] + '\n'
+                self.buffer = parts[1]
+                return chunk_to_df(ready_chunk, self.regexp)
+            else:
+                self.buffer += parts[0]
+        else:
+            self.buffer += self.source.readline()
+        return None
+
+    def __iter__(self):
+        while not self.closed:
+            yield self._read_chunk()
+        yield self._read_chunk()
+
+    def close(self):
+        self.closed = True
+
+
+def chunk_to_df(chunk, regexp):
+    """ split chunks by LF, parse contents and create dataframes
+
+    Args:
+        chunk (string): chunk of data read from source
+    Returns:
+        pandas.DataFrame, fmt: ['sys_uts', 'message']
+    """
+    results = []
+    df = None
+    for line in chunk.split('\n'):
+        if line:
+            match = regexp.match(line)
+            if match:
+                ts = datetime.datetime.strptime("{date} {time}".format(
+                        date=match.group('date'),
+                        time=match.group('time')),
+                    '%m-%d %H:%M:%S.%f').replace(
+                    year=datetime.datetime.now().year
+                )
+                # unix timestamp in microseconds
+                sys_uts = int(
+                    (ts-datetime.datetime(1970,1,1)).total_seconds() * 10 ** 6
+                )
+                message = match.group('message')
+                results.append([sys_uts, message])
+            else:
+                logger.debug('Trash data in logs: %s', line)
+    if results:
+        df = pd.DataFrame(results, columns=['sys_uts', 'message'], dtype=np.int64)
+    return df

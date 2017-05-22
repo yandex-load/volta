@@ -13,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class DataUploader(DataListener):
-    """
-    Uploads data to clickhouse
+    """ Uploads data to Clickhouse
     have non-interface private method __upload_meta() for meta information upload
     """
     def __init__(self, config):
@@ -40,6 +39,14 @@ class DataUploader(DataListener):
         }
 
     def put(self, data, type):
+        """ Process data
+
+        Args:
+            data (pandas.DataFrame): dfs w/ data contents,
+                differs for each data type.
+                Should be processed differently from each other
+            type (string): dataframe type
+        """
         if type in self.data_types_to_tables:
             data.loc[:, ('key_date')] = self.key_date
             data.loc[:, ('test_id')] = self.test_id

@@ -18,6 +18,12 @@ logger = logging.getLogger(__name__)
 
 
 class Factory(object):
+    """ Finds appropriate class for Volta and Phone
+
+    Attributes:
+        voltas (dict): binds config volta types to appropriate VoltaBox classes
+        phones (dict): binds config phone types to appropriate Phone classes
+    """
     def __init__(self):
         """ find VoltaBox and Phone """
         self.voltas = {
@@ -31,6 +37,13 @@ class Factory(object):
         }
 
     def detect_volta(self, config):
+        """
+        Args:
+            config (dict): type of VoltaBox
+
+        Returns:
+            appropriate VoltaBox class for config.type
+        """
         type = config.get('type')
         if not type:
             raise RuntimeError('Mandatory option volta.type not specified')
@@ -40,6 +53,13 @@ class Factory(object):
             return self.voltas[type](config)
 
     def detect_phone(self, config):
+        """
+        Args:
+            config (dict): type of Phone
+
+        Returns:
+            appropriate Phone class for config.type
+        """
         type = config.get('type')
         if not type:
             raise RuntimeError('Mandatory option phone.type not specified')
@@ -50,16 +70,25 @@ class Factory(object):
 
 
 class Core(object):
-    """ Core
-    Core class, test performer
+    """ Core, test performer
+
+    Attributes:
+        config (dict): test config
+        test_id (string): lunapark test id
+        key_date (string): clickhouse key (sharding)
+        event_types (list): currently supported event types
+        event_fnames (dict): filename for FileListener for each event type
+        currents_fname (string): filename for FileListener for electrical currents
+        grabber_listeners (list): list of electrical currents listeners
+        event_listeners (list): list of events listeners
+        grabber_q (queue.Queue): queue for electrical currents
+        phone_q (queue.Queue): queue for phone events
     """
     def __init__(self, config):
         """ Configures core, parse config
 
-        Parameters
-        ----------
-            config : dict
-                core configuration dict
+        Args:
+            config (dict): core configuration dict
         """
         self.config = config
         if not self.config:

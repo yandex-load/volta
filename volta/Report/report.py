@@ -4,9 +4,19 @@ from volta.common.interfaces import DataListener
 class FileListener(DataListener):
     """
     Saves data to file
+
+    Attributes:
+        fname (string): path to file
+        init_header (bool): write header to file
+        output_separator (string): line-separator for output data
+        file_output_fmt (dict): list of columns to store for each data type
     """
 
     def __init__(self, config):
+        """
+        Args:
+            config (dict): config to listeners, config.fname should store a name of file
+        """
         super(FileListener, self).__init__(config)
         self.fname = open(config.get('fname'), 'w')
         self.closed = None
@@ -23,6 +33,14 @@ class FileListener(DataListener):
 
 
     def put(self, df, type):
+        """ Process data
+
+        Args:
+            data (pandas.DataFrame): dfs w/ data contents,
+                differs for each data type.
+                Should be processed differently from each other
+            type (string): dataframe type
+        """
         if not self.closed:
             if self.init_header:
                 self.fname.write(str(self.file_output_fmt.get(type, [])))

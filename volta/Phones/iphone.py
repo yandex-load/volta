@@ -5,44 +5,77 @@ import time
 import queue as q
 import pandas as pd
 import datetime
+import re
 
 from volta.common.interfaces import Phone
-from volta.common.util import Drain, popen
+from volta.common.util import Drain, popen, chunk_to_df, LogReader
 
 
 logger = logging.getLogger(__name__)
 
 
+iphone_logevent_re = re.compile(r"""
+    ^(?P<month>\S+)
+    \s+
+    (?P<date>\S+)
+    \s+
+    (?P<time>\S+)
+    \s+
+    (?P<message>.*)
+    $
+    """, re.VERBOSE | re.IGNORECASE
+)
+
+
 class iPhone(Phone):
+    """ iPhone worker class - work w/ phone, read phone logs, store data
+
+    Attributes:
+        source (basestring): path to data source, differs for each type of phone
+            adb devices id for android phones
+            cfgutil id for iphones
+        unplug_type (basestring, optional): type of test execution - NOT available at the moment for now
+            `auto`: disable battery charge (by software) or use special USB cord limiting charge over USB
+        path_to_util (basestring, optional): path to Apple Configurators' cfgutil
+
+    Todo:
+        unlug_type manual
+    """
     def __init__(self, config):
+        """
+        Args:
+            config (dict): module configuration data
+        """
         Phone.__init__(self, config)
         self.log_stdout_reader = None
         self.log_stderr_reader = None
-        self.path_to_util = "/Applications/Apple\ Configurator\ 2.app/Contents/MacOS/"
-        # mandatory options
+        self.path_to_util = config.get('util', "/Applications/Apple\ Configurator\ 2.app/Contents/MacOS/")
         self.source = config.get('source', '0x6382910F98C26')
         # self.unplug_type = config.get('unplug_type', 'auto')
 
     def prepare(self):
+        """ this method skipped by iphone - instruments do the thing """
         return
 
-    def start(self, phone_q):
-        """
+    def start(self, results):
+        """ Grab stage: starts log reader
+
         pipeline:
             start async logcat reader
+
+        Args:
+            results (queue-like object): Phone should put there dataframes, format: ['sys_uts', 'message']
         """
-        self.phone_q = phone_q
+
+        self.phone_q = results
         self.__start_async_log()
 
     def run_test(self):
+        """ this method skipped by iphone because instruments do the thing """
         return
 
     def end(self):
-        """
-        pipeline:
-            stop async logcat process, readers and queues
-        """
-
+        """ pipeline: stop async log process, readers and queues """
         self.log_reader_stdout.close()
         self.log_reader_stderr.close()
         self.log_process.kill()
@@ -50,10 +83,7 @@ class iPhone(Phone):
         self.drain_log_stderr.close()
 
     def __start_async_log(self):
-        """
-        Start logcat read in subprocess and make threads to read its stdout/stderr to queues
-
-        """
+        """ Start logcat read in subprocess and make threads to read its stdout/stderr to queues """
         cmd = "{path}cfgutil -e {device_id} syslog".format(
             path=self.path_to_util,
             device_id=self.source
@@ -61,69 +91,11 @@ class iPhone(Phone):
         logger.debug("Execute : %s", cmd)
         self.log_process = popen(cmd)
 
-        self.log_reader_stdout = LogReader(self.log_process.stdout)
+        self.log_reader_stdout = LogReader(self.log_process.stdout, iphone_logevent_re)
         self.drain_log_stdout = Drain(self.log_reader_stdout, self.phone_q)
         self.drain_log_stdout.start()
 
         self.phone_q_err=q.Queue()
-        self.log_reader_stderr = LogReader(self.log_process.stderr)
+        self.log_reader_stderr = LogReader(self.log_process.stderr, iphone_logevent_re)
         self.drain_log_stderr = Drain(self.log_reader_stderr, self.phone_q_err)
         self.drain_log_stderr.start()
-
-
-def string_to_df(chunk):
-    results = []
-    df = None
-    for line in chunk.split('\n'):
-        try:
-            # TODO regexp should be here, just like in eventshandler
-            # input format:
-            # Apr 13 14:17:18 Benders-iPhone kernel(AppleBiometricSensor)[0] <Debug>: exit
-            ts = datetime.datetime.strptime(line[:15], '%b %d %H:%M:%S').replace(year=datetime.datetime.now().year)
-            sys_uts = int(
-                (ts-datetime.datetime(1970,1,1)).total_seconds() * 10 ** 6
-            )
-            message = line[15:]
-        except:
-            logger.error('cfgutil log parsing exception', exc_info=True)
-            pass
-        else:
-            results.append([sys_uts, message])
-    if results:
-        df = pd.DataFrame(results, columns=['sys_uts', 'message'])
-        #df.set_index('sys_uts', inplace=True)
-    return df
-
-
-class LogReader(object):
-    """
-    Read chunks from source
-    """
-
-    def __init__(self, source, cache_size=1024):
-        self.closed = False
-        self.cache_size = cache_size # read from pipe blocks waiting for equal block if cache size is large
-        self.source = source
-        self.buffer = ""
-
-    def _read_chunk(self):
-        data = self.source.read(self.cache_size)
-        if data:
-            parts = data.rsplit('\n', 1)
-            if len(parts) > 1:
-                ready_chunk = self.buffer + parts[0] + '\n'
-                self.buffer = parts[1]
-                return string_to_df(ready_chunk)
-            else:
-                self.buffer += parts[0]
-        else:
-            self.buffer += self.source.readline()
-        return None
-
-    def __iter__(self):
-        while not self.closed:
-            yield self._read_chunk()
-        yield self._read_chunk()
-
-    def close(self):
-        self.closed = True

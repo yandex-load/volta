@@ -12,8 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 class SyncFinder(DataListener):
-    """
-    Calculates sync points for volta current measurements and phone system logs
+    """ Calculates sync points for volta current measurements and phone system logs
+
+    Attributes:
+        search_interval (int): amount of seconds will be used for sync (searching for sync events)
+        sample_rate (int): volta box sample rate - depends on software and which type of volta box you use
     """
     def __init__(self, config):
         super(SyncFinder, self).__init__(config)
@@ -23,6 +26,9 @@ class SyncFinder(DataListener):
         self.volta_sync_stage_df = pd.DataFrame()
 
     def put(self, data, type):
+        """ Append sync chunks to sync dataframe
+            Append currents dataframes until search interval won't will be filled up
+        """
         if type == 'sync':
             self.sync_df = self.sync_df.append(data)
         elif type == 'currents':
@@ -30,13 +36,10 @@ class SyncFinder(DataListener):
                 self.volta_sync_stage_df = self.volta_sync_stage_df.append(data)
 
     def find_sync_points(self):
-        """
-        Cross correlation and calculate offsets
+        """ Cross correlation and calculate offsets
 
-        Returns
-        -------
-            dict
-                offsets for 'volta timestamp -> system log timestamp' and 'volta timestamp -> custom log timestamp'
+        Returns:
+            dict: offsets for 'volta timestamp -> system log timestamp' and 'volta timestamp -> custom log timestamp'
         """
         logger.info('Starting sync...')
 
@@ -83,9 +86,7 @@ class SyncFinder(DataListener):
         return sync
 
     def __prepare_sync_df(self):
-        """
-        reset idx, drop excessive sync data, map sync events and make offset
-        """
+        """ Reset idx, drop excessive sync data, map sync events and make offset """
         # map messages
         self.sync_df.loc[:, ('message')] = self.sync_df.message.map({'rise': 1, 'fall': 0})
 
@@ -103,9 +104,7 @@ class SyncFinder(DataListener):
         return
 
     def ref_signal(self, sync):
-        """
-        Generate square reference signal
-        """
+        """ Generate square reference signal """
         logger.info("Generating ref signal...")
         if len(sync) == 0:
             raise ValueError('Sync events not found.')
@@ -115,8 +114,6 @@ class SyncFinder(DataListener):
         return rs - np.mean(rs)
 
     def cross_correlate(self, sig, ref, first=30000):
-        """
-        Calculate cross-correlation with lag. Take only first n lags.
-        """
+        """ Calculate cross-correlation with lag. Take only first n lags """
         logger.info("Calculating cross-correlation...")
         return signal.fftconvolve(sig[:first], ref[::-1], mode="valid")

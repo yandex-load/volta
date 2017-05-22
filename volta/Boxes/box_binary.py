@@ -13,6 +13,18 @@ logger = logging.getLogger(__name__)
 
 
 class VoltaBoxBinary(VoltaBox):
+    """ VoltaBoxBinary - works with binary box, grabs data and stores data to queue
+
+    Attributes:
+        source (string): path to data source, should be able to be opened by resource manager
+            may be url, e.g. 'http://myhost.tld/path/to/file'
+            may be device, e.g. '/dev/cu.wchusbserial1420'
+            may be path to file, e.g. '/home/users/netort/path/to/file.data'
+        sample_rate (int): volta box sample rate - depends on software and which type of volta box you use
+        chop_ratio (int): chop ratio for incoming data, 1 means 1 second (500 for sample_rate 500)
+        baud_rate (int): baud rate for device if device specified in source
+        grab_timeout (int): timeout for grabber
+    """
     def __init__(self, config):
         VoltaBox.__init__(self, config)
         self.source = config.get('source', '/dev/cu.wchusbserial1420')
@@ -28,17 +40,17 @@ class VoltaBoxBinary(VoltaBox):
         logger.debug('Data source initialized: %s', self.data_source)
 
     def start_test(self, results):
-        """ handshake w/ device, get samplerate
+        """ Grab stage - starts grabber thread and puts data to results queue
+        + handshake w/ device, get samplerate
+
             pipeline
                 read source data ->
                 chop by samplerate w/ ratio ->
                 make pandas DataFrame ->
                 drain DataFrame to queue `results`
+
         Args:
             results: object answers to put() and get() methods
-
-        Returns:
-            puts pandas DataFrame to specified queue
         """
 
         # handshake
