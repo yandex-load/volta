@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='volta',
-    version='0.0.93',
+    version='0.0.95',
     description='yandex package for mobile energy consumption measurements',
     longer_description='''
 yandex package for mobile energy consumption measurements
@@ -32,38 +32,15 @@ yandex package for mobile energy consumption measurements
     ],
     entry_points={
         'console_scripts': [
-            'volta = volta.wizard.ui:main',
-            'volta-ui = volta.ui.ui:main',
-            'volta-sync = volta.analysis.sync:main',
-            'volta-grab = volta.analysis.grab:run',
-            'volta-uploader = volta.analysis.uploader:run',
-            'volta-wizard = volta.analysis.wizard:run',
-            'volta-wizard-ui = volta.wizard.ui:main',
-            'volta-realtime = volta.analysis.realtime:main',
-            'volta2 = volta.core.cli:main',
+            'volta = volta.core.cli:main',
         ],
     },
     license='MPLv2',
     package_data={
-        'volta.ui': [
-            'static/*',
-            'handlers/*',
-        ],
-        'volta.wizard': [
-            'static/*',
-            'handlers/*',
-            '*.html',
-        ],
-        'volta.analysis': [
-            '*.db',
-        ],
         'volta.Phones': [
             'binary/*.apk'
         ]
     },
-    data_files=[
-        ('/usr/local/bin', ['volta/reader/serial-reader']),
-    ],
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: End Users/Desktop',
