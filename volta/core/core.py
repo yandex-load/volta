@@ -89,11 +89,14 @@ class Core(object):
 
     def configure(self):
         """
-        1) VoltaFactory - VOLTA-87
-        2) PhoneFactory - VOLTA-120 / VOLTA-131
-        3) EventLogParser - VOLTA-129
-        4) Sync - VOLTA-133
-        5) Uploader - VOLTA-144
+        Configures modules and prepare modules for test
+
+        pipeline:
+            volta
+            phone
+            sync
+            uploader
+            report
         """
         if self.config.get('volta', {}):
             self.volta = self.factory.detect_volta(self.config.get('volta'))
@@ -136,6 +139,13 @@ class Core(object):
         self.grabber_listeners.append(grabber_f)
 
     def start_test(self):
+        """
+        Start test: start grabbers and process data to listeners
+
+        pipeline:
+            volta
+            phone
+        """
         logger.info('Starting test...')
         self.start_time = time.time()
 
@@ -158,6 +168,9 @@ class Core(object):
             self.events_parser.start()
 
     def end_test(self):
+        """
+        Interrupts test: stops grabbers and events parsers
+        """
         logger.info('Finishing test...')
         if self.config.get('volta', {}):
             self.volta.end_test()
@@ -167,6 +180,10 @@ class Core(object):
             self.events_parser.close()
 
     def post_process(self):
+        """
+        Post-process actions: sync cross correlation, upload meta information
+
+        """
         logger.info('Post process...')
         for artifact in self.artifacts:
             artifact.close()
