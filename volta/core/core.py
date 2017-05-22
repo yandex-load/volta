@@ -5,13 +5,13 @@ import datetime
 import os
 import uuid
 
-from volta import Boxes
-from volta import Phones
+from volta import boxes
+from volta import phones
 from volta.common.eventshandler import EventsRouter
 from volta.common.util import Tee
-from volta.Sync.sync import SyncFinder
-from volta.Uploader.uploader import DataUploader
-from volta.Report.report import FileListener
+from volta.sync.sync import SyncFinder
+from volta.uploader.uploader import DataUploader
+from volta.report.report import FileListener
 
 
 logger = logging.getLogger(__name__)
@@ -27,13 +27,13 @@ class Factory(object):
     def __init__(self):
         """ find VoltaBox and Phone """
         self.voltas = {
-            '500hz': Boxes.VoltaBox500Hz,
-            'binary': Boxes.VoltaBoxBinary,
+            '500hz': boxes.VoltaBox500Hz,
+            'binary': boxes.VoltaBoxBinary,
 
         }
         self.phones = {
-            'android': Phones.AndroidPhone,
-            'iphone': Phones.iPhone,
+            'android': phones.AndroidPhone,
+            'iphone': phones.iPhone,
         }
 
     def detect_volta(self, config):

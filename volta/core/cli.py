@@ -1,9 +1,7 @@
 import logging
-import sys
 import signal
 import yaml
 import time
-from optparse import OptionParser
 
 from volta.core.core import Core
 

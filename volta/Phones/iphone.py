@@ -1,10 +1,7 @@
 """ iPhone phone worker
 """
 import logging
-import time
 import queue as q
-import pandas as pd
-import datetime
 import re
 
 from volta.common.interfaces import Phone
