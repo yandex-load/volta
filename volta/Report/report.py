@@ -1,3 +1,5 @@
+import json
+
 from volta.common.interfaces import DataListener
 
 
@@ -43,7 +45,9 @@ class FileListener(DataListener):
         """
         if not self.closed:
             if self.init_header:
-                self.fname.write(str(self.file_output_fmt.get(type, [])))
+                types = df.dtypes.apply(lambda x: x.name).to_dict()
+                header = json.dumps({'type': type, 'names': self.file_output_fmt.get(type), 'dtypes': types})
+                self.fname.write(header)
                 self.fname.write('\n')
                 self.init_header = False
             data = df.to_csv(

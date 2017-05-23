@@ -1,0 +1,11 @@
+tornado
+pandas
+seaborn
+numpy
+scipy
+matplotlib
+requests
+pyserial
+progressbar2
+pyusb
+pyyaml

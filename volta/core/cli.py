@@ -22,13 +22,14 @@ def main():
 
     if not args.config:
         raise RuntimeError('Empty config')
-    with open(args.config, 'r') as cfg:
-        cfg_data = cfg.read()
-    try:
-        cfg_dict = yaml.safe_load(cfg_data)
-    except:
-        logger.debug('Config file format not yaml or json...', exc_info=True)
-        raise RuntimeError('Unknown config file format. Malformed?')
+
+    cfg_dict = {}
+    with open(args.config, 'r') as cfg_stream:
+        try:
+            cfg_dict = yaml.safe_load(cfg_stream)
+        except:
+            logger.debug('Config file format not yaml or json...', exc_info=True)
+            raise RuntimeError('Unknown config file format. Malformed?')
 
     core = Core(cfg_dict)
 

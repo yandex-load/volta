@@ -33,11 +33,12 @@ yandex package for mobile energy consumption measurements
     entry_points={
         'console_scripts': [
             'volta = volta.core.cli:main',
+            'volta-uploader = volta.core.postloader:main',
         ],
     },
     license='MPLv2',
     package_data={
-        'volta.Phones': [
+        'volta.phones': [
             'binary/*.apk'
         ]
     },
