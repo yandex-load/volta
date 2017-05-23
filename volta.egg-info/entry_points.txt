@@ -1,4 +1,0 @@
-[console_scripts]
-volta = volta.core.cli:main
-volta-uploader = volta.core.postloader:main
-
