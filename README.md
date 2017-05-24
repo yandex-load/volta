@@ -36,7 +36,7 @@ There are different types of Volta modules
 
 
 ## Command-line entry-point `volta`
-You can use command-line entry-point `volta` with .yaml config
+Use command-line entry-point `volta` with .yaml config
 `volta -c config.yaml`
 
 Sample yaml config for cli-wrapper:
@@ -51,13 +51,13 @@ phone:
 sync:
   search_interval: 30
 ```
-This config creates test with `VoltaBox500Hz` at `/dev/cu.wchusbserial1420` and android phone id `01e345da733a4764`, starts to collect and process data from VoltaBox and Phone. 
+This config creates a test with `VoltaBox500Hz` at `/dev/cu.wchusbserial1420` and android phone id `01e345da733a4764`, then starts to collect and process data from VoltaBox and the phone. 
 
-If you want to stop the test, press `Ctrl+C` or send `SIGTERM` to process. 
+If you want to stop the test, press `Ctrl+C` or send `SIGTERM` to the process. 
 
 
 ## Core as python module
-Also, if you want to control test execution or integrate Volta with your CI, you can use Core as python library.
+Also, if you want to control test execution or integrate Volta into your CI, you can use Core as python library.
 
 Sample usage:
 ```python
@@ -91,7 +91,7 @@ finally:
 ## VoltaBox class
 
 
-If you want more flexible use of Volta components, you can use different Volta modules (or write you own) as python modules aswell.
+If you want more flexibility using Volta components, you can use provided Volta modules (or write you own) as python classes.
 
 Sample usage:
 ```python
@@ -139,8 +139,7 @@ config = {
 }
 
 phone = AndroidPhone(config) # create Phone class
-# создать очередь, в которую будут складываться результаты работы
-q = queue.Queue() # create python queue for results
+q = queue.Queue() # create python queue for test results
 phone.prepare() # prepare phone to test - clean logs, install test apps and install volta's `lightning` app for synchronization
 phone.start(q) # start test and pass results queue
 phone.run_test() # run test app, specified in config
@@ -157,9 +156,9 @@ print(q.get_nowait())
 
 Works with iPhone. Reads/parses system logs (`cfgutil`). If you want to use this module, you should install [Apple Configurator 2](https://itunes.apple.com/us/app/apple-configurator-2/id1037126344?mt=12) and use Mac.
 
-If you want to install apps on iPhone and control them you need to use `Apple's Instruments`.
+To install apps on iPhone and control them you need to use `Apple's Instruments`.
 
-Everithing else is like android class.
+Everithing else is the same as for android class.
 
 Sample usage:
 ```python
