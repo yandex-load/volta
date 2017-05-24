@@ -231,3 +231,8 @@ def chunk_to_df(chunk, regexp):
     if results:
         df = pd.DataFrame(results, columns=['sys_uts', 'message'], dtype=np.int64)
     return df
+
+
+def string_to_np(data, type=np.uint16, sep=""):
+    chunk = np.fromstring(data, dtype=type, sep=sep)
+    return chunk

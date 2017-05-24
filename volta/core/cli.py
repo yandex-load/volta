@@ -35,9 +35,8 @@ def main():
 
     try:
         core.configure()
+        logger.info('Starting test... You can interrupt test w/ Ctrl+C or SIGTERM signal')
         core.start_test()
-        time.sleep(20)
-        core.end_test()
     except KeyboardInterrupt:
         logger.info('Keyboard interrupt, trying graceful shutdown. Do not press interrupt again...')
         core.end_test()

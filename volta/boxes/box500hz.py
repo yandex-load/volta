@@ -3,10 +3,9 @@
 import logging
 import queue as q
 import time
-import numpy as np
 
 from volta.common.interfaces import VoltaBox
-from volta.common.util import Drain, TimeChopper
+from volta.common.util import Drain, TimeChopper, string_to_np
 from volta.common.resource import manager as resource
 
 
@@ -76,11 +75,6 @@ class VoltaBox500Hz(VoltaBox):
         self.data_source.close()
 
 
-def string_to_np(data):
-    chunk = np.fromstring(data, dtype=float, sep='\n')
-    return chunk
-
-
 class BoxPlainTextReader(object):
     """
     Read chunks from source, convert and return numpy.array
@@ -99,7 +93,7 @@ class BoxPlainTextReader(object):
             if len(parts) > 1:
                 ready_chunk = self.buffer + parts[0] + '\n'
                 self.buffer = parts[1]
-                return string_to_np(ready_chunk)
+                return string_to_np(ready_chunk, type=float, sep='\n')
             else:
                 self.buffer += parts[0]
         else:

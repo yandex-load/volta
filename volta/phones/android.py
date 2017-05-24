@@ -61,7 +61,7 @@ class AndroidPhone(Phone):
         self.logcat_stderr_reader = None
         # mandatory options
         self.source = config.get('source', '00dc3419957ba583')
-        self.unplug_type = config.get('unplug_type', 'manual')
+        self.unplug_type = config.get('unplug_type', 'auto')
         # lightning app configuration
         self.lightning_apk_path = config.get('lightning', pkg_resources.resource_filename(
             'volta.phones', 'binary/lightning-new3.apk')

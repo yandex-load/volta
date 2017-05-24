@@ -28,12 +28,10 @@ class iPhone(Phone):
     """ iPhone worker class - work w/ phone, read phone logs, store data
 
     Attributes:
-        source (basestring): path to data source, differs for each type of phone
-            adb devices id for android phones
-            cfgutil id for iphones
-        unplug_type (basestring, optional): type of test execution - NOT available at the moment for now
+        source (string): path to data source, cfgutil id for iphones
+        unplug_type (string, optional): type of test execution - NOT available at the moment for now
             `auto`: disable battery charge (by software) or use special USB cord limiting charge over USB
-        path_to_util (basestring, optional): path to Apple Configurators' cfgutil
+        path_to_util (string, optional): path to Apple Configurators' cfgutil
 
     Todo:
         unlug_type manual

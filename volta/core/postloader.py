@@ -34,6 +34,7 @@ def main():
 
     if not args.logs:
         raise RuntimeError('Empty log list')
+
     for log in args.logs:
         try:
             with open(log, 'r') as logname:

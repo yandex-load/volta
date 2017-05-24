@@ -5,8 +5,9 @@ import Queue as queue
 import time
 import numpy as np
 import json
+
 from volta.common.interfaces import VoltaBox
-from volta.common.util import Drain, TimeChopper
+from volta.common.util import Drain, TimeChopper, string_to_np
 from volta.common.resource import manager as resource
 
 logger = logging.getLogger(__name__)
@@ -84,11 +85,6 @@ class VoltaBoxBinary(VoltaBox):
         self.data_source.close()
 
 
-def string_to_np(data):
-    chunk = np.fromstring(data, dtype=np.uint16).astype(np.float32)
-    return chunk
-
-
 class BoxBinaryReader(object):
     """
     Read chunks from source, convert and return numpy.array
@@ -110,7 +106,8 @@ class BoxBinaryReader(object):
             if (len(data) % 2 != 0):
                 self.orphan_byte = data[-1:]
                 data = data[:-1]
-            return string_to_np(data)
+            chunk = string_to_np(data).astype(np.float32)
+            return chunk
 
     def __iter__(self):
         while not self.closed:
