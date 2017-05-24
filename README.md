@@ -36,7 +36,7 @@ There are different types of Volta modules
 
 
 ## Command-line entry-point `volta`
-You can configure you test using command-line entry-point `volta`, configuring test w/ .yaml config
+You can use command-line entry-point `volta` with .yaml config
 `volta -c config.yaml`
 
 Sample yaml config for cli-wrapper:
