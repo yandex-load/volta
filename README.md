@@ -57,7 +57,7 @@ If you want to stop the test, press `Ctrl+C` or send `SIGTERM` to process.
 
 
 ## Core as python module
-Also, if you want to control test execution or integrate Volta with your CI, you can you Core as python library.
+Also, if you want to control test execution or integrate Volta with your CI, you can use Core as python library.
 
 Sample usage:
 ```python
@@ -157,7 +157,7 @@ print(q.get_nowait())
 
 Works with iPhone. Reads/parses system logs (`cfgutil`). If you want to use this module, you should install [Apple Configurator 2](https://itunes.apple.com/us/app/apple-configurator-2/id1037126344?mt=12) and use Mac.
 
-If you want to install apps on iPhone and control them you nede to use `Apple's Instruments`.
+If you want to install apps on iPhone and control them you need to use `Apple's Instruments`.
 
 Everithing else is like android class.
 
