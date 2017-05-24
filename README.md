@@ -16,7 +16,7 @@ Install with ```pip install volta```, connect your device, run ```volta```.
 ![Architecture scheme](/docs/architecture.png)
 [yEd scheme](/docs/architecture.graphml)
 
-# Using Volta software as a python library:
+# Volta components
 There are different types of Volta modules
 * Core - module that configures test life cycle and test pipeline, creates, configures and controls other modules.
 * VoltaBox - module for different types of Volta Boxes.
