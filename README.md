@@ -262,7 +262,8 @@ events_router.close()
 ```
 
 ## Sync class
-Module for data cross-correlation. Calculates sync points for volta current measurements and phone's system log.
+Module for time synchronization. Calculates synchronization offsets for volta current measurements and phone's system log.
+Uses fast fourier transform convolve.
 
 Sample usage:
 ```python
