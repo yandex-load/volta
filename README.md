@@ -106,11 +106,9 @@ import queue
 import time
 import logging
 
-config = {
-  'source': '/dev/cu.wchusbserial1420'
-}
-volta = VoltaBox500Hz(config) # create VoltaBox class
-q = queue.Queue() # create python queue for results
+config = {'source': '/dev/cu.wchusbserial1420'}
+volta = VoltaBox500Hz(config) # VoltaBox class
+q = queue.Queue() # queue for results
 volta.start_test(q) # start test and pass results queue
 time.sleep(5) # do something (start autotests, do manual testing ...). I passed 5 seconds sleep as a placeholder.
 volta.end_test() # end test execution
@@ -178,9 +176,7 @@ import queue
 import time
 import logging
 
-config = {
-  'source': '0x6382910F98C26',
-}
+config = {'source': '0x6382910F98C26'}
 phone = iPhone(config) # create Phone class
 q = queue.Queue() # queue for results
 phone.prepare()
@@ -324,6 +320,37 @@ print(offsets)
 # sys_uts_offset is the phone's system uts to volta's uts offset
 # log_uts_offset is the phone's logs custom events nanotime to volta's uts offset
 # {'sys_uts_offset': -1005000, 'sync_sample': 0, 'log_uts_offset': 0}
+```
+
+## Report
+Listener: saves data to a file.
+
+Sample usage:
+```python
+from volta.boxes.box500hz import VoltaBox500Hz
+from volta.report.report import FileListener
+from volta.common.util import Tee
+import queue
+import time
+import logging
+
+config = {'source': '/dev/cu.wchusbserial1420'}
+volta = VoltaBox500Hz(config) # VoltaBox class
+volta_q = queue.Queue() # queue for results
+volta_listeners = [] # emptry list for listeners
+
+# create FileListeners and subscribe it to volta
+report_config = {'fname': 'current_output_filename'}
+file_listener = FileListener(report_config)
+volta_listeners.append(file_listener)
+
+volta_data_process = Tee(volta_q, volta_listeners, 'currents') # start volta data processing
+
+volta.start_test(volta_q) # start test and pass results queue
+volta_data_process.start()
+time.sleep(15) # do something (start autotests, do manual testing ...). I passed 5 seconds sleep as a placeholder.
+volta.end_test() # end test execution
+volta_data_process.close()
 ```
 
 
