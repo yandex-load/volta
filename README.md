@@ -24,17 +24,18 @@ Install with ```pip install volta```, connect your device, run ```volta```.
 # Volta components
 There are different types of Volta modules
 
-**Core** - module that configures test life cycle and test pipeline, creates, configures and controls other modules.
+[Core](volta/core/) - module that configures test life cycle and test pipeline, creates, configures and controls other modules.
 
 Data Providers:
-* **VoltaBox** - module for different types of Volta Boxes.
-* **Phone** - module for different types of phones. Android and iPhone supported.
-* **Events** - phone logs parser module.
+
+* [VoltaBox](volta/boxes/) - module for different types of Volta Boxes.
+* [Phone](volta/phones/) - module for different types of phones. Android and iPhone supported.
+* [Events](volta/events/) - phone logs parser module.
 
 Data Listeners:
-* **Sync** - cross-corellation sync module, syncs volta logs to phone logs.
-* **Uploader** - data uploader module (e.g. to Overload).
-* **Report** - file write module.
+* [Sync](volta/sync/) - cross-corellation sync module, syncs volta logs to phone logs.
+* [Uploader](volta/uploader/) - data uploader module (e.g. to Overload).
+* [Report](volta/report/) - file write module.
 
 
 # Using Volta
