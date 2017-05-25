@@ -114,7 +114,7 @@ volta.end_test() # end test execution
 print(q.get_nowait()) 
 ```
 
-## Phone class - Android
+### Phone class - Android
 
 
 Works with android phones. Reads/parses system logs (`adb logcat`), starts lightning app for synchronization, installs/starts/runs tests on device.
@@ -152,7 +152,7 @@ phone.end() # end test execution
 print(q.get_nowait())
 ```
 
-## Phone class - iPhone
+### Phone class - iPhone
 
 
 Works with iPhone. Reads/parses system logs (`cfgutil`). If you want to use this module, you should install [Apple Configurator 2](https://itunes.apple.com/us/app/apple-configurator-2/id1037126344?mt=12) and use Mac.

@@ -1,4 +1,4 @@
-""" Event parser
+""" Events router - phone custom messsage parser and router
 """
 import queue as q
 import logging

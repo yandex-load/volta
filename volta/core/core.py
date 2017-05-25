@@ -7,7 +7,7 @@ import uuid
 
 from volta import boxes
 from volta import phones
-from volta.common.eventshandler import EventsRouter
+from volta.events.router import EventsRouter
 from volta.common.util import Tee
 from volta.sync.sync import SyncFinder
 from volta.uploader.uploader import DataUploader
