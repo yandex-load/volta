@@ -225,12 +225,13 @@ import queue
 import time
 import uuid
 
+test_id = uuid.uuid4() # some test id
+
 phone_config = {'source': '01e345da733a4764'} # phone id
 phone = AndroidPhone(phone_config) # Phone class
 phone_q = queue.Queue() # queue for results
 phone.start(phone_q) # start phone log reader
 
-test_id = uuid.uuid4() # some test id
 event_types = ['event', 'sync', 'fragment', 'metric', 'unknown'] # define event types
 event_listeners = {key:[] for key in event_types} # create dict w/ empty list for each event type
 
@@ -259,6 +260,69 @@ events_router.close()
 # in the end you will have files w/ events for each event type in current working directory
 ```
 
+## Sync class
+Module for data cross-correlation. Calculates sync points for volta current measurements and phone's system log.
+
+Sample usage:
+```python
+from volta.boxes.box500hz import VoltaBox500Hz
+from volta.phones.android import AndroidPhone
+from volta.events.router import EventsRouter
+from volta.sync.sync import SyncFinder
+from volta.common.util import Tee
+
+# setup Volta and start
+volta_config = {'source': '/dev/cu.wchusbserial1420'} # volta box device
+volta = VoltaBox500Hz(volta_config) # VoltaBox class
+volta_q = queue.Queue() # queue for volta results
+volta_listeners = [] # init electrical currents listeners
+
+# setup Phone and start
+phone_config = {'source': '01e345da733a4764'} # phone id
+phone = AndroidPhone(phone_config) # Phone class
+phone_q = queue.Queue() # queue for results
+
+# setup EventsRouter
+event_types = ['event', 'sync', 'fragment', 'metric', 'unknown'] # define event types
+event_listeners = {key:[] for key in event_types} # create dict w/ empty list for each event type
+events_router = EventsRouter(phone_q, event_listeners)
+
+# at the moment we have electrical currents queue and phone queue
+sync_config = {'search_interval': 30, 'sample_rate': volta.sample_rate}
+sync_finder = SyncFinder(sync_config)
+
+# subscribe our SyncFinder to electrical currents and sync events
+volta_listeners.append(sync_finder)
+event_listeners['sync'].append(sync_finder)
+
+# now process electrical currents to listeners
+# Tee is a thread: drains the queue and send data to listeners
+process_volta_data = Tee(
+    volta_q,
+    volta_listeners,
+    'currents'
+)
+
+volta.start_test(volta_q) # start volta data grabber
+process_volta_data.start() # start volta data processing
+phone.start(phone_q) # start phone log reader
+events_router.start() # start events processing
+# do some work... or maybe phone.run_test()
+time.sleep(15)
+
+# end the test
+volta.end_test()
+process_volta_data.close()
+phone.end()
+events_router.close()
+
+offsets = sync_finder.find_sync_points()
+print(offsets)
+# output format:
+# sys_uts_offset is the phone's system uts to volta's uts offset
+# log_uts_offset is the phone's logs custom events nanotime to volta's uts offset
+# {'sys_uts_offset': -1005000, 'sync_sample': 0, 'log_uts_offset': 0}
+```
 
 
 # Questions
