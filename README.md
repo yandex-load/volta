@@ -290,7 +290,7 @@ events_router.close()
 ## Data Listeners
 ### Sync module - SyncFinder
 Module for time synchronization. Calculates synchronization offsets for volta current measurements and phone's system log.
-Uses fast fourier transform convolve.
+Uses fast fourier transform convolution.
 
 
 Available configuration options:
