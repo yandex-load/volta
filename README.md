@@ -7,7 +7,7 @@ An [article](https://habrahabr.ru/company/yandex/blog/311046/) about the device 
 
 
 # What do you need
-* **A Volta Box**. Volta Box is an arduino-based current meter and power source for your mobile device. We will provide schematics after a while. Contact us if you want to get explanation right now.
+* **A Volta Box**. Volta Box is an arduino-based current meter and power source for your mobile device. We will provide schematics after a while. Contact us if you want to get explanation right away.
 * An **instrumented** mobile device. You need to extract a battery from your mobile device and connect **Volta Box** instead.
 * If you want to control your device with **adb** while running your tests, you also need a current-limiting USB cable. Currently, we use FET to make those (google "FET current limiter").
 
@@ -24,7 +24,7 @@ Install with ```pip install volta```, connect your device, run ```volta```.
 # Volta components
 There are different types of Volta modules
 
-[Core](volta/core/) - unique central module, configures test life cycle and test pipeline.
+[Core](volta/core/) - core module, configures test life cycle and test pipeline.
 Creates, configures and controls other modules.
 
 **Data Providers**
@@ -58,7 +58,7 @@ sync:
 ```
 This config creates a test with **VoltaBox500Hz** at **/dev/cu.wchusbserial1420** and android phone id **01e345da733a4764**, then starts to collect and process data from VoltaBox and the phone.
 
-If you want to stop the test, press **Ctrl+C** or send **SIGTERM** signal to the process.
+To stop the test, press **Ctrl+C** or send **SIGTERM** signal to the process.
 
 
 ## Core as module
@@ -97,7 +97,7 @@ finally:
 ### VoltaBox module
 
 
-If you want more flexibility using of Volta components, you can use provided Volta modules (or write you own) as python classes.
+If you want more flexibility using Volta components, you can use provided Volta modules (or write you own) as python classes.
 
 Available configuration options:
 * **source** (mandatory) - path to volta box device
@@ -128,7 +128,7 @@ print(q.get_nowait())
 ### Phone module
 
 
-We have modules for Android and iPhone. If you want to use your own phone (e.g. Windows Phone), you can write your own phone module.
+We have modules for Android and iPhone. If you want to use some other type of device (e.g. Windows Phone), you can write your own phone module.
 
 #### Phone module - Android
 
@@ -139,12 +139,12 @@ Available configuration options:
 * **source** (mandatory) - android device id
 * **unplug_type** - type of test execution, describes the way you do the tests on your phone
     * `auto`: disable battery charge (by software) or use special USB cord limiting charge over USB
-    * `manual`: disable phone from USB by your own hands during test exection and click your test
+    * `manual`: disable phone from USB with your bare hands during test exection and click your test
 * **lightning** - path to lightning application (used for synchronization)
 * **lightning_class** - lightning application class (how to run the app)
-* **test_apps** - list of apps will be installed to device for test
-    * may be url, e.g. 'http://myhost.tld/path/to/file'
-    * may be path to file, e.g. '/home/users/netort/path/to/file.apk'
+* **test_apps** - list of apps that will be installed to device for test
+    * may be an url, e.g. 'http://myhost.tld/path/to/file'
+    * may be a path to file, e.g. '/home/users/netort/path/to/file.apk'
 * **test_class** - app class for run_test() stage
 * **test_package** - app package for run_test() stage
 * **test_runner** - app runner for run_test() stage
@@ -184,7 +184,7 @@ print(q.get_nowait())
 #### Phone module - iPhone
 
 
-Works with iPhone. Reads/parses system logs (`cfgutil`). If you want to use this module, you should install [Apple Configurator 2](https://itunes.apple.com/us/app/apple-configurator-2/id1037126344?mt=12) and use Mac.
+Works with iPhone. Reads/parses system logs (`cfgutil`). To use this module install [Apple Configurator 2](https://itunes.apple.com/us/app/apple-configurator-2/id1037126344?mt=12) and use Mac.
 
 To install apps on iPhone and control them you need to use `Apple's Instruments`.
 
@@ -211,9 +211,9 @@ phone.end()
 
 ### Events module - Router
 
-Once you get data from one of your phone modules, parse it with **EventsRouter**. It reads phone's results queue, parses messages, groups them by different types and sends them to  listeners.
+Once you get data from one of your phone modules, parse it with **EventsRouter**. It reads phone's results queue, parses messages, groups them by different types and sends them to listeners.
 
-Also, applications can write to phone's system log any information you want to use later for debugging/better synchronization or mark some special events.
+Also, applications can write any information you want into phone's system log to use later for debugging/better synchronization or mark some special events.
 
 
 Available configuration options: None
@@ -290,7 +290,7 @@ events_router.close()
 ## Data Listeners
 ### Sync module - SyncFinder
 Module for time synchronization. Calculates synchronization offsets for volta current measurements and phone's system log.
-Uses fast fourier transform convolution.
+Uses fast Fourier transform convolution.
 
 
 Available configuration options:
@@ -310,7 +310,7 @@ from volta.common.util import Tee
 volta_config = {'source': '/dev/cu.wchusbserial1420'} # volta box device
 volta = VoltaBox500Hz(volta_config) # VoltaBox class
 volta_q = queue.Queue() # queue for volta results
-volta_listeners = [] # init electrical currents listeners
+volta_listeners = [] # init electrical current listeners
 
 # setup Phone and start
 phone_config = {'source': '01e345da733a4764'} # phone id
@@ -326,7 +326,7 @@ events_router = EventsRouter(phone_q, event_listeners)
 sync_config = {'search_interval': 30, 'sample_rate': volta.sample_rate}
 sync_finder = SyncFinder(sync_config)
 
-# subscribe our SyncFinder to electrical currents and sync events
+# subscribe our SyncFinder to electrical current and sync events
 volta_listeners.append(sync_finder)
 event_listeners['sync'].append(sync_finder)
 
