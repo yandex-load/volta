@@ -12,11 +12,11 @@ An [article](https://habrahabr.ru/company/yandex/blog/311046/) about the device 
 * If you want to control your device with **adb** while running your tests, you also need a current-limiting USB cable. Currently, we use FET to make those (google "FET current limiter").
 
 
-# Usage:  
+# Usage
 Install with ```pip install volta```, connect your device, run ```volta```.
 
 
-# Architecture:
+# Architecture
 ![Architecture scheme](/docs/architecture.png)
 [yEd scheme](/docs/architecture.graphml)
 
@@ -24,15 +24,15 @@ Install with ```pip install volta```, connect your device, run ```volta```.
 # Volta components
 There are different types of Volta modules
 
-[Core](volta/core/) - module that configures test life cycle and test pipeline, creates, configures and controls other modules.
+[Core](volta/core/) - unique central module, configures test life cycle and test pipeline.
+Creates, configures and controls other modules.
 
-Data Providers:
-
+**Data Providers**
 * [VoltaBox](volta/boxes/) - module for different types of Volta Boxes.
 * [Phone](volta/phones/) - module for different types of phones. Android and iPhone supported.
 * [Events](volta/events/) - phone logs parser module.
 
-Data Listeners:
+**Data Listeners**
 * [Sync](volta/sync/) - cross-corellation sync module, syncs volta logs to phone logs.
 * [Uploader](volta/uploader/) - data uploader module (e.g. to Overload).
 * [Report](volta/report/) - file write module.
@@ -40,10 +40,9 @@ Data Listeners:
 
 # Using Volta
 
-
 ## Command-line entry-point `volta`
 Use command-line entry-point `volta` with .yaml config
-`volta -c config.yaml`
+> `volta -c config.yaml`
 
 Sample yaml config for cli-wrapper:
 ```yaml
@@ -62,7 +61,7 @@ This config creates a test with **VoltaBox500Hz** at **/dev/cu.wchusbserial1420*
 If you want to stop the test, press **Ctrl+C** or send **SIGTERM** signal to the process.
 
 
-## Core as python module
+## Core as module
 Also, if you want to control test execution or integrate Volta into your CI, you can use Core as python library.
 
 Sample usage:
@@ -94,10 +93,18 @@ finally:
     core.post_process()
 ```
 
-## VoltaBox class
+## Data Providers
+### VoltaBox module
 
 
 If you want more flexibility using of Volta components, you can use provided Volta modules (or write you own) as python classes.
+
+Available configuration options:
+* **source** (mandatory) - path to volta box device
+* **sample_rate** - volta box sample rate, depends on software and which type of volta box you use. Default differs for each type of VoltaBox
+* **chop_ratio** - chop ratio for incoming data, describes the way how pandas.DataFrames w/ data will be created. Default 1
+* **baud_rate** - baud rate for VoltaBox. Default differs for each VoltaBox class.
+* **grab_timeout** - timeout for data read from VoltaBox. Default 1
 
 Sample usage:
 ```python
@@ -118,15 +125,29 @@ volta.end_test() # end test execution
 print(q.get_nowait())
 ```
 
-## Phone class
+### Phone module
 
 
 We have modules for Android and iPhone. If you want to use your own phone (e.g. Windows Phone), you can write your own phone module.
 
-### Phone class - Android
+#### Phone module - Android
 
 
 Works with android phones. Reads/parses system logs (`adb logcat`), starts lightning app for synchronization, installs/starts/runs tests on device.
+
+Available configuration options:
+* **source** (mandatory) - android device id
+* **unplug_type** - type of test execution, describes the way you do the tests on your phone
+    * `auto`: disable battery charge (by software) or use special USB cord limiting charge over USB
+    * `manual`: disable phone from USB by your own hands during test exection and click your test
+* **lightning** - path to lightning application (used for synchronization)
+* **lightning_class** - lightning application class (how to run the app)
+* **test_apps** - list of apps will be installed to device for test
+    * may be url, e.g. 'http://myhost.tld/path/to/file'
+    * may be path to file, e.g. '/home/users/netort/path/to/file.apk'
+* **test_class** - app class for run_test() stage
+* **test_package** - app package for run_test() stage
+* **test_runner** - app runner for run_test() stage
 
 Sample usage:
 ```python
@@ -136,7 +157,7 @@ import time
 import logging
 
 config = {
-  'source': '01e345da733a4764',  # android device id
+  'source': '01e345da733a4764',
   'unplug_type': 'auto',         # test type
   'test_apps': [
     'http://hostname.tld/path/to/first/apk1.apk',
@@ -160,7 +181,7 @@ phone.end() # end test execution
 print(q.get_nowait())
 ```
 
-### Phone class - iPhone
+#### Phone module - iPhone
 
 
 Works with iPhone. Reads/parses system logs (`cfgutil`). If you want to use this module, you should install [Apple Configurator 2](https://itunes.apple.com/us/app/apple-configurator-2/id1037126344?mt=12) and use Mac.
@@ -168,6 +189,10 @@ Works with iPhone. Reads/parses system logs (`cfgutil`). If you want to use this
 To install apps on iPhone and control them you need to use `Apple's Instruments`.
 
 Everithing else is the same as for AndroidPhone class.
+
+Available configuration options:
+* **source** (mandatory) - Apple device id
+* **util** - path to Apple Configurator 2. Default: `/Applications/Apple\ Configurator\ 2.app/Contents/MacOS/`
 
 Sample usage:
 ```python
@@ -184,12 +209,14 @@ phone.start(q)
 phone.end()
 ```
 
-## EventsRouter class
-
+### Events module - Router
 
 Once you get data from one of your phone modules, parse it with **EventsRouter**. It reads phone's results queue, parses messages, groups them by different types and sends them to  listeners.
 
 Also, applications can write to phone's system log any information you want to use later for debugging/better synchronization or mark some special events.
+
+
+Available configuration options: None
 
 
 Special messages format:
@@ -207,11 +234,12 @@ lightning: [volta] 12345678 fragment TagFragment start
 Currently we have those types of special messages supported by **EventsRouter**:
 * **sync** - synchronization message, Sync module uses it for cross-correlation
 * **event** - event message, you can write any information you need by your application on phone and send it to system log
-* **fragment**
-* **metric**
+* **fragment** - fragment message, used to mark fragments of events in your test
+* **metric** - just a metric with float value instead of message.
 
 
 Everything else (e.g. default phone system log messages) is grouped to **unknown** message type.
+
 
 Sample usage:
 ```python
@@ -257,9 +285,18 @@ events_router.close()
 # in the end you will have files w/ events for each event type in current working directory
 ```
 
-## Sync class
+
+
+## Data Listeners
+### Sync module - SyncFinder
 Module for time synchronization. Calculates synchronization offsets for volta current measurements and phone's system log.
 Uses fast fourier transform convolve.
+
+
+Available configuration options:
+* **search_interval** -  sync search interval, in seconds from start. Default 30
+* **sample_rate** - volta samplerate. Default 500
+
 
 Sample usage:
 ```python
@@ -322,8 +359,13 @@ print(offsets)
 # {'sys_uts_offset': -1005000, 'sync_sample': 0, 'log_uts_offset': 0}
 ```
 
-## Report
-Listener: saves data to a file.
+#### Report module - FileListener
+Saves data to a file.
+
+
+Available configuration options:
+* **fname** (mandatory) - Path to file.
+
 
 Sample usage:
 ```python
@@ -343,6 +385,42 @@ volta_listeners = [] # emptry list for listeners
 report_config = {'fname': 'current_output_filename'}
 file_listener = FileListener(report_config)
 volta_listeners.append(file_listener)
+
+volta_data_process = Tee(volta_q, volta_listeners, 'currents') # start volta data processing
+
+volta.start_test(volta_q) # start test and pass results queue
+volta_data_process.start()
+time.sleep(15) # do something (start autotests, do manual testing ...). I passed 5 seconds sleep as a placeholder.
+volta.end_test() # end test execution
+volta_data_process.close()
+```
+
+#### Uploader module - DataUploader
+Upload data. Currently supports only clickhouse TSV upload.
+
+
+Available configuration options:
+* **address** (mandatory) - Path to destination.
+* **test_id** - You can specify test id manually, otherwise it will be automatically generated (using uuid)
+
+Sample usage:
+```python
+from volta.boxes.box500hz import VoltaBox500Hz
+from volta.uploader.uploader import DataUploader
+from volta.common.util import Tee
+import queue
+import time
+import logging
+
+config = {'source': '/dev/cu.wchusbserial1420'}
+volta = VoltaBox500Hz(config) # VoltaBox class
+volta_q = queue.Queue() # queue for results
+volta_listeners = [] # emptry list for listeners
+
+# create DataUploader and subscribe it to volta
+uploader_config = {'address': 'https://path/to/clickhouse/api/volta'}
+uploader = DataUploader(uploader_config)
+volta_listeners.append(uploader)
 
 volta_data_process = Tee(volta_q, volta_listeners, 'currents') # start volta data processing
 
