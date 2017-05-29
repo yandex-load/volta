@@ -15,6 +15,7 @@ Yandex Volta is a framework for mobile performance and energy efficiency analysi
          * [Phone module](#phone-module)
             * [Phone module - Android](#phone-module---android)
             * [Phone module - iPhone](#phone-module---iphone)
+      * [Data Mappers](#data-mappers)
          * [Events module - Router](#events-module---router)
       * [Data Listeners](#data-listeners)
          * [Sync module - SyncFinder](#sync-module---syncfinder)
