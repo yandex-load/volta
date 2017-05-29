@@ -3,7 +3,7 @@ import pandas as pd
 import json
 import yaml
 
-from volta.uploader.uploader import DataUploader
+from volta.listeners.uploader.uploader import DataUploader
 
 logger = logging.getLogger(__name__)
 

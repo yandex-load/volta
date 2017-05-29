@@ -5,13 +5,13 @@ import datetime
 import os
 import uuid
 
-from volta import boxes
-from volta import phones
-from volta.events.router import EventsRouter
 from volta.common.util import Tee
-from volta.sync.sync import SyncFinder
-from volta.uploader.uploader import DataUploader
-from volta.report.report import FileListener
+from volta.providers import boxes
+from volta.providers import phones
+from volta.listeners.sync.sync import SyncFinder
+from volta.listeners.uploader.uploader import DataUploader
+from volta.listeners.report.report import FileListener
+from volta.mappers.events.router import EventsRouter
 
 
 logger = logging.getLogger(__name__)

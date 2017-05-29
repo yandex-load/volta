@@ -1,7 +1,6 @@
 import logging
 import signal
 import yaml
-import time
 
 from volta.core.core import Core
 

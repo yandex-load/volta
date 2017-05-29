@@ -2,11 +2,12 @@
 
 import numpy as np
 import pandas as pd
+import logging
 from scipy import interpolate
 from scipy import signal
-import logging
 
 from volta.common.interfaces import DataListener
+
 
 logger = logging.getLogger(__name__)
 
