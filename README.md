@@ -52,6 +52,8 @@ Creates, configures and controls other modules.
 **Data Providers**
 * [VoltaBox](volta/boxes/) - module for different types of Volta Boxes.
 * [Phone](volta/phones/) - module for different types of phones. Android and iPhone supported.
+
+**Data Mappers**
 * [Events](volta/events/) - phone logs parser module.
 
 **Data Listeners**
@@ -130,7 +132,7 @@ Available configuration options:
 
 Sample usage:
 ```python
-from volta.boxes.box500hz import VoltaBox500Hz
+from volta.providers.boxes.box500hz import VoltaBox500Hz
 import queue
 import time
 import logging
@@ -173,7 +175,7 @@ Available configuration options:
 
 Sample usage:
 ```python
-from volta.phones.android import AndroidPhone
+from volta.providers.phones.android import AndroidPhone
 import queue
 import time
 import logging
@@ -231,6 +233,8 @@ phone.start(q)
 phone.end()
 ```
 
+## Data Mappers
+
 ### Events module - Router
 
 Once you get data from one of your phone modules, parse it with **EventsRouter**. It reads phone's results queue, parses messages, groups them by different types and sends them to listeners.
@@ -265,9 +269,9 @@ Everything else (e.g. default phone system log messages) is grouped to **unknown
 
 Sample usage:
 ```python
-from volta.phones.android import AndroidPhone
-from volta.events.router import EventsRouter
-from volta.report.report import FileListener
+from volta.providers.phones.android import AndroidPhone
+from volta.mappers.events.router import EventsRouter
+from volta.listeners.report.report import FileListener
 import queue
 import time
 import uuid
@@ -322,10 +326,10 @@ Available configuration options:
 
 Sample usage:
 ```python
-from volta.boxes.box500hz import VoltaBox500Hz
-from volta.phones.android import AndroidPhone
-from volta.events.router import EventsRouter
-from volta.sync.sync import SyncFinder
+from volta.providers.boxes.box500hz import VoltaBox500Hz
+from volta.providers.phones.android import AndroidPhone
+from volta.mappers.events.router import EventsRouter
+from volta.listeners.sync.sync import SyncFinder
 from volta.common.util import Tee
 
 # setup Volta and start
@@ -391,8 +395,8 @@ Available configuration options:
 
 Sample usage:
 ```python
-from volta.boxes.box500hz import VoltaBox500Hz
-from volta.report.report import FileListener
+from volta.providers.boxes.box500hz import VoltaBox500Hz
+from volta.listeners.report.report import FileListener
 from volta.common.util import Tee
 import queue
 import time
@@ -427,8 +431,8 @@ Available configuration options:
 
 Sample usage:
 ```python
-from volta.boxes.box500hz import VoltaBox500Hz
-from volta.uploader.uploader import DataUploader
+from volta.providers.boxes.box500hz import VoltaBox500Hz
+from volta.listeners.uploader.uploader import DataUploader
 from volta.common.util import Tee
 import queue
 import time
