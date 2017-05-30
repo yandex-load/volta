@@ -115,6 +115,7 @@ class Core(object):
                 id=self.test_id
             ) for key in self.event_types
         }
+        self.finished = False
 
     def configure(self):
         """
@@ -151,6 +152,16 @@ class Core(object):
                 self.event_listeners[type].append(self.uploader)
             self.grabber_listeners.append(self.uploader)
 
+            # create job
+            create_job_data = {
+                'key_date' : self.uploader.key_date,
+                'test_id': self.test_id,
+                'version': '2',
+                'task': self.uploader.task,
+                'person': self.uploader.operator,
+            }
+            self.uploader.create_job(create_job_data)
+
         self._setup_filelisteners()
 
     def _setup_filelisteners(self):
@@ -176,7 +187,7 @@ class Core(object):
             phone
         """
         logger.info('Starting test...')
-        self.start_time = time.time()
+        self.start_time = int(time.time() * 10 ** 6)
 
         if self.config.get('volta', {}):
             self.volta.start_test(self.grabber_q)
@@ -196,11 +207,16 @@ class Core(object):
             self.events_parser = EventsRouter(self.phone_q, self.event_listeners)
             self.events_parser.start()
 
+        while not self.finished:
+            time.sleep(1)
+
+
     def end_test(self):
         """
         Interrupts test: stops grabbers and events parsers
         """
         logger.info('Finishing test...')
+        self.finished = True
         if self.config.get('volta', {}):
             self.volta.end_test()
             self.process_currents.close()
@@ -216,12 +232,28 @@ class Core(object):
         logger.info('Post process...')
         for artifact in self.artifacts:
             artifact.close()
+        sync_data = {}
         if self.config.get('sync', {}):
             try:
-                meta_data = self.sync_finder.find_sync_points()
+                sync_data = self.sync_finder.find_sync_points()
             except ValueError:
                 logger.error('Unable to sync', exc_info=True)
-                meta_data = {}
-            meta_data['start'] = self.start_time
-            logger.info('meta: %s', meta_data)
+        update_job_data = {
+            'test_id': self.test_id,
+            'test_start': self.start_time,
+            'sys_uts_offset': sync_data.get('sys_uts_offset', None),
+            'log_uts_offset': sync_data.get('sys_uts_offset', None),
+            'sync_sample': sync_data.get('sync_sample', None),
+            'name': 'test name',
+            'dsc': 'test dsc',
+            'person': self.uploader.operator,
+            'device_id': 'test device_id',
+            'device_model': 'test device_model',
+            'device_os': 'test device_os',
+            'app': 'test app',
+            'ver': 'test ver',
+            'meta': 'teeeeest meta',
+            'task': 'LOAD-272'
+        }
+        self.uploader.update_job(update_job_data)
         logger.info('Finished!')
