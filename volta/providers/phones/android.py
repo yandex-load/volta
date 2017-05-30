@@ -64,7 +64,7 @@ class AndroidPhone(Phone):
         self.unplug_type = config.get('unplug_type', 'auto')
         # lightning app configuration
         self.lightning_apk_path = config.get('lightning', pkg_resources.resource_filename(
-            'volta.phones', 'binary/lightning-new3.apk')
+            'volta.providers.phones', 'binary/lightning-new3.apk')
         )
         self.lightning_apk_class = config.get('lightning_class', 'net.yandex.overload.lightning')
         self.lightning_apk_fname = None

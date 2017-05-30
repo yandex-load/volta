@@ -2,7 +2,10 @@ import logging
 import requests
 import datetime
 import uuid
+import pwd
+import os
 
+from urlparse import urlparse
 from volta.common.interfaces import DataListener
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -19,7 +22,9 @@ class DataUploader(DataListener):
     def __init__(self, config):
         super(DataUploader, self).__init__(config)
         self.addr = config.get('address', 'https://lunapark.test.yandex-team.ru/api/volta')
+        self.hostname = urlparse(self.addr).scheme+'://'+urlparse(self.addr).netloc
         self.test_id = config.get('test_id', "{uuid}".format(uuid=uuid.uuid4().hex))
+        self.task = config.get('task')
         self.key_date = datetime.datetime.now().strftime("%Y-%m-%d")
         self.data_types_to_tables = {
             'currents': 'volta.currents',
@@ -37,6 +42,10 @@ class DataUploader(DataListener):
             'fragment': ['key_date', 'test_id', 'sys_uts', 'log_uts', 'app', 'tag', 'message'],
             'unknown': ['key_date', 'test_id', 'sys_uts', 'message']
         }
+        try:
+            self.operator = config.get('operator', pwd.getpwuid(os.geteuid())[0])
+        except:
+            self.operator = 'alien'
 
     def put(self, data, type):
         """ Process data
@@ -69,9 +78,22 @@ class DataUploader(DataListener):
             logger.warning('Unknown data type for DataUplaoder: %s', exc_info=True)
             return
 
-    def __upload_meta(self, data):
-        # TODO
-        pass
+    def create_job(self, data):
+        url = "{url}{path}".format(url=self.hostname, path="/mobile/create_job.json")
+        req = requests.post(url, data=data, verify=False)
+        logger.debug('Lunapark create job status: %s', req.status_code)
+        logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
+        req.raise_for_status()
+        return
+
+    def update_job(self, data):
+        url = "{url}{path}".format(url=self.hostname, path="/mobile/update_job.json")
+        req = requests.post(url, data=data, verify=False)
+        logger.debug('Lunapark create job status: %s', req.status_code)
+        logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
+        req.raise_for_status()
+        return
+
 
     def close(self):
         pass
