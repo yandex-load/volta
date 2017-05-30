@@ -1,5 +1,7 @@
 Yandex Volta is a framework for mobile performance and energy efficiency analysis.
 
+![Volta](images/volta.jpg)
+
 **Table of Contents**
 
    * [Links](#links)
