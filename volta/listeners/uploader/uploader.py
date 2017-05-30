@@ -23,7 +23,10 @@ class DataUploader(DataListener):
         super(DataUploader, self).__init__(config)
         self.addr = config.get('address', 'https://lunapark.test.yandex-team.ru/api/volta')
         self.hostname = urlparse(self.addr).scheme+'://'+urlparse(self.addr).netloc
-        self.test_id = config.get('test_id', "{uuid}".format(uuid=uuid.uuid4().hex))
+        self.test_id = config.get('test_id', "{date}_{uuid}".format(
+            date=datetime.datetime.now().strftime("%Y-%m-%d"),
+            uuid=uuid.uuid4().hex
+        ))
         self.task = config.get('task')
         self.key_date = datetime.datetime.now().strftime("%Y-%m-%d")
         self.data_types_to_tables = {

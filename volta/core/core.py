@@ -99,7 +99,10 @@ class Core(object):
         self.grabber_listeners = []
         self.start_time = None
         self.artifacts = []
-        self.test_id = "{uuid}".format(uuid=uuid.uuid4().hex)
+        self.test_id = "{date}_{uuid}".format(
+            date=datetime.datetime.now().strftime("%Y-%m-%d"),
+            uuid=uuid.uuid4().hex
+        )
         logger.info('Test id: %s', self.test_id)
         self.key_date = datetime.datetime.now().strftime("%Y-%m-%d")
         # TODO: should be configurable by config
