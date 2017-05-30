@@ -139,13 +139,13 @@ import time
 import logging
 
 config = {'source': '/dev/cu.wchusbserial1420'}
-volta = VoltaBox500Hz(config) # VoltaBox class
-q = queue.Queue() # queue for results
-volta.start_test(q) # start test and pass results queue
-time.sleep(5) # do something (start autotests, do manual testing ...). I passed 5 seconds sleep as a placeholder.
-volta.end_test() # end test execution
+volta_box = VoltaBox500Hz(config) # VoltaBox class
+q = queue.Queue()  # queue for results
+volta_box.start_test(q)  # start acquiring data
+time.sleep(5)  # do something (start autotests, do manual testing ...)
+volta_box.end_test()  # stop acquiring data
 
-# and you can read pandas.DataFrames from results queue,
+# you can read pandas.DataFrames from results queue,
 # data format: `['uts', 'value']`. Microseconds from test start and electrical currents value.
 print(q.get_nowait())
 ```
@@ -193,15 +193,16 @@ config = {
   'test_runner': 'android.support.test.runner.AndroidJUnitRunner'
 }
 
-phone = AndroidPhone(config) # create Phone class
-q = queue.Queue() # create python queue for results
-phone.prepare() # prepare phone to test - clean logs, install test apps and install volta's `lightning` app for synchronization
-phone.start(q) # start test and pass results queue
-phone.run_test() # run test app, specified in config
-time.sleep(5) # do something ...
-phone.end() # end test execution
 
-# and you can read pandas.DataFrames from results queue,
+phone = AndroidPhone(config)  # create Phone class
+q = queue.Queue()  # create python queue for results
+phone.prepare()  # prepare phone for test - clean logs, install test apps and install volta's `lightning` app for synchronization
+phone.start(q)  # start acquiring log messages
+phone.run_test()  # run test app, specified in config
+time.sleep(5)  # do something ...
+phone.end()  # stop acquiring log messages
+
+# you can read pandas.DataFrames from results queue,
 # data format: `['sys_uts', 'message']`. Microseconds from first event in phone log and message.
 print(q.get_nowait())
 ```
@@ -227,11 +228,11 @@ import time
 import logging
 
 config = {'source': '0x6382910F98C26'}
-phone = iPhone(config) # create Phone class
-q = queue.Queue() # queue for results
-phone.prepare()
-phone.start(q)
-phone.end()
+phone = iPhone(config)  # create Phone class
+q = queue.Queue()  # create python queue for results
+phone.prepare()  # prepare for test
+phone.start(q)  # start phone log data acquiring
+phone.end()  # stop phone log data acquiring
 ```
 
 ## Data Mappers
@@ -277,12 +278,12 @@ import queue
 import time
 import uuid
 
-test_id = uuid.uuid4() # some test id
+test_id = uuid.uuid4()  # some test id
 
-phone_config = {'source': '01e345da733a4764'} # phone id
-phone = AndroidPhone(phone_config) # Phone class
-phone_q = queue.Queue() # queue for results
-phone.start(phone_q) # start phone log reader
+phone_config = {'source': '01e345da733a4764'}  # phone id
+phone = AndroidPhone(phone_config)  # create Phone instance
+phone_q = queue.Queue()  # create python queue for results
+phone.start(phone_q)  # start acquiring phone log messages
 
 event_types = ['event', 'sync', 'fragment', 'metric', 'unknown'] # define event types
 event_listeners = {key:[] for key in event_types} # create dict w/ empty list for each event type
@@ -292,7 +293,7 @@ event_fnames = {
         data=key,
         id=test_id
     ) for key in event_types
-} # file name for each event type
+}  # file name for each event type
 
 # setup FileListener for each event type (at this sample we write each event type to its own file)
 for type, fname in event_fnames.items():
@@ -300,14 +301,13 @@ for type, fname in event_fnames.items():
     f = FileListener(listener_config)
     event_listeners[type].append(f)
 
-# start events router
 events_router = EventsRouter(phone_q, event_listeners)
-events_router.start()
+events_router.start()  # start phone log messages processing and routing
 
 time.sleep(10)
-phone.end()
+phone.end()  # stop acquiring phone log messages
 time.sleep(5)
-events_router.close()
+events_router.close()  # stop phone log messages processing and rouring
 
 # in the end you will have files w/ events for each event type in current working directory
 ```
@@ -335,48 +335,48 @@ from volta.common.util import Tee
 
 # setup Volta and start
 volta_config = {'source': '/dev/cu.wchusbserial1420'} # volta box device
-volta = VoltaBox500Hz(volta_config) # VoltaBox class
-volta_q = queue.Queue() # queue for volta results
-volta_listeners = [] # init electrical current listeners
+volta_box = VoltaBox500Hz(volta_config)  # create VoltaBox class
+volta_q = queue.Queue()  # create python queue for volta results
+volta_listeners = []  # create electrical current listeners list
 
 # setup Phone and start
-phone_config = {'source': '01e345da733a4764'} # phone id
-phone = AndroidPhone(phone_config) # Phone class
-phone_q = queue.Queue() # queue for results
+phone_config = {'source': '01e345da733a4764'}  # phone id
+phone = AndroidPhone(phone_config)  # create Phone class
+phone_q = queue.Queue()  # create python queue for results
 
 # setup EventsRouter
-event_types = ['event', 'sync', 'fragment', 'metric', 'unknown'] # define event types
-event_listeners = {key:[] for key in event_types} # create dict w/ empty list for each event type
+event_types = ['event', 'sync', 'fragment', 'metric', 'unknown']  # define event types
+event_listeners = {key:[] for key in event_types}  # create dict w/ empty list for each event type
 events_router = EventsRouter(phone_q, event_listeners)
 
 # at the moment we have electrical currents queue and phone queue
 sync_config = {'search_interval': 30, 'sample_rate': volta.sample_rate}
-sync_finder = SyncFinder(sync_config)
+sync_finder = SyncFinder(sync_config)  # create SyncFinder class
 
 # subscribe our SyncFinder to electrical current and sync events
 volta_listeners.append(sync_finder)
 event_listeners['sync'].append(sync_finder)
 
 # now process electrical currents to listeners
-# Tee is a thread: drains the queue and send data to listeners
+# Tee drains the queue and send data to listeners
 process_volta_data = Tee(
     volta_q,
     volta_listeners,
     'currents'
 )
 
-volta.start_test(volta_q) # start volta data grabber
-process_volta_data.start() # start volta data processing
-phone.start(phone_q) # start phone log reader
-events_router.start() # start events processing
+volta_box.start_test(volta_q)  # start volta_box data acquiring
+process_volta_data.start()  # start volta_box data processing
+phone.start(phone_q)  # start acquiring phone log messages
+events_router.start()  # start phone logs processing and routing
+
 # do some work... or maybe phone.run_test()
 time.sleep(15)
 
-# end the test
-volta.end_test()
-process_volta_data.close()
-phone.end()
-events_router.close()
+volta_box.end_test()  # stop volta_box data acquiring
+process_volta_data.close()  # stop volta_box data processing
+phone.end()  # stop acquiring phone log messages
+events_router.close()  # stop phone logs processing and routing
 
 offsets = sync_finder.find_sync_points()
 print(offsets)
@@ -404,21 +404,21 @@ import time
 import logging
 
 config = {'source': '/dev/cu.wchusbserial1420'}
-volta = VoltaBox500Hz(config) # VoltaBox class
-volta_q = queue.Queue() # queue for results
-volta_listeners = [] # emptry list for listeners
+volta_box = VoltaBox500Hz(config)  # VoltaBox class
+volta_q = queue.Queue()  # queue for results
+volta_listeners = []  # empty list for listeners
 
 # create FileListeners and subscribe it to volta
 report_config = {'fname': 'current_output_filename'}
 file_listener = FileListener(report_config)
 volta_listeners.append(file_listener)
 
-volta_data_process = Tee(volta_q, volta_listeners, 'currents') # start volta data processing
+volta_data_process = Tee(volta_q, volta_listeners, 'currents')  # start volta data processing
 
-volta.start_test(volta_q) # start test and pass results queue
+volta_box.start_test(volta_q)  # start test and pass results queue
 volta_data_process.start()
 time.sleep(15) # do something (start autotests, do manual testing ...). I passed 5 seconds sleep as a placeholder.
-volta.end_test() # end test execution
+volta_box.end_test()  # end test execution
 volta_data_process.close()
 ```
 
@@ -440,21 +440,21 @@ import time
 import logging
 
 config = {'source': '/dev/cu.wchusbserial1420'}
-volta = VoltaBox500Hz(config) # VoltaBox class
-volta_q = queue.Queue() # queue for results
-volta_listeners = [] # emptry list for listeners
+volta_box = VoltaBox500Hz(config)  # VoltaBox class
+volta_q = queue.Queue()  # queue for results
+volta_listeners = []  # emptry list for listeners
 
-# create DataUploader and subscribe it to volta
-uploader_config = {'address': 'https://path/to/clickhouse/api/volta'}
+# create DataUploader and subscribe it to volta_box
+uploader_config = {'address': 'https://lunapark.test.yandex-team.ru/api/volta'}
 uploader = DataUploader(uploader_config)
 volta_listeners.append(uploader)
 
-volta_data_process = Tee(volta_q, volta_listeners, 'currents') # start volta data processing
+volta_data_process = Tee(volta_q, volta_listeners, 'currents')  # start volta data processing
 
-volta.start_test(volta_q) # start test and pass results queue
+volta_box.start_test(volta_q)  # start test and pass results queue
 volta_data_process.start()
 time.sleep(15) # do something (start autotests, do manual testing ...). I passed 5 seconds sleep as a placeholder.
-volta.end_test() # end test execution
+volta_box.end_test()  # end test execution
 volta_data_process.close()
 ```
 
