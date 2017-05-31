@@ -1,0 +1,9 @@
+volta:
+  type: '500hz'
+  source: '/dev/cu.wchusbserial1420'
+uploader:
+  address: 'https://lunapark.test.yandex-team.ru/api/volta'
+  task: 'LOAD-272'
+sync:
+  search_interval: 30
+

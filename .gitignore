@@ -97,3 +97,6 @@ ENV/
 *.data
 *.bin
 *.png
+
+#some mac junk
+.DS_Store

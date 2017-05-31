@@ -1,9 +1,7 @@
 import logging
-import sys
 import signal
 import yaml
 import time
-from optparse import OptionParser
 
 from volta.core.core import Core
 
@@ -24,21 +22,21 @@ def main():
 
     if not args.config:
         raise RuntimeError('Empty config')
-    with open(args.config, 'r') as cfg:
-        cfg_data = cfg.read()
-    try:
-        cfg_dict = yaml.safe_load(cfg_data)
-    except:
-        logger.debug('Config file format not yaml or json...', exc_info=True)
-        raise RuntimeError('Unknown config file format. Malformed?')
+
+    cfg_dict = {}
+    with open(args.config, 'r') as cfg_stream:
+        try:
+            cfg_dict = yaml.safe_load(cfg_stream)
+        except:
+            logger.debug('Config file format not yaml or json...', exc_info=True)
+            raise RuntimeError('Unknown config file format. Malformed?')
 
     core = Core(cfg_dict)
 
     try:
         core.configure()
+        logger.info('Starting test... You can interrupt test w/ Ctrl+C or SIGTERM signal')
         core.start_test()
-        time.sleep(20)
-        core.end_test()
     except KeyboardInterrupt:
         logger.info('Keyboard interrupt, trying graceful shutdown. Do not press interrupt again...')
         core.end_test()
