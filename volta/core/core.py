@@ -99,26 +99,29 @@ class Core(object):
         self.grabber_listeners = []
         self.start_time = None
         self.artifacts = []
+        self.artifacts_dir = config.get('artifacts_dir', "./logs")
         self.test_id = "{date}_{uuid}".format(
             date=datetime.datetime.now().strftime("%Y-%m-%d"),
             uuid=uuid.uuid4().hex
         )
         logger.info('Test id: %s', self.test_id)
         self.key_date = datetime.datetime.now().strftime("%Y-%m-%d")
-        # TODO: should be configurable by config
-        if not os.path.exists(self.key_date):
-            os.makedirs(self.key_date)
-        self.currents_fname = "{dir}/currents_{id}.data".format(dir=self.key_date, id=self.test_id)
+        if not os.path.exists(self.artifacts_dir):
+            os.makedirs(self.artifacts_dir)
+        if not os.path.exists(os.path.join(self.artifacts_dir, self.test_id)):
+            os.makedirs(os.path.join(self.artifacts_dir, self.test_id))
+        self.currents_fname = "{artifacts_dir}/{test_id}/currents.data".format(
+            artifacts_dir=self.artifacts_dir, test_id=self.test_id
+        )
         self.event_types = ['event', 'sync', 'fragment', 'metric', 'unknown']
         self.event_listeners = {key:[] for key in self.event_types}
         self.event_fnames = {
-            key:"{dir}/{data}_{id}.data".format(
-                dir=self.key_date,
-                data=key,
-                id=self.test_id
+            key:"{artifacts_dir}/{test_id}/{data}.data".format(
+                artifacts_dir=self.artifacts_dir,
+                test_id=self.test_id,
+                data=key
             ) for key in self.event_types
         }
-        self.finished = False
 
     def configure(self):
         """
@@ -210,16 +213,11 @@ class Core(object):
             self.events_parser = EventsRouter(self.phone_q, self.event_listeners)
             self.events_parser.start()
 
-        while not self.finished:
-            time.sleep(1)
-
-
     def end_test(self):
         """
         Interrupts test: stops grabbers and events parsers
         """
         logger.info('Finishing test...')
-        self.finished = True
         if self.config.get('volta', {}):
             self.volta.end_test()
             self.process_currents.close()
