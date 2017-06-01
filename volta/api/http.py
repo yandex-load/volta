@@ -7,6 +7,7 @@ from tornado import httpserver
 from tornado import gen
 from tornado.ioloop import IOLoop
 import json
+import traceback
 
 
 from volta.core.core import Core
@@ -19,14 +20,15 @@ active_test = None
 class StartHandler(tornado.web.RequestHandler):
     def post(self):
         global active_test
+        cfg, cfg_data = None, None
         try:
             cfg_data = self.get_body_argument("config")
             cfg = yaml.load(cfg_data)
-        except Exception as exc:
-            self.write('Error parsing config option: %s' % cfg_data)
+        except Exception:
+            self.set_status(400)
+            self.write('Error parsing config: %s. \nTraceback: %s' % (cfg_data, traceback.format_exc()))
             return
         logger.debug('Received config: %s. Starting test', cfg)
-
         try:
             self.core = Core(cfg)
             self.core.configure()
@@ -34,9 +36,10 @@ class StartHandler(tornado.web.RequestHandler):
             active_test = self.core
             self.write(json.dumps({'test_id': self.core.test_id}))
             return
-        except Exception as exc:
+        except Exception:
             logger.warning('Failed to start the test', exc_info=True)
-            self.write_error(500, write='Failed to start the test: %s' % exc)
+            self.set_status(500)
+            self.write('Failed to start the test: %s' % traceback.format_exc())
             return
 
     @gen.coroutine
@@ -47,12 +50,14 @@ class StartHandler(tornado.web.RequestHandler):
 
 class StopHandler(tornado.web.RequestHandler):
     def post(self):
+        global active_test
         if active_test:
             self.core = active_test
             self.core.end_test()
             self.write('Finished active test: %s' % self.core.test_id)
         else:
-            self.write('There is no active tests')
+            self.set_status(404)
+            self.write('There are no active tests')
         return
 
 
@@ -77,6 +82,7 @@ def main():
 
 
     app = VoltaApplication()
+    app.settings['debug'] = True
     app.listen(9998)
 
     url = "http://localhost:{port}".format(port=args.port)
