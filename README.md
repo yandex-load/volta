@@ -435,7 +435,7 @@ Available configuration options:
 * **task** (mandatory) - You can specify task id manually.
 * **test_id** - You can specify test id manually, otherwise it will be automatically generated (using uuid)
 
-Sample yaml config:
+Sample yaml config section for uploader:
 ```yaml
 uploader:
   address: 'https://lunapark.test.yandex-team.ru/api/volta'
