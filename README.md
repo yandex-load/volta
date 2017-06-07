@@ -23,6 +23,8 @@ Yandex Volta is a framework for mobile performance and energy efficiency analysi
          * [Sync module - SyncFinder](#sync-module---syncfinder)
             * [Report module - FileListener](#report-module---filelistener)
             * [Uploader module - DataUploader](#uploader-module---datauploader)
+      * [API](#api)
+         * [HTTP API](#http-api)
    * [Questions](#questions)
 
 
@@ -49,20 +51,20 @@ Install with ```pip install volta```, connect your device, run ```volta```.
 # Volta components
 There are different types of Volta modules
 
-[Core](volta/core/) - core module, configures test life cycle and test pipeline.
+[Core](volta/core/core.py) - core module, configures test life cycle and test pipeline.
 Creates, configures and controls other modules.
 
 **Data Providers**
-* [VoltaBox](volta/boxes/) - module for different types of Volta Boxes.
-* [Phone](volta/phones/) - module for different types of phones. Android and iPhone supported.
+* [VoltaBox](volta/providers/boxes/) - module for different types of Volta Boxes.
+* [Phone](volta/providers/phones/) - module for different types of phones. Android and iPhone supported.
 
 **Data Mappers**
-* [Events](volta/events/) - phone logs parser module.
+* [Events](volta/mappers/events/) - phone logs parser module.
 
 **Data Listeners**
-* [Sync](volta/sync/) - cross-corellation sync module, syncs volta logs to phone logs.
-* [Uploader](volta/uploader/) - data uploader module (e.g. to Overload).
-* [Report](volta/report/) - file write module.
+* [Sync](volta/listeners/sync/) - cross-corellation sync module, syncs volta logs to phone logs.
+* [Uploader](volta/listeners/uploader/) - data uploader module (e.g. to Overload).
+* [Report](volta/listeners/report/) - file write module.
 
 
 # Using Volta
@@ -430,7 +432,16 @@ Upload data. Currently supports only clickhouse TSV upload.
 
 Available configuration options:
 * **address** (mandatory) - Path to destination.
+* **task** (mandatory) - You can specify task id manually.
 * **test_id** - You can specify test id manually, otherwise it will be automatically generated (using uuid)
+
+Sample yaml config:
+```yaml
+uploader:
+  address: 'https://lunapark.test.yandex-team.ru/api/volta'
+  task: 'LOAD-272'
+```
+
 
 Sample usage:
 ```python
@@ -458,6 +469,27 @@ volta_data_process.start()
 time.sleep(15) # do something (start autotests, do manual testing ...). I passed 5 seconds sleep as a placeholder.
 volta_box.end_test()  # end test execution
 volta_data_process.close()
+```
+
+## API
+### HTTP API
+Allows to start and stop test via HTTP interface.
+
+
+Entry point: `volta-http`
+
+
+Simply put config into a POST body.
+
+
+Start test sample:
+```bash
+curl 'http://localhost:9998/api/v1/start/' --data 'config={"volta":{"source":"/dev/cu.wchusbserial1420","type":"500hz"}}' -v
+```
+
+Stop test sample:
+```bash
+curl 'http://localhost:9998/api/v1/stop/' -XPOST -v
 ```
 
 

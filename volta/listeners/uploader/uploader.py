@@ -87,6 +87,7 @@ class DataUploader(DataListener):
         logger.debug('Lunapark create job status: %s', req.status_code)
         logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
         req.raise_for_status()
+        logger.info('Lunapark test id: %s', req.json()['jobno'])
         return
 
     def update_job(self, data):

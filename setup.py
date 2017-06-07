@@ -32,7 +32,8 @@ yandex package for mobile energy consumption measurements
     ],
     entry_points={
         'console_scripts': [
-            'volta = volta.core.cli:main',
+            'volta = volta.api.cli:main',
+            'volta-http = volta.api.http:main',
             'volta-uploader = volta.core.postloader:main',
         ],
     },
