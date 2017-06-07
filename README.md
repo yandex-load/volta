@@ -23,6 +23,8 @@ Yandex Volta is a framework for mobile performance and energy efficiency analysi
          * [Sync module - SyncFinder](#sync-module---syncfinder)
             * [Report module - FileListener](#report-module---filelistener)
             * [Uploader module - DataUploader](#uploader-module---datauploader)
+      * [API](#api)
+         * [HTTP API](#http-api)
    * [Questions](#questions)
 
 
@@ -467,6 +469,27 @@ volta_data_process.start()
 time.sleep(15) # do something (start autotests, do manual testing ...). I passed 5 seconds sleep as a placeholder.
 volta_box.end_test()  # end test execution
 volta_data_process.close()
+```
+
+## API
+### HTTP API
+Allows to start and stop test via HTTP interface.
+
+
+Entry point: `volta-http`
+
+
+Simply put config into a POST body.
+
+
+Start test sample:
+```bash
+curl 'http://localhost:9998/api/v1/start/' --data 'config={"volta":{"source":"/dev/cu.wchusbserial1420","type":"500hz"}}' -v
+```
+
+Stop test sample:
+```bash
+curl 'http://localhost:9998/api/v1/stop/' -XPOST -v
 ```
 
 
