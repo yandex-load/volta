@@ -1,5 +1,7 @@
 Yandex Volta is a framework for mobile performance and energy efficiency analysis.
 
+[Telegram](https://t.me/joinchat/AAAAAAvBER7vU-672v1jbw) chat
+
 ![Volta](images/volta_small.jpg)
 
 **Table of Contents**
@@ -494,5 +496,5 @@ curl 'http://localhost:9998/api/v1/stop/' -XPOST -v
 
 
 # Questions
-Any questions to Alexey Lavrenuke <direvius@yandex-team.ru>.
+Any questions to Alexey Lavrenuke <direvius@yandex-team.ru> OR [Telegram](https://t.me/joinchat/AAAAAAvBER7vU-672v1jbw) chat.
 
