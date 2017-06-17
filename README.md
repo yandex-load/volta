@@ -1,5 +1,7 @@
 Yandex Volta is a framework for mobile performance and energy efficiency analysis.
 
+[Telegram](https://t.me/joinchat/AAAAAAvBER7vU-672v1jbw) chat
+
 ![Volta](images/volta_small.jpg)
 
 **Table of Contents**
@@ -435,7 +437,7 @@ Available configuration options:
 * **task** (mandatory) - You can specify task id manually.
 * **test_id** - You can specify test id manually, otherwise it will be automatically generated (using uuid)
 
-Sample yaml config:
+Sample yaml config section for uploader:
 ```yaml
 uploader:
   address: 'https://lunapark.test.yandex-team.ru/api/volta'
@@ -494,5 +496,5 @@ curl 'http://localhost:9998/api/v1/stop/' -XPOST -v
 
 
 # Questions
-Any questions to Alexey Lavrenuke <direvius@yandex-team.ru>.
+Any questions to Alexey Lavrenuke <direvius@yandex-team.ru> OR [Telegram](https://t.me/joinchat/AAAAAAvBER7vU-672v1jbw) chat.
 
