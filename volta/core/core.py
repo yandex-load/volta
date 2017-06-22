@@ -223,6 +223,7 @@ class Core(object):
             self.process_currents.close()
         if self.config.get('phone', {}):
             self.phone.end()
+            time.sleep(5)
             self.events_parser.close()
 
     def post_process(self):
@@ -237,24 +238,26 @@ class Core(object):
         if self.config.get('sync', {}):
             try:
                 sync_data = self.sync_finder.find_sync_points()
+                logger.debug('Sync data: %s', sync_data)
             except ValueError:
                 logger.error('Unable to sync', exc_info=True)
-        update_job_data = {
-            'test_id': self.test_id,
-            'test_start': self.start_time,
-            'sys_uts_offset': sync_data.get('sys_uts_offset', None),
-            'log_uts_offset': sync_data.get('sys_uts_offset', None),
-            'sync_sample': sync_data.get('sync_sample', None),
-            'name': 'test name',
-            'dsc': 'test dsc',
-            'person': self.uploader.operator,
-            'device_id': 'test device_id',
-            'device_model': 'test device_model',
-            'device_os': 'test device_os',
-            'app': 'test app',
-            'ver': 'test ver',
-            'meta': 'teeeeest meta',
-            'task': 'LOAD-272'
-        }
-        self.uploader.update_job(update_job_data)
+        if self.config.get('uploader', {}):
+            update_job_data = {
+                'test_id': self.test_id,
+                'test_start': self.start_time,
+                'sys_uts_offset': sync_data.get('sys_uts_offset', None),
+                'log_uts_offset': sync_data.get('sys_uts_offset', None),
+                'sync_sample': sync_data.get('sync_sample', None),
+                'name': 'test name',
+                'dsc': 'test dsc',
+                'person': self.uploader.operator,
+                'device_id': 'test device_id',
+                'device_model': 'test device_model',
+                'device_os': 'test device_os',
+                'app': 'test app',
+                'ver': 'test ver',
+                'meta': 'teeeeest meta',
+                'task': 'LOAD-272'
+            }
+            self.uploader.update_job(update_job_data)
         logger.info('Finished!')
