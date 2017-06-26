@@ -22,17 +22,13 @@ android_logevent_re = re.compile(r"""
     \s+
     \S+
     \s+
-    \S+
-    \s+
-    \S+
-    \s+
     (?P<message>.*)
     $
     """, re.VERBOSE | re.IGNORECASE
 )
 
 
-class AndroidPhone(Phone):
+class Nexus4(Phone):
     """ Android phone worker class - work w/ phone, read phone logs, run test apps and store data
 
     Attributes:
@@ -62,12 +58,15 @@ class AndroidPhone(Phone):
         self.logcat_stdout_reader = None
         self.logcat_stderr_reader = None
         # mandatory options
-        self.source = config.get('source', '00dc3419957ba583')
+        self.source = config.get('source', '01dd6e7352c97826')
         self.unplug_type = config.get('unplug_type', 'auto')
         # lightning app configuration
         self.lightning_apk_path = config.get('lightning', pkg_resources.resource_filename(
             'volta.providers.phones', 'binary/lightning-new3.apk')
         )
+        logger.info('lightning_apk_path '+self.lightning_apk_path)
+        self.blink_delay = config.get('blink_delay', 0)
+        self.blink_toast = config.get('blink_toast', 0)
         self.lightning_apk_class = config.get('lightning_class', 'net.yandex.overload.lightning')
         self.lightning_apk_fname = None
         # test app configuration
@@ -87,7 +86,7 @@ class AndroidPhone(Phone):
 
         # install lightning
         self.lightning_apk_fname = resource.get_opener(self.lightning_apk_path).get_filename
-        logger.info('Installing lightning apk...')
+        logger.info('Installing lightning apk '+self.lightning_apk_fname)
         execute("adb -s {device_id} install -r -d -t {apk}".format(device_id=self.source, apk=self.lightning_apk_fname))
 
         # install apks
@@ -98,18 +97,11 @@ class AndroidPhone(Phone):
         # clean logcat
         execute("adb -s {device_id} logcat -c".format(device_id=self.source))
 
-        # unplug device or start logcat
-        if self.unplug_type == 'manual':
-            logger.info('Detach the phone %s from USB and press enter to continue...', self.source)
-            # TODO make API and remove this
-            raw_input()
-
-
     def start(self, results):
         """ Grab stage: starts log reader, make sync w/ flashlight
 
         pipeline:
-            if uplug_type is manual:
+            if unplug_type is manual:
                 remind user to start flashlight app
             if unplug_type is auto:
                 start async logcat reader
@@ -120,25 +112,18 @@ class AndroidPhone(Phone):
         """
         self.phone_q = results
 
-        if self.unplug_type == 'manual':
-            logger.info("It's time to start flashlight app!")
-            return
-
-        if self.unplug_type == 'auto':
-            self.__start_async_logcat()
-            # start flashes app
-            execute(
-                "adb -s {device_id} shell am start -n {package}/{runner}.MainActivity".format(
-                    device_id=self.source,
-                    package=self.lightning_apk_class,
-                    runner=self.lightning_apk_class
-                )
+        self.__start_async_logcat()
+        # start flashes app
+        execute(
+            "adb -s {device_id} shell am startservice -a BLINK --ei DELAY 10000 -n com.yandex.pmu_blinker/.PmuIntentService".format(
+                device_id=self.source,
             )
-            return
+        )
+        return
 
     def __start_async_logcat(self):
         """ Start logcat read in subprocess and make threads to read its stdout/stderr to queues """
-        cmd = "adb -s {device_id} logcat".format(device_id=self.source)
+        cmd = "adb -s {device_id} logcat -v time".format(device_id=self.source)
         logger.debug("Execute : %s", cmd)
         self.logcat_process = popen(cmd)
 
@@ -160,19 +145,14 @@ class AndroidPhone(Phone):
             if unplug_type is manual:
                 skip
         """
-
-        if self.unplug_type == 'manual':
-            return
-
-        if self.unplug_type == 'auto':
-            execute(
-                "adb shell am instrument -w -e class {test_class} {test_package}/{test_runner}".format(
-                    test_class=self.test_class,
-                    test_package=self.test_package,
-                    test_runner=self.test_runner
-                )
-            )
-            return
+        #execute(
+        #    "adb shell am instrument -w -e class {test_class} {test_package}/{test_runner}".format(
+        #        test_class=self.test_class,
+        #        test_package=self.test_package,
+        #        test_runner=self.test_runner
+        #    )
+        #)
+        return
 
     def end(self):
         """ Stop test and grabbers
@@ -185,25 +165,10 @@ class AndroidPhone(Phone):
                 stop async logcat process, readers and queues
         """
 
-        if self.unplug_type == 'manual':
-            logger.warning("Plug the phone in and press `enter` to continue...")
-            # TODO make API and remove this
-            raw_input()
-
-            _, stdout, stderr = execute(
-                "adb -s {device_id} logcat -d".format(device_id=self.source), catch_out=True
-            )
-            logger.debug('Recieved %d logcat data', len(stdout))
-            self.phone_q.put(
-                chunk_to_df(stdout, android_logevent_re)
-            )
-            return
-
-        if self.unplug_type == 'auto':
-            self.logcat_reader_stdout.close()
-            self.logcat_reader_stderr.close()
-            self.logcat_process.kill()
-            self.drain_logcat_stdout.close()
-            self.drain_logcat_stderr.close()
-            return
+        self.logcat_reader_stdout.close()
+        self.logcat_reader_stderr.close()
+        self.logcat_process.kill()
+        self.drain_logcat_stdout.close()
+        self.drain_logcat_stderr.close()
+        return
 

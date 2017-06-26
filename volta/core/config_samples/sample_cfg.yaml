@@ -14,7 +14,7 @@ phone:
 sync:
   search_interval: 30
 uploader:
-  address: 'https://lunapark.test.yandex-team.ru/api/volta'
+  address: 'https://lunapark.yandex-team.ru/api/volta'
 meta:
   app: 'testapp'
   device_model: 'device model'

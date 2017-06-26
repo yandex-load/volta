@@ -2,5 +2,5 @@ volta:
   type: '500hz'
   source: '/home/netort/currents.data'
 uploader:
-  address: 'https://lunapark.test.yandex-team.ru/api/volta'
+  address: 'https://lunapark.yandex-team.ru/api/volta'
 

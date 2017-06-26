@@ -59,27 +59,31 @@ class DataUploader(DataListener):
                 Should be processed differently from each other
             type (string): dataframe type
         """
-        if type in self.data_types_to_tables:
-            data.loc[:, ('key_date')] = self.key_date
-            data.loc[:, ('test_id')] = self.test_id
-            data = data.to_csv(
-                sep='\t',
-                header=False,
-                index=False,
-                columns=self.clickhouse_output_fmt.get(type, [])
-            )
-            url = "{addr}/?query={query}".format(
-                addr=self.addr,
-                query="INSERT INTO {table} FORMAT TSV".format(table=self.data_types_to_tables[type])
-            )
-            r = requests.post(url, data=data, verify=False)
+        try:
+            if type in self.data_types_to_tables:
+                data.loc[:, ('key_date')] = self.key_date
+                data.loc[:, ('test_id')] = self.test_id
+                data = data.to_csv(
+                    sep='\t',
+                    header=False,
+                    index=False,
+                    na_rep="",
+                    columns=self.clickhouse_output_fmt.get(type, [])
+                )
+                url = "{addr}/?query={query}".format(
+                    addr=self.addr,
+                    query="INSERT INTO {table} FORMAT TSV".format(table=self.data_types_to_tables[type])
+                )
+                r = requests.post(url, data=data, verify=False)
 
-            if r.status_code != 200:
-                logger.warning('Request w/ status code not 200. Error message:\n%s', r.text)
-            r.raise_for_status()
-        else:
-            logger.warning('Unknown data type for DataUplaoder: %s', exc_info=True)
-            return
+                if r.status_code != 200:
+                    logger.warning('Request w/ status code not 200. Error message:\n%s. Data: %s', r.text, data)
+                r.raise_for_status()
+            else:
+                logger.warning('Unknown data type for DataUplaoder: %s', exc_info=True)
+                return
+        except:
+            logger.info('Error sending data to Lunapark: %s', exc_info=True)
 
     def create_job(self, data):
         url = "{url}{path}".format(url=self.hostname, path="/mobile/create_job.json")
@@ -87,13 +91,15 @@ class DataUploader(DataListener):
         logger.debug('Lunapark create job status: %s', req.status_code)
         logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
         req.raise_for_status()
+        if req.json()['success'] == False:
+            raise RuntimeError('Lunapark id not created: %s' % req.json()['error'])
         logger.info('Lunapark test id: %s', req.json()['jobno'])
         return
 
     def update_job(self, data):
         url = "{url}{path}".format(url=self.hostname, path="/mobile/update_job.json")
         req = requests.post(url, data=data, verify=False)
-        logger.debug('Lunapark create job status: %s', req.status_code)
+        logger.debug('Lunapark update job status: %s', req.status_code)
         logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
         req.raise_for_status()
         return

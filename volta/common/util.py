@@ -212,6 +212,8 @@ def chunk_to_df(chunk, regexp):
     df = None
     for line in chunk.split('\n'):
         if line:
+            if line.startswith('---------'):
+                continue
             match = regexp.match(line)
             if match:
                 ts = datetime.datetime.strptime("{date} {time}".format(
@@ -225,6 +227,12 @@ def chunk_to_df(chunk, regexp):
                     (ts-datetime.datetime(1970,1,1)).total_seconds() * 10 ** 6
                 )
                 message = match.group('message')
+                message = message\
+                    .replace('\t', '__tab__')\
+                    .replace('\n', '__nl__')\
+                    .replace('\r', '')\
+                    .replace('\f', '')\
+                    .replace('\v', '')
                 results.append([sys_uts, message])
             else:
                 logger.debug('Trash data in logs: %s', line)

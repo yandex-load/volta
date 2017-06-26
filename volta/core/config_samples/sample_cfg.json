@@ -26,6 +26,6 @@
     "search_interval": 30
   }, 
   "uploader": {
-    "address": "https://lunapark.test.yandex-team.ru/api/volta"
+    "address": "https://lunapark.yandex-team.ru/api/volta"
   }
 }

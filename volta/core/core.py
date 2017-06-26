@@ -34,6 +34,7 @@ class Factory(object):
         self.phones = {
             'android': phones.AndroidPhone,
             'iphone': phones.iPhone,
+            'nexus4': phones.Nexus4,
         }
 
     def detect_volta(self, config):
@@ -51,6 +52,8 @@ class Factory(object):
         if type in self.voltas:
             logger.debug('Volta type detected: %s', type)
             return self.voltas[type](config)
+        else:
+            raise RuntimeError('Unknown VoltaBox type: %s', type)
 
     def detect_phone(self, config):
         """
@@ -67,6 +70,8 @@ class Factory(object):
         if type in self.phones:
             logger.debug('Phone type detected: %s', type)
             return self.phones[type](config)
+        else:
+            raise RuntimeError('Unknown Phone type: %s', type)
 
 
 class Core(object):
@@ -166,7 +171,7 @@ class Core(object):
                 'task': self.uploader.task,
                 'person': self.uploader.operator,
             }
-            self.uploader.create_job(create_job_data)
+            jobid = self.uploader.create_job(create_job_data)
 
         self._setup_filelisteners()
 
@@ -223,7 +228,10 @@ class Core(object):
             self.process_currents.close()
         if self.config.get('phone', {}):
             self.phone.end()
-            time.sleep(5)
+            while self.phone_q.qsize() >= 1:
+                logger.info('qsize: %s', self.phone_q.qsize())
+                time.sleep(5)
+                logger.debug('Waiting for phone events processing...')
             self.events_parser.close()
 
     def post_process(self):
