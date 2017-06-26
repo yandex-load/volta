@@ -255,13 +255,13 @@ Available configuration options: None
 
 Special messages format:
 ```
-%app%: [volta] %nanotime% %type% %tag% %message%
+[volta] %nanotime% %type% %tag% %message%
 ```
 
 
 Special message format sample:
 ```
-lightning: [volta] 12345678 fragment TagFragment start
+[volta] 12345678 fragment TagFragment start
 ```
 
 
