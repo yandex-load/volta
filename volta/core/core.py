@@ -229,7 +229,7 @@ class Core(object):
         if self.config.get('phone', {}):
             self.phone.end()
             while self.phone_q.qsize() >= 1:
-                logger.info('qsize: %s', self.phone_q.qsize())
+                logger.debug('qsize: %s', self.phone_q.qsize())
                 time.sleep(5)
                 logger.debug('Waiting for phone events processing...')
             self.events_parser.close()
