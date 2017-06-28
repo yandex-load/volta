@@ -228,10 +228,10 @@ class Core(object):
             self.process_currents.close()
         if self.config.get('phone', {}):
             self.phone.end()
-            while self.phone_q.qsize() >= 1:
+            if self.phone_q.qsize() >= 1:
                 logger.debug('qsize: %s', self.phone_q.qsize())
-                time.sleep(5)
                 logger.debug('Waiting for phone events processing...')
+                time.sleep(10)
             self.events_parser.close()
 
     def post_process(self):
