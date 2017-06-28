@@ -93,7 +93,9 @@ class EventsRouter(threading.Thread):
         """
         Parse event entry and modify
         """
-        match = re_.match(row.message)
+        match = None
+        if row.message != '':
+            match = re_.match(row.message)
         if match:
             row["app"] = 'testapp'
             try:
