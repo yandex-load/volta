@@ -127,6 +127,7 @@ class Core(object):
                 data=key
             ) for key in self.event_types
         }
+        self.lunapark_id = None
 
     def configure(self):
         """
@@ -171,9 +172,11 @@ class Core(object):
                 'task': self.uploader.task,
                 'person': self.uploader.operator,
             }
-            jobid = self.uploader.create_job(create_job_data)
+            self.lunapark_id = self.uploader.create_job(create_job_data)
 
         self._setup_filelisteners()
+        
+        return
 
     def _setup_filelisteners(self):
         logger.debug('Creating file listeners...')

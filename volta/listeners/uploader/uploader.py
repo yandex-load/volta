@@ -91,10 +91,14 @@ class DataUploader(DataListener):
         logger.debug('Lunapark create job status: %s', req.status_code)
         logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
         req.raise_for_status()
+
         if req.json()['success'] == False:
             raise RuntimeError('Lunapark id not created: %s' % req.json()['error'])
-        logger.info('Lunapark test id: %s', req.json()['jobno'])
-        return
+        else:
+            jobno = req.json()['jobno']
+            logger.info('Lunapark test id: %s', jobno)
+            return jobno
+
 
     def update_job(self, data):
         url = "{url}{path}".format(url=self.hostname, path="/mobile/update_job.json")
