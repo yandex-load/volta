@@ -175,7 +175,7 @@ class Core(object):
             self.lunapark_id = self.uploader.create_job(create_job_data)
 
         self._setup_filelisteners()
-        
+
         return
 
     def _setup_filelisteners(self):

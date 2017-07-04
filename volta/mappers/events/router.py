@@ -94,8 +94,12 @@ class EventsRouter(threading.Thread):
         Parse event entry and modify
         """
         match = None
-        if row.message != '':
-            match = re_.match(row.message)
+        try:
+            if row.message != '':
+                match = re_.match(row.message)
+        except:
+            logger.debug('Unknown error in message parse: %s', exc_info=True)
+            pass
         if match:
             row["app"] = 'testapp'
             try:
