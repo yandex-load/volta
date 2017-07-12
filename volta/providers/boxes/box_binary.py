@@ -33,6 +33,8 @@ class VoltaBoxBinary(VoltaBox):
         self.chop_ratio = config.get('chop_ratio', 1)
         self.baud_rate = config.get('baud_rate', 230400)
         self.grab_timeout = config.get('grab_timeout', 1)
+        self.slope = config.get('slope', 1)
+        self.offset = config.get('offset', 0)
         # initialize data source
         self.source_opener = resource.get_opener(self.source)
         self.source_opener.baud_rate = self.baud_rate
@@ -66,7 +68,7 @@ class VoltaBoxBinary(VoltaBox):
             pass
 
         self.reader = BoxBinaryReader(
-            self.data_source, self.sample_rate
+            self.data_source, self.sample_rate, self.slope, self.offset
         )
         self.pipeline = Drain(
             TimeChopper(
@@ -90,12 +92,14 @@ class BoxBinaryReader(object):
     Read chunks from source, convert and return numpy.array
     """
 
-    def __init__(self, source, sample_rate):
+    def __init__(self, source, sample_rate, slope=1, offset=0):
         self.closed = False
         self.source = source
         self.sample_rate = sample_rate
         self.buffer = ""
         self.orphan_byte = None
+        self.slope = slope
+        self.offset = offset
 
     def _read_chunk(self):
         data = self.source.read(self.sample_rate * 2 * 10)
@@ -106,7 +110,7 @@ class BoxBinaryReader(object):
             if (len(data) % 2 != 0):
                 self.orphan_byte = data[-1:]
                 data = data[:-1]
-            chunk = string_to_np(data).astype(np.float32)
+            chunk = string_to_np(data).astype(np.float32) * (5000./1024) * self.slope + self.offset
             return chunk
 
     def __iter__(self):
