@@ -12,8 +12,7 @@ from volta.common.resource import manager as resource
 
 logger = logging.getLogger(__name__)
 
-
-android_logevent_re = re.compile(r"""
+event_regexp = r"""
     ^(?P<date>\S+)
     \s+
     (?P<time>\S+)
@@ -28,8 +27,7 @@ android_logevent_re = re.compile(r"""
     \s+
     (?P<message>.*)
     $
-    """, re.VERBOSE | re.IGNORECASE
-)
+    """
 
 
 class AndroidPhone(Phone):
@@ -75,6 +73,12 @@ class AndroidPhone(Phone):
         self.test_class = config.get('test_class', '')
         self.test_package = config.get('test_package', '')
         self.test_runner = config.get('test_runner', '')
+        self.regexp = config.get('event_regexp', event_regexp)
+        try:
+            self.compiled_regexp = re.compile(self.regexp, re.VERBOSE | re.IGNORECASE)
+        except:
+            logger.debug('Unable to parse specified regexp', exc_info=True)
+            raise RuntimeError("Unable to parse specified regexp")
 
     def prepare(self):
         """ Phone preparements stage: install apps etc
@@ -142,12 +146,12 @@ class AndroidPhone(Phone):
         logger.debug("Execute : %s", cmd)
         self.logcat_process = popen(cmd)
 
-        self.logcat_reader_stdout = LogReader(self.logcat_process.stdout, android_logevent_re)
+        self.logcat_reader_stdout = LogReader(self.logcat_process.stdout, self.compiled_regexp)
         self.drain_logcat_stdout = Drain(self.logcat_reader_stdout, self.phone_q)
         self.drain_logcat_stdout.start()
 
         self.phone_q_err=q.Queue()
-        self.logcat_reader_stderr = LogReader(self.logcat_process.stderr, android_logevent_re)
+        self.logcat_reader_stderr = LogReader(self.logcat_process.stderr, self.compiled_regexp)
         self.drain_logcat_stderr = Drain(self.logcat_reader_stderr, self.phone_q_err)
         self.drain_logcat_stderr.start()
 
@@ -195,7 +199,7 @@ class AndroidPhone(Phone):
             )
             logger.debug('Recieved %d logcat data', len(stdout))
             self.phone_q.put(
-                chunk_to_df(stdout, android_logevent_re)
+                chunk_to_df(stdout, self.compiled_regexp)
             )
             return
 

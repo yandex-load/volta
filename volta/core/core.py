@@ -127,7 +127,6 @@ class Core(object):
                 data=key
             ) for key in self.event_types
         }
-        self.lunapark_id = None
 
     def configure(self):
         """
@@ -172,7 +171,7 @@ class Core(object):
                 'task': self.uploader.task,
                 'person': self.uploader.operator,
             }
-            self.lunapark_id = self.uploader.create_job(create_job_data)
+            self.uploader.create_job(create_job_data)
 
         self._setup_filelisteners()
 
@@ -271,4 +270,7 @@ class Core(object):
                 'task': 'LOAD-272'
             }
             self.uploader.update_job(update_job_data)
+        if self.config.get('uploader', {}):
+            if self.uploader.jobno:
+                logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
         logger.info('Finished!')

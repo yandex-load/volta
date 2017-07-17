@@ -35,6 +35,7 @@ class VoltaBoxBinary(VoltaBox):
         self.grab_timeout = config.get('grab_timeout', 1)
         self.slope = config.get('slope', 1)
         self.offset = config.get('offset', 0)
+        self.power_voltage = config.get('power_voltage', 4700)
         # initialize data source
         self.source_opener = resource.get_opener(self.source)
         self.source_opener.baud_rate = self.baud_rate
@@ -92,7 +93,7 @@ class BoxBinaryReader(object):
     Read chunks from source, convert and return numpy.array
     """
 
-    def __init__(self, source, sample_rate, slope=1, offset=0):
+    def __init__(self, source, sample_rate, slope=1, offset=0, power_voltage=4700):
         self.closed = False
         self.source = source
         self.sample_rate = sample_rate
@@ -100,6 +101,7 @@ class BoxBinaryReader(object):
         self.orphan_byte = None
         self.slope = slope
         self.offset = offset
+        self.power_voltage = float(power_voltage)
 
     def _read_chunk(self):
         data = self.source.read(self.sample_rate * 2 * 10)
@@ -110,7 +112,7 @@ class BoxBinaryReader(object):
             if (len(data) % 2 != 0):
                 self.orphan_byte = data[-1:]
                 data = data[:-1]
-            chunk = string_to_np(data).astype(np.float32) * (5000./1024) * self.slope + self.offset
+            chunk = string_to_np(data).astype(np.float32) * (self.power_voltage/1024) * self.slope + self.offset
             return chunk
 
     def __iter__(self):

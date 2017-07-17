@@ -49,6 +49,7 @@ class DataUploader(DataListener):
             self.operator = config.get('operator', pwd.getpwuid(os.geteuid())[0])
         except:
             self.operator = 'alien'
+        self.jobno = None
 
     def put(self, data, type):
         """ Process data
@@ -95,9 +96,15 @@ class DataUploader(DataListener):
         if req.json()['success'] == False:
             raise RuntimeError('Lunapark id not created: %s' % req.json()['error'])
         else:
-            jobno = req.json()['jobno']
-            logger.info('Lunapark test id: %s', jobno)
-            return jobno
+            self.jobno = req.json()['jobno']
+            logger.info('Lunapark test id: %s', self.jobno)
+            logger.info('Report url: %s/mobile/%s', self.hostname, self.jobno)
+            with open('jobno.log', 'w') as jobnofile:
+                jobnofile.write(
+                    "{path}/mobile/{jobno}".format(
+                        path=self.hostname, jobno=self.jobno
+                    )
+                )
 
 
     def update_job(self, data):
