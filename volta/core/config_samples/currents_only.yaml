@@ -1,4 +1,5 @@
 volta:
+  enabled: true
   type: '500hz'
   source: '/dev/cu.wchusbserial1420'
 

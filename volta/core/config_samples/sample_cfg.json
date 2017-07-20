@@ -1,31 +1,32 @@
 {
   "phone": {
+    "enabled": true,
     "source": "01e345da733a4764", 
     "test_class": "ru.yandex.metrica.test.highload.LittleTests", 
     "test_runner": "android.support.test.runner.AndroidJUnitRunner", 
-    "unplug_type": "auto", 
     "test_package": "ru.yandex.mobile.metrica.test", 
     "test_apps": [
       "http://highload-metrica.s3.mds.yandex.net/test-be19404d-de02-4c05-92f1-e2cb3873609f.apk", 
       "http://highload-metrica.s3.mds.yandex.net/app-e19ab4f6-f56e-4a72-a702-61e1527b1da7.apk"
-    ], 
+    ],
     "type": "android"
   }, 
   "volta": {
+    "enabled": true,
     "source": "/dev/cu.wchusbserial1420", 
     "type": "500hz"
   }, 
-  "meta": {
-    "device_model": "device model", 
-    "app": "testapp", 
-    "ver": "ver", 
-    "name": "name", 
-    "dsc": "dsc"
-  }, 
   "sync": {
+    "enabled": true,
     "search_interval": 30
   }, 
   "uploader": {
-    "address": "https://lunapark.yandex-team.ru/api/volta"
+    "enabled": true,
+    "address": "https://lunapark.yandex-team.ru/api/volta",
+    "device_model": "device model",
+    "app": "testapp",
+    "ver": "ver",
+    "name": "name",
+    "dsc": "dsc"
   }
 }
