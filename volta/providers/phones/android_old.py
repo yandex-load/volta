@@ -53,26 +53,28 @@ class AndroidOldPhone(Phone):
     def __init__(self, config):
         """
         Args:
-            config (dict): module configuration data
+            config (VoltaConfig): module configuration data
         """
         Phone.__init__(self, config)
         self.logcat_stdout_reader = None
         self.logcat_stderr_reader = None
         # mandatory options
-        self.source = config.get('source', '00dc3419957ba583')
-        self.unplug_type = config.get('unplug_type', 'auto')
+        self.source = config.get_option('phone', 'source')
+        #self.unplug_type = config.get('unplug_type', 'auto')
         # lightning app configuration
-        self.lightning_apk_path = config.get('lightning', pkg_resources.resource_filename(
-            'volta.providers.phones', 'binary/lightning-new3.apk')
+        self.lightning_apk_path = config.get_option(
+            'phone', 'lightning', pkg_resources.resource_filename(
+                'volta.providers.phones', 'binary/lightning-new3.apk'
+            )
         )
-        self.lightning_apk_class = config.get('lightning_class', 'net.yandex.overload.lightning')
+        self.lightning_apk_class = config.get_option('phone', 'lightning_class')
         self.lightning_apk_fname = None
         # test app configuration
-        self.test_apps = config.get('test_apps', [])
-        self.test_class = config.get('test_class', '')
-        self.test_package = config.get('test_package', '')
-        self.test_runner = config.get('test_runner', '')
-        self.regexp = config.get('event_regexp', event_regexp)
+        self.test_apps = config.get_option('phone', 'test_apps')
+        self.test_class = config.get_option('phone', 'test_class')
+        self.test_package = config.get_option('phone', 'test_package')
+        self.test_runner = config.get_option('phone', 'test_runner')
+        self.regexp = config.get_option('phone', 'event_regexp', event_regexp)
         try:
             self.compiled_regexp = re.compile(self.regexp, re.VERBOSE | re.IGNORECASE)
         except:
@@ -101,10 +103,10 @@ class AndroidOldPhone(Phone):
         execute("adb -s {device_id} logcat -c".format(device_id=self.source))
 
         # unplug device or start logcat
-        if self.unplug_type == 'manual':
-            logger.info('Detach the phone %s from USB and press enter to continue...', self.source)
-            # TODO make API and remove this
-            raw_input()
+        #if self.unplug_type == 'manual':
+        #    logger.info('Detach the phone %s from USB and press enter to continue...', self.source)
+        #    # TODO make API and remove this
+        #    raw_input()
 
 
     def start(self, results):
@@ -122,21 +124,21 @@ class AndroidOldPhone(Phone):
         """
         self.phone_q = results
 
-        if self.unplug_type == 'manual':
-            logger.info("It's time to start flashlight app!")
-            return
+        #if self.unplug_type == 'manual':
+        #    logger.info("It's time to start flashlight app!")
+        #    return
 
-        if self.unplug_type == 'auto':
-            self.__start_async_logcat()
-            # start flashes app
-            execute(
-                "adb -s {device_id} shell am start -n {package}/{runner}.MainActivity".format(
-                    device_id=self.source,
-                    package=self.lightning_apk_class,
-                    runner=self.lightning_apk_class
-                )
+        #if self.unplug_type == 'auto':
+        self.__start_async_logcat()
+        # start flashes app
+        execute(
+            "adb -s {device_id} shell am start -n {package}/{runner}.MainActivity".format(
+                device_id=self.source,
+                package=self.lightning_apk_class,
+                runner=self.lightning_apk_class
             )
-            return
+        )
+        return
 
     def __start_async_logcat(self):
         """ Start logcat read in subprocess and make threads to read its stdout/stderr to queues """
@@ -163,19 +165,19 @@ class AndroidOldPhone(Phone):
                 skip
         """
 
-        if self.unplug_type == 'manual':
-            return
+        #if self.unplug_type == 'manual':
+        #    return
 
-        if self.unplug_type == 'auto':
-            if self.test_package != '':
-                execute(
-                    "adb shell am instrument -w -e class {test_class} {test_package}/{test_runner}".format(
-                        test_class=self.test_class,
-                        test_package=self.test_package,
-                        test_runner=self.test_runner
-                    )
+        #if self.unplug_type == 'auto':
+        if self.test_package:
+            execute(
+                "adb shell am instrument -w -e class {test_class} {test_package}/{test_runner}".format(
+                    test_class=self.test_class,
+                    test_package=self.test_package,
+                    test_runner=self.test_runner
                 )
-            return
+            )
+        return
 
     def end(self):
         """ Stop test and grabbers
@@ -188,25 +190,24 @@ class AndroidOldPhone(Phone):
                 stop async logcat process, readers and queues
         """
 
-        if self.unplug_type == 'manual':
-            logger.warning("Plug the phone in and press `enter` to continue...")
-            # TODO make API and remove this
-            raw_input()
+        #if self.unplug_type == 'manual':
+        #    logger.warning("Plug the phone in and press `enter` to continue...")
+        #    # TODO make API and remove this
+        #    raw_input()
 
-            _, stdout, stderr = execute(
-                "adb -s {device_id} logcat -v time -d".format(device_id=self.source), catch_out=True
-            )
-            logger.debug('Recieved %d logcat data', len(stdout))
-            self.phone_q.put(
-                chunk_to_df(stdout, self.compiled_regexp)
-            )
-            return
+        #    _, stdout, stderr = execute(
+        #        "adb -s {device_id} logcat -v time -d".format(device_id=self.source), catch_out=True
+        #    )
+        #    logger.debug('Recieved %d logcat data', len(stdout))
+        #    self.phone_q.put(
+        #        chunk_to_df(stdout, self.compiled_regexp)
+        #    )
+        #    return
 
-        if self.unplug_type == 'auto':
-            self.logcat_reader_stdout.close()
-            self.logcat_reader_stderr.close()
-            self.logcat_process.kill()
-            self.drain_logcat_stdout.close()
-            self.drain_logcat_stderr.close()
-            return
-
+        #if self.unplug_type == 'auto':
+        self.logcat_reader_stdout.close()
+        self.logcat_reader_stderr.close()
+        self.logcat_process.kill()
+        self.drain_logcat_stdout.close()
+        self.drain_logcat_stderr.close()
+        return
