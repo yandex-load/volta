@@ -33,6 +33,7 @@ class Factory(object):
         }
         self.phones = {
             'android': phones.AndroidPhone,
+            'android_old': phones.AndroidOldPhone,
             'iphone': phones.iPhone,
             'nexus4': phones.Nexus4,
         }
