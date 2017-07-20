@@ -1,4 +1,4 @@
-""" Android phone worker, OS version >5
+""" Android phone worker, OS version below 5
 
 """
 import logging
@@ -24,15 +24,13 @@ event_regexp = r"""
     \s+
     \S+
     \s+
-    \S+
-    \s+
     (?P<message>.*)
     $
     """
 
 
-class AndroidPhone(Phone):
-    """ Android phone worker class - work w/ phone, read phone logs, run test apps and store data
+class AndroidOldPhone(Phone):
+    """ Android Old phone worker class - work w/ phone, read phone logs, run test apps and store data
 
     Attributes:
         source (string): path to data source, phone id (adb devices)
@@ -142,7 +140,7 @@ class AndroidPhone(Phone):
 
     def __start_async_logcat(self):
         """ Start logcat read in subprocess and make threads to read its stdout/stderr to queues """
-        cmd = "adb -s {device_id} logcat".format(device_id=self.source)
+        cmd = "adb -s {device_id} logcat -v time".format(device_id=self.source)
         logger.debug("Execute : %s", cmd)
         self.logcat_process = popen(cmd)
 
@@ -196,7 +194,7 @@ class AndroidPhone(Phone):
             raw_input()
 
             _, stdout, stderr = execute(
-                "adb -s {device_id} logcat -d".format(device_id=self.source), catch_out=True
+                "adb -s {device_id} logcat -v time -d".format(device_id=self.source), catch_out=True
             )
             logger.debug('Recieved %d logcat data', len(stdout))
             self.phone_q.put(
