@@ -22,7 +22,8 @@ yandex package for mobile energy consumption measurements
         'pyserial',
         'progressbar2',
         'pyusb',
-        'pyyaml'
+        'pyyaml',
+        'cerberus'
     ],
     setup_requires=[
         'pytest-runner',

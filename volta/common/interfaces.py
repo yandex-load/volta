@@ -3,7 +3,7 @@ class VoltaBox(object):
     def __init__(self, config):
         """
         Args:
-            config (dict): module configuration data
+            config (VoltaConfig): module configuration data
         """
         pass
 
@@ -47,7 +47,7 @@ class DataListener(object):
     """ Listener interface
 
     Args:
-        config (dict): module configuration information, differs for each type of listener
+        config (VoltaConfig): module configuration information, differs for each type of listener
     """
 
     def __init__(self, config):

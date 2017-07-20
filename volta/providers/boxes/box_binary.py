@@ -28,14 +28,14 @@ class VoltaBoxBinary(VoltaBox):
     """
     def __init__(self, config):
         VoltaBox.__init__(self, config)
-        self.source = config.get('source', '/dev/cu.wchusbserial1420')
-        self.sample_rate = config.get('sample_rate', 10000)
-        self.chop_ratio = config.get('chop_ratio', 1)
-        self.baud_rate = config.get('baud_rate', 230400)
-        self.grab_timeout = config.get('grab_timeout', 1)
-        self.slope = config.get('slope', 1)
-        self.offset = config.get('offset', 0)
-        self.power_voltage = config.get('power_voltage', 4700)
+        self.source = config.get_option('volta', 'source')
+        self.sample_rate = config.get_option('volta', 'sample_rate', 10000)
+        self.chop_ratio = config.get_option('volta', 'chop_ratio')
+        self.baud_rate = config.get_option('volta', 'baud_rate', 230400)
+        self.grab_timeout = config.get_option('volta', 'grab_timeout')
+        self.slope = config.get_option('volta', 'slope')
+        self.offset = config.get_option('volta', 'offset')
+        self.power_voltage = config.get_option('volta', 'power_voltage')
         # initialize data source
         self.source_opener = resource.get_opener(self.source)
         self.source_opener.baud_rate = self.baud_rate

@@ -28,11 +28,11 @@ class VoltaBox500Hz(VoltaBox):
 
     def __init__(self, config):
         VoltaBox.__init__(self, config)
-        self.source = config.get('source', '/dev/cu.wchusbserial1420')
-        self.sample_rate = config.get('sample_rate', 500)
-        self.chop_ratio = config.get('chop_ratio', 1)
-        self.baud_rate = config.get('baud_rate', 115200)
-        self.grab_timeout = config.get('grab_timeout', 1)
+        self.source = config.get_option('volta', 'source')
+        self.chop_ratio = config.get_option('volta', 'chop_ratio')
+        self.sample_rate = config.get_option('volta', 'sample_rate', 500)
+        self.baud_rate = config.get_option('volta', 'baud_rate', 115200)
+        self.grab_timeout = config.get_option('volta', 'grab_timeout')
         # initialize data source
         self.source_opener = resource.get_opener(self.source)
         self.source_opener.baud_rate = self.baud_rate
