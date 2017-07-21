@@ -185,9 +185,6 @@ Works with android phones. Reads/parses system logs (`adb logcat`), starts light
 
 Available configuration options:
 * **source** (mandatory) - android device id
-* **unplug_type** - type of test execution, describes the way you do the tests on your phone
-    * `auto`: disable battery charge (by software) or use special USB cord limiting charge over USB
-    * `manual`: disable phone from USB with your bare hands during test exection and click your test
 * **lightning** - path to lightning application (used for synchronization)
 * **lightning_class** - lightning application class (how to run the app)
 * **test_apps** - list of apps that will be installed to device for test
