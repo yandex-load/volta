@@ -169,7 +169,8 @@ volta_box.end_test()  # stop acquiring data
 
 # you can read pandas.DataFrames from results queue,
 # data format: `['uts', 'value']`. Microseconds from test start and electrical currents value.
-print(q.get_nowait())```
+print(q.get_nowait())
+```
 
 
 ### Phone module
