@@ -78,13 +78,15 @@ Use command-line entry-point `volta` with .yaml config
 Sample yaml config for cli-wrapper:
 ```yaml
 volta:
+  enabled: true
   type: '500hz'
   source: '/dev/cu.wchusbserial1420'
 phone:
+  enabled: true
   type: 'android'
-  unplug_type: 'auto'
   source: '01e345da733a4764'
 sync:
+  enabled: true
   search_interval: 30
 ```
 This config creates a test with **VoltaBox500Hz** at **/dev/cu.wchusbserial1420** and android phone id **01e345da733a4764**, then starts to collect and process data from VoltaBox and the phone.
@@ -94,22 +96,28 @@ To stop the test, press **Ctrl+C** or send **SIGTERM** signal to the process.
 
 ## Core as module
 Also, if you want to control test execution or integrate Volta into your CI, you can use Core as python library.
+Core validates config and reads parts with `enabled`: `True` option only.
 
 Sample usage:
 ```python
 from volta.core.core import Core
+import logging
+logger = logging.getLogger(__name__)
 
 config = {
     'volta': {
+        'enabled': True,
         'source': '/dev/cu.wchusbserial1420',
         'type': '500hz'
     },
     'phone': {
+        'enabled': True,
         'source': '01e345da733a4764',
         'type': 'android',
         'unplug_type': 'auto'
     },
    'sync': {
+       'enabled': True,
        'search_interval': 30
     }
 }
