@@ -248,11 +248,19 @@ Available configuration options:
 Sample usage:
 ```python
 from volta.phones.iphone import iPhone
+from volta.core.validator import VoltaConfig
+
 import queue
 import time
 import logging
 
-config = {'source': '0x6382910F98C26'}
+config_dict = {
+    'phone': {
+        'source': '0x6382910F98C26',
+        'type': 'iphone',
+    }
+}
+config = VoltaConfig(config_dict)
 phone = iPhone(config)  # create Phone class
 q = queue.Queue()  # create python queue for results
 phone.prepare()  # prepare for test
@@ -299,14 +307,22 @@ Sample usage:
 from volta.providers.phones.android import AndroidPhone
 from volta.mappers.events.router import EventsRouter
 from volta.listeners.report.report import FileListener
+from volta.core.validator import VoltaConfig
+
 import queue
 import time
 import uuid
 
 test_id = uuid.uuid4()  # some test id
 
-phone_config = {'source': '01e345da733a4764'}  # phone id
-phone = AndroidPhone(phone_config)  # create Phone instance
+config_dict = {
+    'phone': {
+        'source': '01e345da733a4764',
+        'type': 'android',
+    },
+}
+config = VoltaConfig(config_dict)
+phone = AndroidPhone(config)  # create Phone instance
 phone_q = queue.Queue()  # create python queue for results
 phone.start(phone_q)  # start acquiring phone log messages
 
@@ -357,16 +373,29 @@ from volta.providers.phones.android import AndroidPhone
 from volta.mappers.events.router import EventsRouter
 from volta.listeners.sync.sync import SyncFinder
 from volta.common.util import Tee
+from volta.core.validator import VoltaConfig
+
 
 # setup Volta and start
-volta_config = {'source': '/dev/cu.wchusbserial1420'} # volta box device
-volta_box = VoltaBox500Hz(volta_config)  # create VoltaBox class
+config_dict = {
+    'volta': {
+        'source': '/dev/cu.wchusbserial1420',
+        'type': '500hz'
+    },
+    'phone': {
+        'source': '01e345da733a4764',
+        'type': 'android',
+    'sync': {
+        'search_interval': 30
+    },
+}
+config = VoltaConfig(config_dict)
+volta_box = VoltaBox500Hz(config)  # create VoltaBox class
 volta_q = queue.Queue()  # create python queue for volta results
 volta_listeners = []  # create electrical current listeners list
 
 # setup Phone and start
-phone_config = {'source': '01e345da733a4764'}  # phone id
-phone = AndroidPhone(phone_config)  # create Phone class
+phone = AndroidPhone(config)  # create Phone class
 phone_q = queue.Queue()  # create python queue for results
 
 # setup EventsRouter
@@ -375,8 +404,7 @@ event_listeners = {key:[] for key in event_types}  # create dict w/ empty list f
 events_router = EventsRouter(phone_q, event_listeners)
 
 # at the moment we have electrical currents queue and phone queue
-sync_config = {'search_interval': 30, 'sample_rate': volta.sample_rate}
-sync_finder = SyncFinder(sync_config)  # create SyncFinder class
+sync_finder = SyncFinder(config)  # create SyncFinder class
 
 # subscribe our SyncFinder to electrical current and sync events
 volta_listeners.append(sync_finder)
@@ -424,11 +452,18 @@ Sample usage:
 from volta.providers.boxes.box500hz import VoltaBox500Hz
 from volta.listeners.report.report import FileListener
 from volta.common.util import Tee
+from volta.core.validator import VoltaConfig
 import queue
 import time
 import logging
 
-config = {'source': '/dev/cu.wchusbserial1420'}
+config_dict = {
+    'volta': {
+        'source': '/dev/cu.wchusbserial1420',
+        'type': '500hz'
+    }
+}
+config = VoltaConfig(config_dict)
 volta_box = VoltaBox500Hz(config)  # VoltaBox class
 volta_q = queue.Queue()  # queue for results
 volta_listeners = []  # empty list for listeners
@@ -459,6 +494,7 @@ Available configuration options:
 Sample yaml config section for uploader:
 ```yaml
 uploader:
+  enabled: true,
   address: 'https://lunapark.test.yandex-team.ru/api/volta'
   task: 'LOAD-272'
 ```
@@ -469,18 +505,27 @@ Sample usage:
 from volta.providers.boxes.box500hz import VoltaBox500Hz
 from volta.listeners.uploader.uploader import DataUploader
 from volta.common.util import Tee
+from volta.core.validator import VoltaConfig
 import queue
 import time
 import logging
 
-config = {'source': '/dev/cu.wchusbserial1420'}
+config_dict = {
+    'volta': {
+        'source': '/dev/cu.wchusbserial1420',
+        'type': '500hz'
+    },
+    'uploader': {
+        'task': LOAD-272
+    }
+}
+config = VoltaConfig(config_dict)
 volta_box = VoltaBox500Hz(config)  # VoltaBox class
 volta_q = queue.Queue()  # queue for results
 volta_listeners = []  # emptry list for listeners
 
 # create DataUploader and subscribe it to volta_box
-uploader_config = {'address': 'https://lunapark.test.yandex-team.ru/api/volta'}
-uploader = DataUploader(uploader_config)
+uploader = DataUploader(config)
 volta_listeners.append(uploader)
 
 volta_data_process = Tee(volta_q, volta_listeners, 'currents')  # start volta data processing
@@ -505,7 +550,7 @@ Simply put config into a POST body.
 
 Start test sample:
 ```bash
-curl 'http://localhost:9998/api/v1/start/' --data 'config={"volta":{"source":"/dev/cu.wchusbserial1420","type":"500hz"}}' -v
+curl 'http://localhost:9998/api/v1/start/' --data 'config={"volta":{"source":"/dev/cu.wchusbserial1420","type":"500hz","enabled":True}}' -v
 ```
 
 Stop test sample:
