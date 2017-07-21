@@ -101,24 +101,25 @@ Core validates config and reads parts with `enabled`: `True` option only.
 Sample usage:
 ```python
 from volta.core.core import Core
-import logging
-logger = logging.getLogger(__name__)
 
 config = {
     'volta': {
         'enabled': True,
         'source': '/dev/cu.wchusbserial1420',
-        'type': '500hz'
+        'type': 'binary'
     },
     'phone': {
         'enabled': True,
         'source': '01e345da733a4764',
         'type': 'android',
-        'unplug_type': 'auto'
     },
    'sync': {
        'enabled': True,
        'search_interval': 30
+    },
+    'uploader':{
+        'enabled': True,
+        'task': 'LOAD-272'
     }
 }
 
@@ -147,13 +148,20 @@ Available configuration options:
 
 Sample usage:
 ```python
-from volta.providers.boxes.box500hz import VoltaBox500Hz
+from volta.providers.boxes.box_binary import VoltaBoxBinary
+from volta.core.validator import VoltaConfig
 import queue
 import time
 import logging
 
-config = {'source': '/dev/cu.wchusbserial1420'}
-volta_box = VoltaBox500Hz(config) # VoltaBox class
+config_dict = {
+    'volta': {
+        'source': '/dev/cu.wchusbserial1420',
+        'type': 'binary'
+    }
+}
+config = VoltaConfig(config_dict)
+volta_box = VoltaBoxBinary(config) # VoltaBox class
 q = queue.Queue()  # queue for results
 volta_box.start_test(q)  # start acquiring data
 time.sleep(5)  # do something (start autotests, do manual testing ...)
@@ -161,8 +169,8 @@ volta_box.end_test()  # stop acquiring data
 
 # you can read pandas.DataFrames from results queue,
 # data format: `['uts', 'value']`. Microseconds from test start and electrical currents value.
-print(q.get_nowait())
-```
+print(q.get_nowait())```
+
 
 ### Phone module
 
@@ -191,22 +199,25 @@ Available configuration options:
 Sample usage:
 ```python
 from volta.providers.phones.android import AndroidPhone
+from volta.core.validator import VoltaConfig
 import queue
 import time
 import logging
 
-config = {
-  'source': '01e345da733a4764',
-  'unplug_type': 'auto',         # test type
-  'test_apps': [
-    'http://hostname.tld/path/to/first/apk1.apk',
-    'http://hostname.tld/path/to/second/apk2.apk',,
-  ],
-  'test_package': 'ru.yandex.mobile.test',
-  'test_class': 'ru.yandex.test.highload.Tests',
-  'test_runner': 'android.support.test.runner.AndroidJUnitRunner'
+config_dict = {
+    'phone': {
+        'source': '01e345da733a4764',
+        'type': 'android',
+        'test_apps': [
+            'http://hostname.tld/path/to/first/apk1.apk',
+            'http://hostname.tld/path/to/second/apk2.apk',,
+        ],
+        'test_class': 'ru.yandex.test.highload.Tests',
+        'test_package': 'ru.yandex.mobile.test',
+        'test_runner': 'android.support.test.runner.AndroidJUnitRunner'
+    }
 }
-
+config = VoltaConfig(config_dict)
 
 phone = AndroidPhone(config)  # create Phone class
 q = queue.Queue()  # create python queue for results
