@@ -50,6 +50,8 @@ phone:
     type:
       type: string
       required: true
+    event_regexp:
+      type: string
     source:
       type: string
       required: true
