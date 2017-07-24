@@ -244,3 +244,26 @@ def chunk_to_df(chunk, regexp):
 def string_to_np(data, type=np.uint16, sep=""):
     chunk = np.fromstring(data, dtype=type, sep=sep)
     return chunk
+
+
+class PhoneTestPerformer(threading.Thread):
+    """
+    Run test on device
+    """
+
+    def __init__(self, command):
+        super(PhoneTestPerformer, self).__init__()
+        self.command = command
+        self._finished = threading.Event()
+        self._interrupted = threading.Event()
+        self.retcode = None
+
+    def run(self):
+        self.retcode, _, _ = execute(self.command)
+        self._finished.set()
+
+    def wait(self, timeout=None):
+        self._finished.wait(timeout=timeout)
+
+    def close(self):
+        self._interrupted.set()

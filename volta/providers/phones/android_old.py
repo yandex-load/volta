@@ -7,7 +7,7 @@ import queue as q
 import pkg_resources
 
 from volta.common.interfaces import Phone
-from volta.common.util import execute, Drain, popen, chunk_to_df, LogReader
+from volta.common.util import execute, Drain, popen, LogReader, PhoneTestPerformer
 from volta.common.resource import manager as resource
 
 
@@ -80,6 +80,8 @@ class AndroidOldPhone(Phone):
         except:
             logger.debug('Unable to parse specified regexp', exc_info=True)
             raise RuntimeError("Unable to parse specified regexp")
+        self.test_performer = None
+
 
     def prepare(self):
         """ Phone preparements stage: install apps etc
@@ -156,55 +158,26 @@ class AndroidOldPhone(Phone):
         self.drain_logcat_stderr.start()
 
     def run_test(self):
-        """ App stage: run app/phone tests,
-
-        pipeline:
-            if unplug_type is auto:
-                run test
-            if unplug_type is manual:
-                skip
-        """
-
-        #if self.unplug_type == 'manual':
-        #    return
-
-        #if self.unplug_type == 'auto':
+        """ App stage: run app/phone tests """
         if self.test_package:
-            execute(
-                "adb shell am instrument -w -e class {test_class} {test_package}/{test_runner}".format(
-                    test_class=self.test_class,
-                    test_package=self.test_package,
-                    test_runner=self.test_runner
-                )
+            command = "adb shell am instrument -w -e class {test_class} {test_package}/{test_runner}".format(
+                test_class=self.test_class,
+                test_package=self.test_package,
+                test_runner=self.test_runner
             )
+            self.test_performer = PhoneTestPerformer(command)
+            self.test_performer.start()
+        else:
+            logger.info('Infinite loop for volta because there are no tests specified, waiting for SIGINT')
+            command = 'while [ 1 ]; do sleep 1; done'
+            self.test_performer = PhoneTestPerformer(command)
+            self.test_performer.start()
         return
 
     def end(self):
-        """ Stop test and grabbers
-
-        pipeline:
-            if uplug_type is manual:
-                ask user to plug device in
-                get logcat dump from device
-            if unplug_type is auto:
-                stop async logcat process, readers and queues
-        """
-
-        #if self.unplug_type == 'manual':
-        #    logger.warning("Plug the phone in and press `enter` to continue...")
-        #    # TODO make API and remove this
-        #    raw_input()
-
-        #    _, stdout, stderr = execute(
-        #        "adb -s {device_id} logcat -v time -d".format(device_id=self.source), catch_out=True
-        #    )
-        #    logger.debug('Recieved %d logcat data', len(stdout))
-        #    self.phone_q.put(
-        #        chunk_to_df(stdout, self.compiled_regexp)
-        #    )
-        #    return
-
-        #if self.unplug_type == 'auto':
+        """ Stop test and grabbers """
+        if self.test_performer:
+            self.test_performer.close()
         self.logcat_reader_stdout.close()
         self.logcat_reader_stderr.close()
         self.logcat_process.kill()

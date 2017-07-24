@@ -219,7 +219,7 @@ class Core(object):
             if self.phone_q.qsize() >= 1:
                 logger.debug('qsize: %s', self.phone_q.qsize())
                 logger.debug('Waiting for phone events processing...')
-                time.sleep(10)
+                time.sleep(3)
             self.events_parser.close()
 
     def post_process(self):
