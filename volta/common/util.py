@@ -212,6 +212,8 @@ def chunk_to_df(chunk, regexp):
     df = None
     for line in chunk.split('\n'):
         if line:
+            if line.startswith('---------'):
+                continue
             match = regexp.match(line)
             if match:
                 ts = datetime.datetime.strptime("{date} {time}".format(
@@ -225,6 +227,12 @@ def chunk_to_df(chunk, regexp):
                     (ts-datetime.datetime(1970,1,1)).total_seconds() * 10 ** 6
                 )
                 message = match.group('message')
+                message = message\
+                    .replace('\t', '__tab__')\
+                    .replace('\n', '__nl__')\
+                    .replace('\r', '')\
+                    .replace('\f', '')\
+                    .replace('\v', '')
                 results.append([sys_uts, message])
             else:
                 logger.debug('Trash data in logs: %s', line)
@@ -236,3 +244,26 @@ def chunk_to_df(chunk, regexp):
 def string_to_np(data, type=np.uint16, sep=""):
     chunk = np.fromstring(data, dtype=type, sep=sep)
     return chunk
+
+
+class PhoneTestPerformer(threading.Thread):
+    """
+    Run test on device
+    """
+
+    def __init__(self, command):
+        super(PhoneTestPerformer, self).__init__()
+        self.command = command
+        self._finished = threading.Event()
+        self._interrupted = threading.Event()
+        self.retcode = None
+
+    def run(self):
+        self.retcode, _, _ = execute(self.command)
+        self._finished.set()
+
+    def wait(self, timeout=None):
+        self._finished.wait(timeout=timeout)
+
+    def close(self):
+        self._interrupted.set()

@@ -1,0 +1,132 @@
+core:
+  type: dict
+  schema:
+    enabled:
+      type: boolean
+      default: true
+    artifacts_dir:
+      type: string
+      default: ./logs
+    version:
+      type: integer
+      default: 2
+volta:
+  type: dict
+  schema:
+    enabled:
+      type: boolean
+      default: true
+    type:
+      type: string
+      required: true
+    source:
+      type: string
+      required: true
+    chop_ratio:
+      type: integer
+      default: 1
+    baud_rate:
+      type: integer
+    grab_timeout:
+      type: integer
+      default: 1
+    sample_rate:
+      type: integer
+    slope:
+      type: integer
+      default: 1
+    offset:
+      type: integer
+      default: 0
+    power_voltage:
+      type: integer
+      default: 4700
+phone:
+  type: dict
+  schema:
+    enabled:
+      type: boolean
+      default: false
+    type:
+      type: string
+      required: true
+    source:
+      type: string
+      required: true
+    lightning:
+      type: string
+    lightning_class:
+      type: string
+      default: net.yandex.overload.lightning
+    test_apps:
+      type: list
+      default: []
+    test_class:
+      type: string
+      nullable: true
+      default: null
+    test_package:
+      type: string
+      nullable: true
+      default: null
+    test_runner:
+      type: string
+      nullable: true
+      default: null
+    util:
+      type: string
+      default: /Applications/Apple\ Configurator\ 2.app/Contents/MacOS/
+sync:
+  type: dict
+  schema:
+    enabled:
+      type: boolean
+      default: false
+    search_interval:
+      type: integer
+      default: 30
+uploader:
+  type: dict
+  schema:
+    enabled:
+      type: boolean
+      default: false
+    address:
+      type: string
+      default: https://lunapark.yandex-team.ru/api/volta
+    task:
+      type: string
+      required: true
+    test_id:
+      type: string
+    create_job_url:
+      type: string
+      default: /mobile/create_job.json
+    update_job_url:
+      type: string
+      default: /mobile/update_job.json
+    name:
+      type: string
+      default: set name via uploader.name
+    dsc:
+      type: string
+      default: set description via uploader.dsc
+    device_id:
+      type: string
+      default: set device_id via uploader.device_id
+    device_model:
+      type: string
+      default: set device_model via uploader.device_model
+    device_os:
+      type: string
+      default: set device_os via uploader.device_os
+    app:
+      type: string
+      default: set app name via uploader.app
+    ver:
+      type: string
+      default: set app version via uploader.ver
+    meta:
+      type: string
+      default: null
+      nullable: true

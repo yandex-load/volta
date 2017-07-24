@@ -1,6 +1,9 @@
 import json
+import logging
 
 from volta.common.interfaces import DataListener
+
+logger = logging.getLogger(__name__)
 
 
 class FileListener(DataListener):
@@ -43,21 +46,24 @@ class FileListener(DataListener):
                 Should be processed differently from each other
             type (string): dataframe type
         """
-        if not self.closed:
-            if self.init_header:
-                types = df.dtypes.apply(lambda x: x.name).to_dict()
-                header = json.dumps({'type': type, 'names': self.file_output_fmt.get(type), 'dtypes': types})
-                self.fname.write(header)
-                self.fname.write('\n')
-                self.init_header = False
-            data = df.to_csv(
-                sep=self.output_separator,
-                header=False,
-                index=False,
-                columns=self.file_output_fmt.get(type, [])
-            )
-            self.fname.write((data))
-            self.fname.flush()
+        try:
+            if not self.closed:
+                if self.init_header:
+                    types = df.dtypes.apply(lambda x: x.name).to_dict()
+                    header = json.dumps({'type': type, 'names': self.file_output_fmt.get(type), 'dtypes': types})
+                    self.fname.write(header)
+                    self.fname.write('\n')
+                    self.init_header = False
+                data = df.to_csv(
+                    sep=self.output_separator,
+                    header=False,
+                    index=False,
+                    columns=self.file_output_fmt.get(type, [])
+                )
+                self.fname.write((data))
+                self.fname.flush()
+        except:
+            logger.warning('Unable to write data', exc_info=True)
 
     def close(self):
         self.closed = True

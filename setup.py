@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='volta',
-    version='0.0.99',
+    version='0.1.1',
     description='yandex package for mobile energy consumption measurements',
     longer_description='''
 yandex package for mobile energy consumption measurements
@@ -13,16 +13,17 @@ yandex package for mobile energy consumption measurements
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
         'tornado',
-        'pandas',
+        'pandas>=0.18.0',
         'seaborn',
-        'numpy',
+        'numpy>=1.11.0',
         'scipy',
         'matplotlib',
         'requests',
         'pyserial',
         'progressbar2',
         'pyusb',
-        'pyyaml'
+        'pyyaml',
+        'cerberus'
     ],
     setup_requires=[
         'pytest-runner',

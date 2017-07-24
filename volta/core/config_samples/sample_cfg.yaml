@@ -1,9 +1,10 @@
 volta:
-  type: '500hz'
+  enabled: true
+  type: 'binary'
   source: '/dev/cu.wchusbserial1420'
 phone:
+  enabled: true
   type: 'android'
-  unplug_type: 'auto'
   source: '01e345da733a4764'
   test_apps:
     - 'http://highload-metrica.s3.mds.yandex.net/test-be19404d-de02-4c05-92f1-e2cb3873609f.apk'
@@ -12,10 +13,12 @@ phone:
   test_class: 'ru.yandex.metrica.test.highload.LittleTests'
   test_runner: 'android.support.test.runner.AndroidJUnitRunner'
 sync:
+  enabled: true
   search_interval: 30
 uploader:
-  address: 'https://lunapark.test.yandex-team.ru/api/volta'
-meta:
+  enabled: true
+  address: 'https://lunapark.yandex-team.ru/api/volta'
+  task: 'LOAD-272'
   app: 'testapp'
   device_model: 'device model'
   name: 'name'

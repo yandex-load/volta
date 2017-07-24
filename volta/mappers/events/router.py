@@ -11,11 +11,10 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-# data sample: lightning: [volta] 12345678 fragment TagFragment start
-# following regexp grabs 'app name', 'nanotime', 'type', 'tag' and 'message' from sample above
+# data sample: [volta] 12345678 fragment TagFragment start
+# following regexp grabs 'nanotime', 'type', 'tag' and 'message' from sample above
 re_ = re.compile(r"""
-    ^(?P<app>\S+)
-    \s+
+    ^
     \[volta\]
     \s+
     (?P<nanotime>\S+)
@@ -76,8 +75,10 @@ class EventsRouter(threading.Thread):
             put data to listeners
 
         """
+        logger.debug('Router dataframe before parse:\n %s', df)
         for dtype, data in df.apply(self.__parse_event, axis=1).groupby('type'):
             if dtype in self.router:
+                logger.debug('Detected %s metric type', dtype)
                 if dtype == 'metric':
                     data.loc[:, ('value')] = data.message.astype(np.float64)
                 if dtype != 'unknown':
@@ -92,10 +93,15 @@ class EventsRouter(threading.Thread):
         """
         Parse event entry and modify
         """
-        row.message = row.message.replace('\t', '__tab__')
-        match = re_.match(row.message)
+        match = None
+        try:
+            if row.message != '':
+                match = re_.match(row.message)
+        except:
+            logger.debug('Unknown error in message parse: %s', exc_info=True)
+            pass
         if match:
-            row["app"] = match.group('app')
+            row["app"] = 'testapp'
             try:
                 # convert nanotime to us
                 log_ts = int(match.group('nanotime')) // 1000

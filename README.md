@@ -78,13 +78,15 @@ Use command-line entry-point `volta` with .yaml config
 Sample yaml config for cli-wrapper:
 ```yaml
 volta:
+  enabled: true
   type: '500hz'
   source: '/dev/cu.wchusbserial1420'
 phone:
+  enabled: true
   type: 'android'
-  unplug_type: 'auto'
   source: '01e345da733a4764'
 sync:
+  enabled: true
   search_interval: 30
 ```
 This config creates a test with **VoltaBox500Hz** at **/dev/cu.wchusbserial1420** and android phone id **01e345da733a4764**, then starts to collect and process data from VoltaBox and the phone.
@@ -94,6 +96,7 @@ To stop the test, press **Ctrl+C** or send **SIGTERM** signal to the process.
 
 ## Core as module
 Also, if you want to control test execution or integrate Volta into your CI, you can use Core as python library.
+Core validates config and reads parts with `enabled`: `True` option only.
 
 Sample usage:
 ```python
@@ -101,16 +104,22 @@ from volta.core.core import Core
 
 config = {
     'volta': {
+        'enabled': True,
         'source': '/dev/cu.wchusbserial1420',
-        'type': '500hz'
+        'type': 'binary'
     },
     'phone': {
+        'enabled': True,
         'source': '01e345da733a4764',
         'type': 'android',
-        'unplug_type': 'auto'
     },
    'sync': {
+       'enabled': True,
        'search_interval': 30
+    },
+    'uploader':{
+        'enabled': True,
+        'task': 'LOAD-272'
     }
 }
 
@@ -139,13 +148,20 @@ Available configuration options:
 
 Sample usage:
 ```python
-from volta.providers.boxes.box500hz import VoltaBox500Hz
+from volta.providers.boxes.box_binary import VoltaBoxBinary
+from volta.core.validator import VoltaConfig
 import queue
 import time
 import logging
 
-config = {'source': '/dev/cu.wchusbserial1420'}
-volta_box = VoltaBox500Hz(config) # VoltaBox class
+config_dict = {
+    'volta': {
+        'source': '/dev/cu.wchusbserial1420',
+        'type': 'binary'
+    }
+}
+config = VoltaConfig(config_dict)
+volta_box = VoltaBoxBinary(config) # VoltaBox class
 q = queue.Queue()  # queue for results
 volta_box.start_test(q)  # start acquiring data
 time.sleep(5)  # do something (start autotests, do manual testing ...)
@@ -155,6 +171,7 @@ volta_box.end_test()  # stop acquiring data
 # data format: `['uts', 'value']`. Microseconds from test start and electrical currents value.
 print(q.get_nowait())
 ```
+
 
 ### Phone module
 
@@ -168,9 +185,6 @@ Works with android phones. Reads/parses system logs (`adb logcat`), starts light
 
 Available configuration options:
 * **source** (mandatory) - android device id
-* **unplug_type** - type of test execution, describes the way you do the tests on your phone
-    * `auto`: disable battery charge (by software) or use special USB cord limiting charge over USB
-    * `manual`: disable phone from USB with your bare hands during test exection and click your test
 * **lightning** - path to lightning application (used for synchronization)
 * **lightning_class** - lightning application class (how to run the app)
 * **test_apps** - list of apps that will be installed to device for test
@@ -183,22 +197,25 @@ Available configuration options:
 Sample usage:
 ```python
 from volta.providers.phones.android import AndroidPhone
+from volta.core.validator import VoltaConfig
 import queue
 import time
 import logging
 
-config = {
-  'source': '01e345da733a4764',
-  'unplug_type': 'auto',         # test type
-  'test_apps': [
-    'http://hostname.tld/path/to/first/apk1.apk',
-    'http://hostname.tld/path/to/second/apk2.apk',,
-  ],
-  'test_package': 'ru.yandex.mobile.test',
-  'test_class': 'ru.yandex.test.highload.Tests',
-  'test_runner': 'android.support.test.runner.AndroidJUnitRunner'
+config_dict = {
+    'phone': {
+        'source': '01e345da733a4764',
+        'type': 'android',
+        'test_apps': [
+            'http://hostname.tld/path/to/first/apk1.apk',
+            'http://hostname.tld/path/to/second/apk2.apk',,
+        ],
+        'test_class': 'ru.yandex.test.highload.Tests',
+        'test_package': 'ru.yandex.mobile.test',
+        'test_runner': 'android.support.test.runner.AndroidJUnitRunner'
+    }
 }
-
+config = VoltaConfig(config_dict)
 
 phone = AndroidPhone(config)  # create Phone class
 q = queue.Queue()  # create python queue for results
@@ -229,11 +246,19 @@ Available configuration options:
 Sample usage:
 ```python
 from volta.phones.iphone import iPhone
+from volta.core.validator import VoltaConfig
+
 import queue
 import time
 import logging
 
-config = {'source': '0x6382910F98C26'}
+config_dict = {
+    'phone': {
+        'source': '0x6382910F98C26',
+        'type': 'iphone',
+    }
+}
+config = VoltaConfig(config_dict)
 phone = iPhone(config)  # create Phone class
 q = queue.Queue()  # create python queue for results
 phone.prepare()  # prepare for test
@@ -255,13 +280,13 @@ Available configuration options: None
 
 Special messages format:
 ```
-%app%: [volta] %nanotime% %type% %tag% %message%
+[volta] %nanotime% %type% %tag% %message%
 ```
 
 
 Special message format sample:
 ```
-lightning: [volta] 12345678 fragment TagFragment start
+[volta] 12345678 fragment TagFragment start
 ```
 
 
@@ -280,14 +305,22 @@ Sample usage:
 from volta.providers.phones.android import AndroidPhone
 from volta.mappers.events.router import EventsRouter
 from volta.listeners.report.report import FileListener
+from volta.core.validator import VoltaConfig
+
 import queue
 import time
 import uuid
 
 test_id = uuid.uuid4()  # some test id
 
-phone_config = {'source': '01e345da733a4764'}  # phone id
-phone = AndroidPhone(phone_config)  # create Phone instance
+config_dict = {
+    'phone': {
+        'source': '01e345da733a4764',
+        'type': 'android',
+    },
+}
+config = VoltaConfig(config_dict)
+phone = AndroidPhone(config)  # create Phone instance
 phone_q = queue.Queue()  # create python queue for results
 phone.start(phone_q)  # start acquiring phone log messages
 
@@ -338,16 +371,29 @@ from volta.providers.phones.android import AndroidPhone
 from volta.mappers.events.router import EventsRouter
 from volta.listeners.sync.sync import SyncFinder
 from volta.common.util import Tee
+from volta.core.validator import VoltaConfig
+
 
 # setup Volta and start
-volta_config = {'source': '/dev/cu.wchusbserial1420'} # volta box device
-volta_box = VoltaBox500Hz(volta_config)  # create VoltaBox class
+config_dict = {
+    'volta': {
+        'source': '/dev/cu.wchusbserial1420',
+        'type': '500hz'
+    },
+    'phone': {
+        'source': '01e345da733a4764',
+        'type': 'android',
+    'sync': {
+        'search_interval': 30
+    },
+}
+config = VoltaConfig(config_dict)
+volta_box = VoltaBox500Hz(config)  # create VoltaBox class
 volta_q = queue.Queue()  # create python queue for volta results
 volta_listeners = []  # create electrical current listeners list
 
 # setup Phone and start
-phone_config = {'source': '01e345da733a4764'}  # phone id
-phone = AndroidPhone(phone_config)  # create Phone class
+phone = AndroidPhone(config)  # create Phone class
 phone_q = queue.Queue()  # create python queue for results
 
 # setup EventsRouter
@@ -356,8 +402,7 @@ event_listeners = {key:[] for key in event_types}  # create dict w/ empty list f
 events_router = EventsRouter(phone_q, event_listeners)
 
 # at the moment we have electrical currents queue and phone queue
-sync_config = {'search_interval': 30, 'sample_rate': volta.sample_rate}
-sync_finder = SyncFinder(sync_config)  # create SyncFinder class
+sync_finder = SyncFinder(config)  # create SyncFinder class
 
 # subscribe our SyncFinder to electrical current and sync events
 volta_listeners.append(sync_finder)
@@ -405,11 +450,18 @@ Sample usage:
 from volta.providers.boxes.box500hz import VoltaBox500Hz
 from volta.listeners.report.report import FileListener
 from volta.common.util import Tee
+from volta.core.validator import VoltaConfig
 import queue
 import time
 import logging
 
-config = {'source': '/dev/cu.wchusbserial1420'}
+config_dict = {
+    'volta': {
+        'source': '/dev/cu.wchusbserial1420',
+        'type': '500hz'
+    }
+}
+config = VoltaConfig(config_dict)
 volta_box = VoltaBox500Hz(config)  # VoltaBox class
 volta_q = queue.Queue()  # queue for results
 volta_listeners = []  # empty list for listeners
@@ -440,6 +492,7 @@ Available configuration options:
 Sample yaml config section for uploader:
 ```yaml
 uploader:
+  enabled: true,
   address: 'https://lunapark.test.yandex-team.ru/api/volta'
   task: 'LOAD-272'
 ```
@@ -450,18 +503,27 @@ Sample usage:
 from volta.providers.boxes.box500hz import VoltaBox500Hz
 from volta.listeners.uploader.uploader import DataUploader
 from volta.common.util import Tee
+from volta.core.validator import VoltaConfig
 import queue
 import time
 import logging
 
-config = {'source': '/dev/cu.wchusbserial1420'}
+config_dict = {
+    'volta': {
+        'source': '/dev/cu.wchusbserial1420',
+        'type': '500hz'
+    },
+    'uploader': {
+        'task': LOAD-272
+    }
+}
+config = VoltaConfig(config_dict)
 volta_box = VoltaBox500Hz(config)  # VoltaBox class
 volta_q = queue.Queue()  # queue for results
 volta_listeners = []  # emptry list for listeners
 
 # create DataUploader and subscribe it to volta_box
-uploader_config = {'address': 'https://lunapark.test.yandex-team.ru/api/volta'}
-uploader = DataUploader(uploader_config)
+uploader = DataUploader(config)
 volta_listeners.append(uploader)
 
 volta_data_process = Tee(volta_q, volta_listeners, 'currents')  # start volta data processing
@@ -486,7 +548,7 @@ Simply put config into a POST body.
 
 Start test sample:
 ```bash
-curl 'http://localhost:9998/api/v1/start/' --data 'config={"volta":{"source":"/dev/cu.wchusbserial1420","type":"500hz"}}' -v
+curl 'http://localhost:9998/api/v1/start/' --data 'config={"volta":{"source":"/dev/cu.wchusbserial1420","type":"500hz","enabled":True}}' -v
 ```
 
 Stop test sample:

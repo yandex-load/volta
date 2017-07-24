@@ -18,6 +18,8 @@ iphone_logevent_re = re.compile(r"""
     \s+
     (?P<time>\S+)
     \s+
+    \S+
+    \s+
     (?P<message>.*)
     $
     """, re.VERBOSE | re.IGNORECASE

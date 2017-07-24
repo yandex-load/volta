@@ -8,6 +8,7 @@ from scipy import signal
 
 from volta.common.interfaces import DataListener
 
+pd.options.mode.chained_assignment = None
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +22,8 @@ class SyncFinder(DataListener):
     """
     def __init__(self, config):
         super(SyncFinder, self).__init__(config)
-        self.search_interval = config.get('search_interval', 30)
-        self.sample_rate = config.get('sample_rate', 500)
+        self.search_interval = config.get_option('sync', 'search_interval')
+        self.sample_rate = None
         self.sync_df = pd.DataFrame()
         self.volta_sync_stage_df = pd.DataFrame()
 

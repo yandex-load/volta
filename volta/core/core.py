@@ -1,10 +1,9 @@
 import logging
 import queue as q
 import time
-import datetime
 import os
-import uuid
 
+from volta.core.validator import VoltaConfig
 from volta.common.util import Tee
 from volta.providers import boxes
 from volta.providers import phones
@@ -33,40 +32,46 @@ class Factory(object):
         }
         self.phones = {
             'android': phones.AndroidPhone,
+            'android_old': phones.AndroidOldPhone,
             'iphone': phones.iPhone,
+            'nexus4': phones.Nexus4,
         }
 
     def detect_volta(self, config):
         """
         Args:
-            config (dict): type of VoltaBox
+            config (VoltaConfig): type of VoltaBox
 
         Returns:
             appropriate VoltaBox class for config.type
         """
-        type = config.get('type')
+        type = config.get_option('volta', 'type')
         if not type:
             raise RuntimeError('Mandatory option volta.type not specified')
         type = type.lower()
         if type in self.voltas:
             logger.debug('Volta type detected: %s', type)
             return self.voltas[type](config)
+        else:
+            raise RuntimeError('Unknown VoltaBox type: %s', type)
 
     def detect_phone(self, config):
         """
         Args:
-            config (dict): type of Phone
+            config (VoltaConfig): type of Phone
 
         Returns:
             appropriate Phone class for config.type
         """
-        type = config.get('type')
+        type = config.get_option('phone', 'type')
         if not type:
             raise RuntimeError('Mandatory option phone.type not specified')
         type = type.lower()
         if type in self.phones:
             logger.debug('Phone type detected: %s', type)
             return self.phones[type](config)
+        else:
+            raise RuntimeError('Unknown Phone type: %s', type)
 
 
 class Core(object):
@@ -85,12 +90,15 @@ class Core(object):
         phone_q (queue.Queue): queue for phone events
     """
     def __init__(self, config):
+        SECTION = 'core'
         """ Configures core, parse config
 
         Args:
             config (dict): core configuration dict
         """
-        self.config = config
+        self.config = VoltaConfig(config)
+        logger.debug(self.config.__dict__)
+        self.enabled_modules = self.config.get_enabled_sections()
         if not self.config:
             raise RuntimeError('Empty config')
         self.factory = Factory()
@@ -99,13 +107,9 @@ class Core(object):
         self.grabber_listeners = []
         self.start_time = None
         self.artifacts = []
-        self.artifacts_dir = config.get('artifacts_dir', "./logs")
-        self.test_id = "{date}_{uuid}".format(
-            date=datetime.datetime.now().strftime("%Y-%m-%d"),
-            uuid=uuid.uuid4().hex
-        )
-        logger.info('Test id: %s', self.test_id)
-        self.key_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        self.artifacts_dir = self.config.get_option(SECTION, 'artifacts_dir')
+        self.test_id = self.config.get_option(SECTION, 'test_id')
+        logger.info('Local test id: %s', self.config.get_option(SECTION, 'test_id'))
         if not os.path.exists(self.artifacts_dir):
             os.makedirs(self.artifacts_dir)
         if not os.path.exists(os.path.join(self.artifacts_dir, self.test_id)):
@@ -134,41 +138,30 @@ class Core(object):
             uploader
             report
         """
-        if self.config.get('volta', {}):
-            self.volta = self.factory.detect_volta(self.config.get('volta'))
-        if self.config.get('phone', {}):
-            self.phone = self.factory.detect_phone(self.config.get('phone'))
+        self.volta = self.factory.detect_volta(self.config)
+
+        if 'phone' in self.enabled_modules:
+            self.phone = self.factory.detect_phone(self.config)
             self.phone.prepare()
 
-        if self.config.get('sync', {}):
-            self.config['sync']['sample_rate'] = self.volta.sample_rate
+        if 'sync' in self.enabled_modules:
             # setup syncfinder
-            self.sync_finder = SyncFinder(
-                self.config.get('sync')
-            )
+            self.sync_finder = SyncFinder(self.config)
+            self.sync_finder.sample_rate = self.volta.sample_rate
             self.grabber_listeners.append(self.sync_finder)
             self.event_listeners['sync'].append(self.sync_finder)
 
-        if self.config.get('uploader', {}):
-            uploader_cfg = self.config.get('uploader', {})
-            if not uploader_cfg.get('test_id'):
-                uploader_cfg['test_id'] = self.test_id
-            self.uploader = DataUploader(uploader_cfg)
+        if 'uploader' in self.enabled_modules:
+            self.uploader = DataUploader(self.config)
             for type, fname in self.event_fnames.items():
                 self.event_listeners[type].append(self.uploader)
             self.grabber_listeners.append(self.uploader)
 
-            # create job
-            create_job_data = {
-                'key_date' : self.uploader.key_date,
-                'test_id': self.test_id,
-                'version': '2',
-                'task': self.uploader.task,
-                'person': self.uploader.operator,
-            }
-            self.uploader.create_job(create_job_data)
+            self.uploader.create_job()
 
         self._setup_filelisteners()
+
+        return
 
     def _setup_filelisteners(self):
         logger.debug('Creating file listeners...')
@@ -195,7 +188,7 @@ class Core(object):
         logger.info('Starting test...')
         self.start_time = int(time.time() * 10 ** 6)
 
-        if self.config.get('volta', {}):
+        if 'volta' in self.enabled_modules:
             self.volta.start_test(self.grabber_q)
             # process currents thread
             self.process_currents = Tee(
@@ -205,7 +198,7 @@ class Core(object):
             )
             self.process_currents.start()
 
-        if self.config.get('phone', {}):
+        if 'phone' in self.enabled_modules:
             self.phone.start(self.phone_q)
             logger.info('Starting test apps and waiting for finish...')
             self.phone.run_test()
@@ -218,11 +211,15 @@ class Core(object):
         Interrupts test: stops grabbers and events parsers
         """
         logger.info('Finishing test...')
-        if self.config.get('volta', {}):
+        if 'volta' in self.enabled_modules:
             self.volta.end_test()
             self.process_currents.close()
-        if self.config.get('phone', {}):
+        if 'phone' in self.enabled_modules:
             self.phone.end()
+            if self.phone_q.qsize() >= 1:
+                logger.debug('qsize: %s', self.phone_q.qsize())
+                logger.debug('Waiting for phone events processing...')
+                time.sleep(3)
             self.events_parser.close()
 
     def post_process(self):
@@ -234,27 +231,31 @@ class Core(object):
         for artifact in self.artifacts:
             artifact.close()
         sync_data = {}
-        if self.config.get('sync', {}):
+        if 'sync' in self.enabled_modules:
             try:
                 sync_data = self.sync_finder.find_sync_points()
+                logger.debug('Sync data: %s', sync_data)
             except ValueError:
                 logger.error('Unable to sync', exc_info=True)
-        update_job_data = {
-            'test_id': self.test_id,
-            'test_start': self.start_time,
-            'sys_uts_offset': sync_data.get('sys_uts_offset', None),
-            'log_uts_offset': sync_data.get('sys_uts_offset', None),
-            'sync_sample': sync_data.get('sync_sample', None),
-            'name': 'test name',
-            'dsc': 'test dsc',
-            'person': self.uploader.operator,
-            'device_id': 'test device_id',
-            'device_model': 'test device_model',
-            'device_os': 'test device_os',
-            'app': 'test app',
-            'ver': 'test ver',
-            'meta': 'teeeeest meta',
-            'task': 'LOAD-272'
-        }
-        self.uploader.update_job(update_job_data)
+        if 'uploader' in self.enabled_modules:
+            update_job_data = {
+                'test_id': self.config.get_option('core', 'test_id'),
+                'test_start': self.start_time,
+                'name': self.config.get_option('uploader', 'name'),
+                'dsc': self.config.get_option('uploader', 'dsc'),
+                'person': self.config.get_option('core', 'operator'),
+                'device_id': self.config.get_option('uploader', 'device_id'),
+                'device_model': self.config.get_option('uploader', 'device_model'),
+                'device_os': self.config.get_option('uploader', 'device_os'),
+                'app': self.config.get_option('uploader', 'app'),
+                'ver': self.config.get_option('uploader', 'ver'),
+                'meta': self.config.get_option('uploader', 'meta'),
+                'task': self.config.get_option('uploader', 'task'),
+                'sys_uts_offset': sync_data.get('sys_uts_offset', None),
+                'log_uts_offset': sync_data.get('sys_uts_offset', None),
+                'sync_sample': sync_data.get('sync_sample', None)
+            }
+            self.uploader.update_job(update_job_data)
+            if self.uploader.jobno:
+                logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
         logger.info('Finished!')

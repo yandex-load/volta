@@ -1,11 +1,10 @@
-""" Android phone worker, OS version >5
+""" Android phone worker, OS version below 5
 
 """
 import logging
 import re
 import queue as q
 import pkg_resources
-import time
 
 from volta.common.interfaces import Phone
 from volta.common.util import execute, Drain, popen, LogReader, PhoneTestPerformer
@@ -25,15 +24,13 @@ event_regexp = r"""
     \s+
     \S+
     \s+
-    \S+
-    \s+
     (?P<message>.*)
     $
     """
 
 
-class AndroidPhone(Phone):
-    """ Android phone worker class - work w/ phone, read phone logs, run test apps and store data
+class AndroidOldPhone(Phone):
+    """ Android Old phone worker class - work w/ phone, read phone logs, run test apps and store data
 
     Attributes:
         source (string): path to data source, phone id (adb devices)
@@ -63,6 +60,7 @@ class AndroidPhone(Phone):
         self.logcat_stderr_reader = None
         # mandatory options
         self.source = config.get_option('phone', 'source')
+        #self.unplug_type = config.get('unplug_type', 'auto')
         # lightning app configuration
         self.lightning_apk_path = config.get_option(
             'phone', 'lightning', pkg_resources.resource_filename(
@@ -83,6 +81,7 @@ class AndroidPhone(Phone):
             logger.debug('Unable to parse specified regexp', exc_info=True)
             raise RuntimeError("Unable to parse specified regexp")
         self.test_performer = None
+
 
     def prepare(self):
         """ Phone preparements stage: install apps etc
@@ -131,6 +130,7 @@ class AndroidPhone(Phone):
         #    logger.info("It's time to start flashlight app!")
         #    return
 
+        #if self.unplug_type == 'auto':
         self.__start_async_logcat()
         # start flashes app
         execute(
@@ -144,7 +144,7 @@ class AndroidPhone(Phone):
 
     def __start_async_logcat(self):
         """ Start logcat read in subprocess and make threads to read its stdout/stderr to queues """
-        cmd = "adb -s {device_id} logcat".format(device_id=self.source)
+        cmd = "adb -s {device_id} logcat -v time".format(device_id=self.source)
         logger.debug("Execute : %s", cmd)
         self.logcat_process = popen(cmd)
 
