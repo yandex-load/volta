@@ -42,7 +42,8 @@ yandex package for mobile energy consumption measurements
     package_data={
         'volta.phones': [
             'binary/*.apk'
-        ]
+        ],
+        'volta.core': ['config/*'],
     },
     classifiers=[
         'Environment :: Web Environment',
