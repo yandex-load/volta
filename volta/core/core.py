@@ -261,9 +261,9 @@ class Core(object):
         logger.info('Finished!')
 
     def get_current_test_id(self):
-        response = {'local_test_id': self.test_id}
+        response = {'jobno': self.test_id}
         if hasattr(self, 'uploader'):
-            response['lunapark_test_id'] = "{api}/mobile/{jobno}".format(
+            response['api_jobno'] = "{api}/mobile/{jobno}".format(
                 api=self.uploader.hostname,
                 jobno=self.uploader.jobno
             )
