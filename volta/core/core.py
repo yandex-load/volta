@@ -259,3 +259,12 @@ class Core(object):
             if self.uploader.jobno:
                 logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
         logger.info('Finished!')
+
+    def get_current_test_id(self):
+        response = {'local_test_id': self.test_id}
+        if hasattr(self, 'uploader'):
+            response['lunapark_test_id'] = "{api}/mobile/{jobno}".format(
+                api=self.uploader.hostname,
+                jobno=self.uploader.jobno
+            )
+        return response
