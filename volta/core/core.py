@@ -260,11 +260,30 @@ class Core(object):
                 logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
         logger.info('Finished!')
 
-    def get_current_test_id(self):
+    def get_current_test_info(self):
         response = {'jobno': self.test_id}
+        if hasattr(self, 'volta'):
+            response['volta'] = {}
+            if hasattr(self.volta, 'pipeline'):
+                response['volta']['grabber_alive'] = self.volta.pipeline.isAlive()
+            if hasattr(self, 'grabber_q'):
+                response['volta']['grabber_queue_size'] = self.grabber_q.qsize()
+            if hasattr(self, 'process_currents'):
+                response['volta']['processing_alive'] = self.process_currents.isAlive()
+        if hasattr(self, 'phone'):
+            response['phone'] = {}
+            if hasattr(self.phone, 'drain_logcat_stdout'):
+                response['phone']['grabber_alive'] = self.phone.drain_logcat_stdout.isAlive()
+            if hasattr(self, 'events_parser'):
+                response['phone']['processing_alive'] = self.events_parser.isAlive()
+            if hasattr(self, 'phone_q'):
+                response['phone']['grabber_queue_size'] = self.phone_q.qsize()
+            if hasattr(self.phone, 'test_performer'):
+                response['phone']['test_performer_alive'] = self.phone.test_performer.isAlive()
         if hasattr(self, 'uploader'):
-            response['api_jobno'] = "{api}/mobile/{jobno}".format(
+            response['api_url'] = "{api}/mobile/{jobno}".format(
                 api=self.uploader.hostname,
                 jobno=self.uploader.jobno
             )
+            response['api_jobno'] = "{jobno}".format(jobno=self.uploader.jobno)
         return response

@@ -34,7 +34,7 @@ class StartHandler(tornado.web.RequestHandler):
             self.core.configure()
             self.perform_test()
             active_test = self.core
-            self.write(json.dumps(self.core.get_current_test_id()))
+            self.write(json.dumps(self.core.get_current_test_info()))
         except Exception:
             logger.warning('Failed to start the test', exc_info=True)
             self.set_status(500)
@@ -59,12 +59,12 @@ class StopHandler(tornado.web.RequestHandler):
         return
 
 
-class GetTestIdHandler(tornado.web.RequestHandler):
+class GetTestInfoHandler(tornado.web.RequestHandler):
     def get(self):
         global active_test
         if active_test:
             self.core = active_test
-            self.write(json.dumps(self.core.get_current_test_id()))
+            self.write(json.dumps(self.core.get_current_test_info()))
         else:
             self.set_status(404)
             self.write('There are no active tests\n')
@@ -76,9 +76,10 @@ class VoltaApplication(tornado.web.Application):
         handlers = [
             (r"/api/v1/start/?", StartHandler),
             (r"/api/v1/stop/?", StopHandler),
-            (r"/api/v1/id/?", GetTestIdHandler)
+            (r"/api/v1/status/?", GetTestInfoHandler)
         ]
         tornado.web.Application.__init__(self, handlers)
+
 
 def main():
     import argparse
