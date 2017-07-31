@@ -282,8 +282,8 @@ class Core(object):
                 logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
         logger.info('Finished!')
 
-    def get_current_test_info(self, per_module=False):
-        response = {'jobno': self.test_id, 'session_id': self.session_id}
+    def get_current_test_info(self, per_module=False, session_id=None):
+        response = {'jobno': self.test_id, 'session_id': session_id}
         if per_module:
             for module in self.enabled_modules:
                 try:
