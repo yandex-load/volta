@@ -79,7 +79,7 @@ class Core(object):
 
     Attributes:
         config (dict): test config
-        test_id (string): lunapark test id
+        test_id (string): local test id
         key_date (string): clickhouse key (sharding)
         event_types (list): currently supported event types
         event_fnames (dict): filename for FileListener for each event type
@@ -97,11 +97,14 @@ class Core(object):
             config (dict): core configuration dict
         """
         self.config = VoltaConfig(config)
-        logger.debug(self.config.__dict__)
         self.enabled_modules = self.config.get_enabled_sections()
         if not self.config:
             raise RuntimeError('Empty config')
         self.factory = Factory()
+        self._volta = None
+        self._phone = None
+        self._sync = None
+        self._uploader = None
         self.grabber_q = q.Queue()
         self.phone_q = q.Queue()
         self.grabber_listeners = []
@@ -110,6 +113,10 @@ class Core(object):
         self.artifacts_dir = self.config.get_option(SECTION, 'artifacts_dir')
         self.test_id = self.config.get_option(SECTION, 'test_id')
         logger.info('Local test id: %s', self.config.get_option(SECTION, 'test_id'))
+        self.event_types = ['event', 'sync', 'fragment', 'metric', 'unknown']
+        self.event_listeners = {key:[] for key in self.event_types}
+
+    def init_artifacts(self):
         if not os.path.exists(self.artifacts_dir):
             os.makedirs(self.artifacts_dir)
         if not os.path.exists(os.path.join(self.artifacts_dir, self.test_id)):
@@ -117,8 +124,6 @@ class Core(object):
         self.currents_fname = "{artifacts_dir}/{test_id}/currents.data".format(
             artifacts_dir=self.artifacts_dir, test_id=self.test_id
         )
-        self.event_types = ['event', 'sync', 'fragment', 'metric', 'unknown']
-        self.event_listeners = {key:[] for key in self.event_types}
         self.event_fnames = {
             key:"{artifacts_dir}/{test_id}/{data}.data".format(
                 artifacts_dir=self.artifacts_dir,
@@ -127,64 +132,69 @@ class Core(object):
             ) for key in self.event_types
         }
 
-    def configure(self):
-        """
-        Configures modules and prepare modules for test
+    @property
+    def volta(self):
+        if not self._volta:
+            self._volta = self.factory.detect_volta(self.config)
+        return self._volta
 
-        pipeline:
-            volta
-            phone
-            sync
-            uploader
-            report
-        """
-        self.volta = self.factory.detect_volta(self.config)
+    @property
+    def phone(self):
+        if not self._phone:
+            self._phone = self.factory.detect_phone(self.config)
+        return self._phone
+
+    @property
+    def sync(self):
+        if not self._sync:
+            self._sync = SyncFinder(self.config)
+        return self._sync
+
+    @property
+    def uploader(self):
+        if not self._uploader:
+            self._uploader = DataUploader(self.config)
+        return self._uploader
+
+    def add_artifact_file(self, filename):
+        self.artifacts.append(filename)
+
+    def configure(self):
+        """ Configures modules and prepare modules for test """
+        self.init_artifacts()
+        self.volta()
 
         if 'phone' in self.enabled_modules:
-            self.phone = self.factory.detect_phone(self.config)
             self.phone.prepare()
 
         if 'sync' in self.enabled_modules:
-            # setup syncfinder
-            self.sync_finder = SyncFinder(self.config)
-            self.sync_finder.sample_rate = self.volta.sample_rate
-            self.grabber_listeners.append(self.sync_finder)
-            self.event_listeners['sync'].append(self.sync_finder)
+            self.sync.sample_rate = self.volta.sample_rate
+            self.grabber_listeners.append(self.sync)
+            self.event_listeners['sync'].append(self.sync)
 
         if 'uploader' in self.enabled_modules:
-            self.uploader = DataUploader(self.config)
             for type, fname in self.event_fnames.items():
                 self.event_listeners[type].append(self.uploader)
             self.grabber_listeners.append(self.uploader)
-
             self.uploader.create_job()
 
         self._setup_filelisteners()
-
-        return
 
     def _setup_filelisteners(self):
         logger.debug('Creating file listeners...')
         for type, fname in self.event_fnames.items():
             listener_config = {'fname': fname}
             f = FileListener(listener_config)
-            self.artifacts.append(f)
+            self.add_artifact_file(f)
             self.event_listeners[type].append(f)
 
-        # grabber
         listener_config = {'fname': self.currents_fname}
         grabber_f = FileListener(listener_config)
-        self.artifacts.append(grabber_f)
+        self.add_artifact_file(grabber_f)
         self.grabber_listeners.append(grabber_f)
 
     def start_test(self):
-        """
-        Start test: start grabbers and process data to listeners
-
-        pipeline:
-            volta
-            phone
-        """
+        """ Start test: start grabbers and process data to listeners """
         logger.info('Starting test...')
         self.start_time = int(time.time() * 10 ** 6)
 
@@ -218,7 +228,7 @@ class Core(object):
             self.phone.end()
             if self.phone_q.qsize() >= 1:
                 logger.debug('qsize: %s', self.phone_q.qsize())
-                logger.debug('Waiting for phone events processing...')
+                logger.debug('Waiting additional 3 seconds for phone events processing...')
                 time.sleep(3)
             self.events_parser.close()
 
@@ -233,7 +243,7 @@ class Core(object):
         sync_data = {}
         if 'sync' in self.enabled_modules:
             try:
-                sync_data = self.sync_finder.find_sync_points()
+                sync_data = self.sync.find_sync_points()
                 logger.debug('Sync data: %s', sync_data)
             except ValueError:
                 logger.error('Unable to sync', exc_info=True)
@@ -260,30 +270,24 @@ class Core(object):
                 logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
         logger.info('Finished!')
 
-    def get_current_test_info(self):
-        response = {'jobno': self.test_id}
-        if hasattr(self, 'volta'):
-            response['volta'] = {}
-            if hasattr(self.volta, 'pipeline'):
-                response['volta']['grabber_alive'] = self.volta.pipeline.isAlive()
-            if hasattr(self, 'grabber_q'):
-                response['volta']['grabber_queue_size'] = self.grabber_q.qsize()
-            if hasattr(self, 'process_currents'):
-                response['volta']['processing_alive'] = self.process_currents.isAlive()
-        if hasattr(self, 'phone'):
-            response['phone'] = {}
-            if hasattr(self.phone, 'drain_logcat_stdout'):
-                response['phone']['grabber_alive'] = self.phone.drain_logcat_stdout.isAlive()
-            if hasattr(self, 'events_parser'):
-                response['phone']['processing_alive'] = self.events_parser.isAlive()
-            if hasattr(self, 'phone_q'):
-                response['phone']['grabber_queue_size'] = self.phone_q.qsize()
-            if hasattr(self.phone, 'test_performer'):
-                response['phone']['test_performer_alive'] = self.phone.test_performer.isAlive()
-        if hasattr(self, 'uploader'):
-            response['api_url'] = "{api}/mobile/{jobno}".format(
-                api=self.uploader.hostname,
-                jobno=self.uploader.jobno
-            )
-            response['api_jobno'] = "{jobno}".format(jobno=self.uploader.jobno)
+    def get_current_test_info(self, per_module=False):
+        response = {'jobno': self.test_id, 'session_id': self.session_id}
+        if per_module:
+            for module in self.enabled_modules:
+                try:
+                    if module == 'volta':
+                        response[module] = self.volta.get_info()
+                        response['currents_parser_alive'] = self.process_currents.isAlive()
+                    elif module == 'phone':
+                        response[module] = self.phone.get_info()
+                        response['events_parser_alive'] = self.events_parser.get_info()
+                    elif module == 'uploader':
+                        response['api_url'] = "{api}/mobile/{jobno}".format(
+                            api=self.uploader.hostname,
+                            jobno=self.uploader.jobno
+                        )
+                        response['api_jobno'] = "{jobno}".format(jobno=self.uploader.jobno)
+                except AttributeError:
+                    logger.info('Unable to get per_module %s current test info', per_module, exc_info=True)
+                    pass
         return response

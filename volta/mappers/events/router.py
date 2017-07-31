@@ -127,3 +127,9 @@ class EventsRouter(threading.Thread):
 
     def close(self):
         self._interrupted.set()
+
+    def get_info(self):
+        data = {
+            'processing_alive': self.isAlive()
+        }
+        return data

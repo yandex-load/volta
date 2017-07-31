@@ -42,6 +42,10 @@ class VoltaBoxBinary(VoltaBox):
         self.source_opener.read_timeout = self.grab_timeout
         self.data_source = self.source_opener()
         logger.debug('Data source initialized: %s', self.data_source)
+        self.pipeline = None
+        self.grabber_q = None
+        self.process_currents = None
+
 
     def start_test(self, results):
         """ Grab stage - starts grabber thread and puts data to results queue
@@ -56,6 +60,7 @@ class VoltaBoxBinary(VoltaBox):
         Args:
             results: object answers to put() and get() methods
         """
+        self.grabber_q = results
 
         # handshake
         while self.data_source.readline() != "VOLTAHELLO\n":
@@ -75,7 +80,7 @@ class VoltaBoxBinary(VoltaBox):
             TimeChopper(
                 self.reader, self.sample_rate, self.chop_ratio
             ),
-            results
+            self.grabber_q
         )
         logger.info('Starting grab thread...')
         self.pipeline.start()
@@ -86,6 +91,15 @@ class VoltaBoxBinary(VoltaBox):
         self.pipeline.close()
         self.pipeline.join(10)
         self.data_source.close()
+
+    def get_info(self):
+        data = {}
+        if self.pipeline:
+            data['grabber_alive'] = self.pipeline.isAlive()
+        if self.grabber_q:
+            data['grabber_queue_size'] = self.grabber_q.qsize()
+        return data
+
 
 
 class BoxBinaryReader(object):

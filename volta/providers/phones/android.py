@@ -82,6 +82,7 @@ class AndroidPhone(Phone):
         except:
             logger.debug('Unable to parse specified regexp', exc_info=True)
             raise RuntimeError("Unable to parse specified regexp")
+        self.drain_logcat_stdout = None
         self.test_performer = None
 
     def prepare(self):
@@ -184,3 +185,13 @@ class AndroidPhone(Phone):
         self.drain_logcat_stdout.close()
         self.drain_logcat_stderr.close()
         return
+
+    def get_info(self):
+        data = {}
+        if self.drain_logcat_stdout:
+            data['grabber_alive'] = self.drain_logcat_stdout.isAlive()
+        if self.phone_q:
+            data['grabber_queue_size'] = self.phone_q.qsize()
+        if self.test_performer:
+            data['test_performer_alive'] = self.test_performer.isAlive()
+        return data
