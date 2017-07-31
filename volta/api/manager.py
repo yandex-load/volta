@@ -288,6 +288,7 @@ def run_server(options):
 
 def parse_options():
     '''parse command line options'''
+    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--debug",
@@ -303,7 +304,7 @@ def parse_options():
     parser.add_argument(
         "--log",
         help='Log file',
-        default=None,
+        default='api.log',
         dest='log_file')
     return parser.parse_args()
 
@@ -313,16 +314,17 @@ def signal_handler(sig, frame):
     raise KeyboardInterrupt()
 
 
-if __name__ == '__main__':
-    import argparse
+def main():
     import logging
     logging.basicConfig(
         level=logging.DEBUG, format="%(asctime)s %(levelname)s: %(message)s")
     options = parse_options()
-
     try:
         run_server(options)
     except:
         logging.exception("Uncaught exception:")
 
+
+if __name__ == '__main__':
+    main()
 

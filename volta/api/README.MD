@@ -19,7 +19,7 @@ curl 'http://localhost:9998/api/v1/stop/' -XPOST -v
 * start tests
 ```bash
 curl 'http://localhost:9998/run' -XPOST --data \
-'config={"volta":{"source":"/dev/cu.wchusbserial1420","type":"500hz","enabled":True}, "uplader": {"enabled": True, "task":"LOAD-272"}}' -v
+'config={"volta":{"source":"/dev/cu.wchusbserial1420","type":"500hz","enabled":True}, "uploader": {"enabled": True, "task":"LOAD-272"}}' -v
 ```
 * stop test
 ```bash
