@@ -63,27 +63,22 @@ class APIHandler(tornado.web.RequestHandler):  # pylint: disable=R0904
 
 class RunHandler(APIHandler):
     def post(self):
+        offered_test_id = self.get_argument(
+            "test_id", datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
         if len(self.srv.running_sessions) >= 1 and not self.srv.allow_multiple:
             self.reply_reason(
                 500, 'There are active tests running: {test_id}'.format(test_id=self.srv.running_sessions)
             )
             return
 
-        cfg, cfg_data = None, None
         try:
             cfg_data = self.get_body_argument("config")
-            cfg = yaml.load(cfg_data)
         except:
             self.reply_reason(
-                400, "Config parse error: {config}.".format(
-                    config=cfg_data
-                )
+                500, "Config MUST be specified by 'config' body argument"
             )
             return
-        logger.debug('Received config: %s. Starting test', cfg)
-        self.core = Core(cfg)
-        self.core.configure()
-        offered_test_id = self.core.test_id
+        logger.debug('Received config: %s. Starting test', cfg_data)
         try:
             session_id = self.srv.create_session_dir(offered_test_id)
         except RuntimeError as err:
@@ -93,65 +88,53 @@ class RunHandler(APIHandler):
         self.srv.set_session_status(
             session_id, {'status': 'starting'}
         )
-        try:
-            self.perform_test()
-            self.core.session_id = session_id
-            self.srv.running_sessions[session_id] = self.core
-            self.reply_reason(200, self.core.get_current_test_info())
-        except serial.SerialException as exc:
-            logger.error("Unable to use specified VoltaBox device", exc_info=True)
-            self.reply_reason(500, 'Unable to use specified VoltaBox device.{exc}'.format(exc=exc))
-        except Exception as exc:
-            logger.warning('Failed to start the test', exc_info=True)
-            self.reply_reason(500, 'Failed to start the test: {exc}'.format(exc=exc))
+        self.srv.cmd({
+            'session': session_id,
+            'cmd': 'run',
+            'config': cfg_data
+        })
+        self.reply_json(200, {"session": session_id})
         return
 
-    @gen.coroutine
-    def perform_test(self):
-        logger.info('Starting test... You can interrupt via API /stop handler')
-        self.core.start_test()
 
+class StopHandler(APIHandler):  # pylint: disable=R0904
+    """
+    Handles GET /stop
+    """
 
-class StopHandler(APIHandler):
-    def post(self):
+    def get(self):
+        session_id = self.get_argument("session")
+
         try:
-            session_id = self.get_body_argument("session_id")
-        except:
-            self.reply_reason(
-                404, "You MUST specify a session_id body argument for this handler"
-            )
-            return
-        try:
-            self.core = self.srv.running_sessions[session_id]
+            self.srv.status(session_id)
         except KeyError:
-            self.reply_reason(
-                404, "session_id {id} not found".format(id=session_id)
-            )
+            self.reply_reason(404, 'No session with this ID.')
             return
-        self.core.end_test()
-        self.core.post_process()
-        del self.srv.running_sessions[session_id]
-        self.reply_reason(200, self.core.get_current_test_info(per_module=True))
-
-
-class StatusHandler(APIHandler):
-    def post(self):
-        try:
-            session_id = self.get_body_argument("session_id")
-        except:
-            self.reply_reason(
-                404, "You MUST specify a session_id body argument for this handler"
-            )
+        if session_id in self.srv.running_sessions.items():
+            self.srv.cmd({'cmd': 'stop', 'session': session_id})
+            self.reply_reason(200, 'Will try to stop test process.')
+            return
+        else:
+            self.reply_reason(409, 'This session is already stopped.')
             return
 
-        try:
-            self.core = self.srv.running_sessions[session_id]
-        except KeyError:
-            self.reply_reason(
-                404, "session_id {id} not found".format(id=session_id)
-            )
-            return
-        self.reply_reason(200, self.core.get_current_test_info(per_module=True))
+
+class StatusHandler(APIHandler):  # pylint: disable=R0904
+    """
+    Handle GET /status?
+    """
+
+    def get(self):
+        session_id = self.get_argument("session", default=None)
+        if session_id:
+            try:
+                status = self.srv.status(session_id)
+            except KeyError:
+                self.reply_reason(404, 'No session with this ID.')
+                return
+            self.reply_json(200, status)
+        else:
+            self.reply_json(200, self.srv.all_sessions)
 
 
 class ApiServer(object):
@@ -208,7 +191,8 @@ class ApiServer(object):
         """Remember session status and change running_id"""
 
         if new_status['status'] in ['success', 'failed']:
-            del self._running_sessions[session_id]
+            if self._running_sessions.get(session_id, None):
+                del self._running_sessions[session_id]
         else:
             self._running_sessions[session_id] = new_status
 
@@ -294,7 +278,7 @@ class ApiServer(object):
         ioloop.start()
 
 
-def main(webserver_queue, manager_queue, test_directory, allow_multiple, debug, port):
+def main(webserver_queue, manager_queue, test_directory, allow_multiple, debug, port=9998):
     """Target for webserver process.
     The only function ever used by the Manager.
     webserver_queue
