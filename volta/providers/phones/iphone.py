@@ -5,7 +5,7 @@ import queue as q
 import re
 
 from volta.common.interfaces import Phone
-from volta.common.util import Drain, popen, chunk_to_df, LogReader
+from volta.common.util import Drain, popen, LogReader, PhoneTestPerformer
 
 
 logger = logging.getLogger(__name__)
@@ -46,9 +46,11 @@ class iPhone(Phone):
         Phone.__init__(self, config)
         self.log_stdout_reader = None
         self.log_stderr_reader = None
+        self.drain_log_stdout = None
         self.path_to_util = config.get('util', "/Applications/Apple\ Configurator\ 2.app/Contents/MacOS/")
         self.source = config.get('source', '0x6382910F98C26')
-        # self.unplug_type = config.get('unplug_type', 'auto')
+        self.test_performer = None
+
 
     def prepare(self):
         """ this method skipped by iphone - instruments do the thing """
@@ -68,11 +70,16 @@ class iPhone(Phone):
         self.__start_async_log()
 
     def run_test(self):
-        """ this method skipped by iphone because instruments do the thing """
-        return
+        """ App stage: run app/phone tests """
+        logger.info('Infinite loop for volta because there are no tests specified, waiting for SIGINT')
+        command = 'while [ 1 ]; do sleep 1; done'
+        self.test_performer = PhoneTestPerformer(command)
+        self.test_performer.start()
 
     def end(self):
         """ pipeline: stop async log process, readers and queues """
+        if self.test_performer:
+            self.test_performer.close()
         self.log_reader_stdout.close()
         self.log_reader_stderr.close()
         self.log_process.kill()
@@ -96,3 +103,13 @@ class iPhone(Phone):
         self.log_reader_stderr = LogReader(self.log_process.stderr, iphone_logevent_re)
         self.drain_log_stderr = Drain(self.log_reader_stderr, self.phone_q_err)
         self.drain_log_stderr.start()
+
+    def get_info(self):
+        data = {}
+        if self.drain_log_stdout:
+            data['grabber_alive'] = self.drain_log_stdout.isAlive()
+        if self.phone_q:
+            data['grabber_queue_size'] = self.phone_q.qsize()
+        if self.test_performer:
+            data['test_performer_alive'] = self.test_performer.isAlive()
+        return data

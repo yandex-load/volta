@@ -39,6 +39,9 @@ class VoltaBox500Hz(VoltaBox):
         self.source_opener.read_timeout = self.grab_timeout
         self.data_source = self.source_opener()
         logger.debug('Data source initialized: %s', self.data_source)
+        self.pipeline = None
+        self.grabber_q = None
+        self.process_currents = None
 
     def start_test(self, results):
         """ Grab stage - starts grabber thread and puts data to results queue
@@ -50,6 +53,7 @@ class VoltaBox500Hz(VoltaBox):
                 make pandas DataFrame ->
                 drain DataFrame to queue `results`
         """
+        self.grabber_q = results
 
         # clean up dirty buffer
         for _ in range(self.sample_rate):
@@ -62,7 +66,7 @@ class VoltaBox500Hz(VoltaBox):
             TimeChopper(
                 self.reader, self.sample_rate, self.chop_ratio
             ),
-            results
+            self.grabber_q
         )
         logger.info('Starting grab thread...')
         self.pipeline.start()
@@ -73,6 +77,14 @@ class VoltaBox500Hz(VoltaBox):
         self.pipeline.close()
         self.pipeline.join(10)
         self.data_source.close()
+
+    def get_info(self):
+        data = {}
+        if self.pipeline:
+            data['grabber_alive'] = self.pipeline.isAlive()
+        if self.grabber_q:
+            data['grabber_queue_size'] = self.grabber_q.qsize()
+        return data
 
 
 class BoxPlainTextReader(object):

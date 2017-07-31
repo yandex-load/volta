@@ -19,6 +19,9 @@ class VoltaBox(object):
         """ end test """
         raise NotImplementedError("Abstract method needs to be overridden")
 
+    def get_info(self):
+        raise NotImplementedError("Abstract method needs to be overridden")
+
 
 class Phone(object):
     """ Phone interface - parent class for phones """
@@ -42,6 +45,9 @@ class Phone(object):
         """ Stop test and grabbers """
         raise NotImplementedError("Abstract method needs to be overridden")
 
+    def get_info(self):
+        raise NotImplementedError("Abstract method needs to be overridden")
+
 
 class DataListener(object):
     """ Listener interface
@@ -59,4 +65,7 @@ class DataListener(object):
 
     def close(self):
         """ Close listeners """
+        raise NotImplementedError("Abstract method needs to be overridden")
+
+    def get_info(self):
         raise NotImplementedError("Abstract method needs to be overridden")

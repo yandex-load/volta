@@ -37,9 +37,6 @@ class AndroidPhone(Phone):
 
     Attributes:
         source (string): path to data source, phone id (adb devices)
-        unplug_type (string): type of test execution
-            `auto`: disable battery charge (by software) or use special USB cord limiting charge over USB
-            `manual`: disable phone from USB by your own hands during test exection and click your test
         lightning_apk_path (string, optional): path to lightning app
             may be url, e.g. 'http://myhost.tld/path/to/file'
             may be path to file, e.g. '/home/users/netort/path/to/file.apk'
@@ -49,8 +46,6 @@ class AndroidPhone(Phone):
         test_package (string, optional): app package to be started during test execution
         test_runner (string, optional): app runner to be started during test execution
 
-    Todo:
-        unplug_type manual - remove raw_input()
     """
 
     def __init__(self, config):
@@ -82,6 +77,7 @@ class AndroidPhone(Phone):
         except:
             logger.debug('Unable to parse specified regexp', exc_info=True)
             raise RuntimeError("Unable to parse specified regexp")
+        self.drain_logcat_stdout = None
         self.test_performer = None
 
     def prepare(self):
@@ -105,32 +101,12 @@ class AndroidPhone(Phone):
         # clean logcat
         execute("adb -s {device_id} logcat -c".format(device_id=self.source))
 
-        # unplug device or start logcat
-        #if self.unplug_type == 'manual':
-        #    logger.info('Detach the phone %s from USB and press enter to continue...', self.source)
-        #    # TODO make API and remove this
-        #    raw_input()
-
-
     def start(self, results):
         """ Grab stage: starts log reader, make sync w/ flashlight
-
-        pipeline:
-            if uplug_type is manual:
-                remind user to start flashlight app
-            if unplug_type is auto:
-                start async logcat reader
-                start lightning flashes
-
         Args:
             results (queue-like object): Phone should put there dataframes, format: ['sys_uts', 'message']
         """
         self.phone_q = results
-
-        #if self.unplug_type == 'manual':
-        #    logger.info("It's time to start flashlight app!")
-        #    return
-
         self.__start_async_logcat()
         # start flashes app
         execute(
@@ -184,3 +160,13 @@ class AndroidPhone(Phone):
         self.drain_logcat_stdout.close()
         self.drain_logcat_stderr.close()
         return
+
+    def get_info(self):
+        data = {}
+        if self.drain_logcat_stdout:
+            data['grabber_alive'] = self.drain_logcat_stdout.isAlive()
+        if self.phone_q:
+            data['grabber_queue_size'] = self.phone_q.qsize()
+        if self.test_performer:
+            data['test_performer_alive'] = self.test_performer.isAlive()
+        return data
