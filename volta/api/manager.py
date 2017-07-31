@@ -21,14 +21,14 @@ logger = logging.getLogger(__name__)
 
 class TestRunner(object):
     """
-    Manages the tank process and its working directory.
+    Manages the test process and its working directory.
     """
 
     def __init__(
             self, cfg, manager_queue, session_id, test_config):
         """
-        Sets up working directory and tank queue
-        Starts tank process
+        Sets up working directory and test queue
+        Starts test process
         """
 
         work_dir = os.path.join(cfg['tests_dir'], session_id)
@@ -41,7 +41,7 @@ class TestRunner(object):
         except:
             logger.info('Failed to write config file to %s', load_ini_path, exc_info=True)
 
-        # Create tank queue and put first break there
+        # Create test queue
         self.test_queue = multiprocessing.Queue()
         parsed_config = yaml.load(test_config)
         # Start test process
@@ -57,12 +57,11 @@ class TestRunner(object):
             logger.info('Failed to start test_process', exc_info=True)
 
     def is_alive(self):
-        """Check that the tank process didn't exit """
+        """Check that the test process didn't exit """
         return self.test_process.exitcode is None
 
     def get_exitcode(self):
         """Return test exitcode"""
-        logger.info('get_exitcode %s', self.test_process)
         return self.test_process.exitcode
 
     def join(self):
@@ -71,7 +70,7 @@ class TestRunner(object):
         return self.test_process.join()
 
     def stop(self):
-        """Interrupts the tank process"""
+        """Interrupts the test process"""
         if self.is_alive():
             sig = signal.SIGTERM
             os.kill(self.test_process.pid, sig)
@@ -116,7 +115,7 @@ class Manager(object):
         self.last_test_status = 'not started'
 
     def _handle_cmd_stop(self, msg):
-        """Check running session and kill tank"""
+        """Check running session and kill test"""
         if msg['session'] == self.session_id:
             self.test_runner.stop()
         else:
@@ -236,7 +235,7 @@ class Manager(object):
 
     def _handle_test_status(self, msg):
         """
-        Wait for tank exit if it stopped.
+        Wait for test exit if it stopped.
         Remember new status and notify webserver.
         """
         new_status = msg['status']
