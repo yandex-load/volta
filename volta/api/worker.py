@@ -45,10 +45,9 @@ class VoltaWorker(object):
         self.retcode = None
         self.locked = False
         self.done_stages = set()
-        self.core = VoltaCore(self.config)
+        self.core = VoltaCore(self.config, artifacts_dir='.')
         self.core.session_id = None
         self.core.status = None
-        self.core.artifacts_dir = '.'
 
     def __add_log_file(self, logger, loglevel, filename):
         """Adds FileHandler to logger; adds filename to artifacts"""

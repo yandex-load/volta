@@ -2,6 +2,8 @@ import logging
 import queue as q
 import time
 import os
+import datetime
+import tempfile
 
 from volta.core.validator import VoltaConfig
 from volta.common.util import Tee
@@ -89,8 +91,9 @@ class Core(object):
         grabber_q (queue.Queue): queue for electrical currents
         phone_q (queue.Queue): queue for phone events
     """
-    def __init__(self, config):
-        SECTION = 'core'
+    SECTION = 'core'
+
+    def __init__(self, config, artifacts_dir=None):
         """ Configures core, parse config
 
         Args:
@@ -110,24 +113,33 @@ class Core(object):
         self.grabber_listeners = []
         self.start_time = None
         self.artifacts = []
-        self.artifacts_dir = self.config.get_option(SECTION, 'artifacts_dir')
-        self.test_id = self.config.get_option(SECTION, 'test_id')
-        logger.info('Local test id: %s', self.config.get_option(SECTION, 'test_id'))
+        self._artifacts_dir = None
+        self.test_id = self.config.get_option(self.SECTION, 'test_id')
+        logger.info('Local test id: %s', self.config.get_option(self.SECTION, 'test_id'))
         self.event_types = ['event', 'sync', 'fragment', 'metric', 'unknown']
         self.event_listeners = {key:[] for key in self.event_types}
 
+    @property
+    def artifacts_dir(self):
+        if not self._artifacts_dir:
+            dir_name = self.config.get_option(self.SECTION, 'artifacts_dir')
+            if not dir_name:
+                date_str = datetime.datetime.now().strftime(
+                    "%Y-%m-%d_%H-%M-%S.")
+                dir_name = tempfile.mkdtemp("", date_str, '.')
+            elif not os.path.isdir(dir_name):
+                os.makedirs(dir_name)
+            os.chmod(dir_name, 0o755)
+            self._artifacts_dir = os.path.abspath(dir_name)
+        return self._artifacts_dir
+
     def init_artifacts(self):
-        if not os.path.exists(self.artifacts_dir):
-            os.makedirs(self.artifacts_dir)
-        if not os.path.exists(os.path.join(self.artifacts_dir, self.test_id)):
-            os.makedirs(os.path.join(self.artifacts_dir, self.test_id))
-        self.currents_fname = "{artifacts_dir}/{test_id}/currents.data".format(
-            artifacts_dir=self.artifacts_dir, test_id=self.test_id
+        self.currents_fname = "{artifacts_dir}/currents.data".format(
+            artifacts_dir=self.artifacts_dir
         )
         self.event_fnames = {
-            key:"{artifacts_dir}/{test_id}/{data}.data".format(
+            key:"{artifacts_dir}/{data}.data".format(
                 artifacts_dir=self.artifacts_dir,
-                test_id=self.test_id,
                 data=key
             ) for key in self.event_types
         }
