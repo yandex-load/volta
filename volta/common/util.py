@@ -149,7 +149,7 @@ class Tee(threading.Thread):
                         break
             if self._interrupted.is_set():
                 break
-            time.sleep(1)
+            time.sleep(0.5)
         self._finished.set()
 
     def wait(self, timeout=None):

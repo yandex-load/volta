@@ -184,3 +184,14 @@ class AndroidOldPhone(Phone):
         self.drain_logcat_stdout.close()
         self.drain_logcat_stderr.close()
         return
+
+    def get_info(self):
+        data = {}
+        if self.drain_logcat_stdout:
+            data['grabber_alive'] = self.drain_logcat_stdout.isAlive()
+        if self.phone_q:
+            data['grabber_queue_size'] = self.phone_q.qsize()
+        if self.test_performer:
+            data['test_performer_alive'] = self.test_performer.isAlive()
+        return data
+
