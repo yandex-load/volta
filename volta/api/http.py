@@ -42,7 +42,7 @@ class StartHandler(tornado.web.RequestHandler):
 
     @gen.coroutine
     def perform_test(self):
-        logger.info('Starting test... You can interrupt test w/ Ctrl+C or SIGTERM signal')
+        logger.info('Starting test... You can interrupt via API /stop/ handler')
         self.core.start_test()
 
 
@@ -52,7 +52,8 @@ class StopHandler(tornado.web.RequestHandler):
         if active_test:
             self.core = active_test
             self.core.end_test()
-            self.write('Finished active test: %s\n' % self.core.test_id)
+            self.core.post_process()
+            self.write('Finished active test: %s\n' % json.dumps(self.core.get_current_test_info()))
         else:
             self.set_status(404)
             self.write('There are no active tests\n')
