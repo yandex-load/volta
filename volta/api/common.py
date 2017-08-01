@@ -43,3 +43,6 @@ Status reported to HTTP Server (into webserver_queue):
 """
 
 TEST_STAGE_ORDER = ['configure', 'start_test', 'end_test', 'post_process']
+TEST_STAGE_ORDER_AND_DEPS = [('configure', set()), ('start_test', 'configure'),
+                             ('end_test', 'start_test'), ('post_process', 'end_test')]
+TEST_STAGE_DEPS = {stage: dep for stage, dep in TEST_STAGE_ORDER_AND_DEPS}

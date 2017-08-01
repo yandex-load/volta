@@ -93,6 +93,7 @@ class RunHandler(APIHandler):
             'cmd': 'run',
             'config': cfg_data
         })
+        self.srv.running_sessions[session_id] = session_id
         self.reply_json(200, {"session": session_id})
         return
 
@@ -110,7 +111,7 @@ class StopHandler(APIHandler):  # pylint: disable=R0904
         except KeyError:
             self.reply_reason(404, 'No session with this ID.')
             return
-        if session_id in self.srv.running_sessions.items():
+        if session_id in self.srv.running_sessions.keys():
             self.srv.cmd({'cmd': 'stop', 'session': session_id})
             self.reply_reason(200, 'Will try to stop test process.')
             return
@@ -152,9 +153,9 @@ class ApiServer(object):
 
         handler_params = dict(server=self)
         handlers = [
-            (r"/run", RunHandler, handler_params),
-            (r"/stop", StopHandler, handler_params),
-            (r"/status", StatusHandler, handler_params)
+            (r"/api/v1/run", RunHandler, handler_params),
+            (r"/api/v1/stop", StopHandler, handler_params),
+            (r"/api/v1/status", StatusHandler, handler_params)
         ]
 
         self.app = tornado.web.Application(

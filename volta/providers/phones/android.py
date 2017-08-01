@@ -141,13 +141,11 @@ class AndroidPhone(Phone):
                 test_package=self.test_package,
                 test_runner=self.test_runner
             )
-            self.test_performer = PhoneTestPerformer(command)
-            self.test_performer.start()
         else:
             logger.info('Infinite loop for volta because there are no tests specified, waiting for SIGINT')
             command = 'while [ 1 ]; do sleep 1; done'
-            self.test_performer = PhoneTestPerformer(command)
-            self.test_performer.start()
+        self.test_performer = PhoneTestPerformer(command)
+        self.test_performer.start()
         return
 
     def end(self):

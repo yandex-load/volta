@@ -26,6 +26,12 @@ class InterruptTest(BaseException):
     def __init__(self):
         super(InterruptTest, self).__init__()
 
+class StopTest(BaseException):
+    """Raised by sigterm handler"""
+
+    def __init__(self):
+        super(StopTest, self).__init__()
+
 
 class VoltaWorker(object):
     """ Volta Worker class that runs Volta core """
@@ -45,7 +51,7 @@ class VoltaWorker(object):
         self.retcode = None
         self.locked = False
         self.done_stages = set()
-        self.core = VoltaCore(self.config, artifacts_dir='.')
+        self.core = VoltaCore(self.config)
         self.core.session_id = None
         self.core.status = None
 
@@ -100,12 +106,15 @@ class VoltaWorker(object):
         """Really execute stage and set retcode"""
         new_retcode = {
             'configure': self.core.configure,
-            'start': self.core.start_test,
-            'end': self.core.end_test,
-            'postprocess': self.core.post_process
+            'start_test': self.core.start_test
         }[stage]()
         if new_retcode is not None:
             self.retcode = new_retcode
+
+    def _stop_stage(self):
+        """Really execute stage and set retcode"""
+        self.core.end_test()
+        self.core.post_process()
 
     def next_stage(self, stage):
         """
@@ -115,12 +124,13 @@ class VoltaWorker(object):
         """
         self.stage = stage
         self.report_status('running', False)
-        if stage == common.TEST_STAGE_ORDER[0]:
+        if stage == common.TEST_STAGE_ORDER[0] or common.TEST_STAGE_DEPS[stage] in self.done_stages:
             try:
                 self._execute_stage(stage)
-            except InterruptTest as exc:
+            except InterruptTest:
                 self.retcode = self.retcode or 1
                 self.process_failure("Interrupted")
+                raise StopTest()
             except Exception as ex:
                 self.retcode = self.retcode or 1
                 logger.exception(
@@ -135,8 +145,13 @@ class VoltaWorker(object):
 
     def perform_test(self):
         """Perform the test sequence via TankCore"""
-        for stage in common.TEST_STAGE_ORDER[:-1]:
-            self.next_stage(stage)
+        try:
+            for stage in common.TEST_STAGE_ORDER[:-1]:
+                self.next_stage(stage)
+        except StopTest:
+            self._stop_stage()
+        else:
+            self._stop_stage()
         self.stage = 'finished'
         self.report_status('failed' if self.failures else 'success', True)
         logger.info("Done performing test with code %s", self.retcode)
@@ -149,12 +164,12 @@ def signal_handler(signum, _):
     raise InterruptTest()
 
 
-def run(tank_queue, manager_queue, work_dir, config, session_id):
+def run(test_queue, manager_queue, work_dir, config, session_id):
     """
-    Target for tank process.
+    Target for test process.
     This is the only function from this module ever used by Manager.
 
-    tank_queue
+    test_queue
         Read next break from here
 
     manager_queue
@@ -166,7 +181,7 @@ def run(tank_queue, manager_queue, work_dir, config, session_id):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
         VoltaWorker(
-            tank_queue, manager_queue, work_dir, config, session_id
+            test_queue, manager_queue, work_dir, config, session_id
             ).perform_test()
     except:
         logger.info('Failed to lauch VoltaWorker', exc_info=True)
