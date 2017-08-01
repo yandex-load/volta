@@ -10,11 +10,8 @@ import traceback
 import json
 from volta.core.core import Core as VoltaCore
 
-
-TEST_STAGE_ORDER = ['configure', 'start_test', 'end_test', 'post_process']
-
 # Test stage order, internal protocol description, etc...
-from . import common
+from volta.api import common
 
 
 logger = logging.getLogger(__name__)

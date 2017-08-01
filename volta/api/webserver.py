@@ -1,18 +1,11 @@
 import tornado.web
 import tornado.ioloop
 import logging
-import yaml
-import time
 import json
-import serial
 import datetime
 import os
 import multiprocessing
 import errno
-
-from tornado import gen
-
-from volta.core.core import Core
 
 DEFAULT_HEARTBEAT_TIMEOUT = 600
 
