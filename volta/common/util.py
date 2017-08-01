@@ -259,7 +259,7 @@ class PhoneTestPerformer(threading.Thread):
         self.retcode = None
 
     def run(self):
-        self.retcode, _, _ = execute(self.command)
+        self.retcode, _, _ = execute(self.command, shell=True)
         self._finished.set()
 
     def wait(self, timeout=None):

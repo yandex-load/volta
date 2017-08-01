@@ -21,14 +21,14 @@ logger = logging.getLogger(__name__)
 
 class TestRunner(object):
     """
-    Manages the tank process and its working directory.
+    Manages the test process and its working directory.
     """
 
     def __init__(
             self, cfg, manager_queue, session_id, test_config):
         """
-        Sets up working directory and tank queue
-        Starts tank process
+        Sets up working directory and test queue
+        Starts test process
         """
 
         work_dir = os.path.join(cfg['tests_dir'], session_id)
@@ -41,7 +41,7 @@ class TestRunner(object):
         except:
             logger.info('Failed to write config file to %s', load_ini_path, exc_info=True)
 
-        # Create tank queue and put first break there
+        # Create test queue
         self.test_queue = multiprocessing.Queue()
         parsed_config = yaml.load(test_config)
         # Start test process
@@ -57,12 +57,11 @@ class TestRunner(object):
             logger.info('Failed to start test_process', exc_info=True)
 
     def is_alive(self):
-        """Check that the tank process didn't exit """
+        """Check that the test process didn't exit """
         return self.test_process.exitcode is None
 
     def get_exitcode(self):
         """Return test exitcode"""
-        logger.info('get_exitcode %s', self.test_process)
         return self.test_process.exitcode
 
     def join(self):
@@ -71,9 +70,9 @@ class TestRunner(object):
         return self.test_process.join()
 
     def stop(self):
-        """Interrupts the tank process"""
+        """Interrupts the test process"""
         if self.is_alive():
-            sig = signal.SIGTERM
+            sig = signal.SIGINT
             os.kill(self.test_process.pid, sig)
 
     def __del__(self):
@@ -103,24 +102,27 @@ class Manager(object):
         )
         self.webserver_process.daemon = True
         self.webserver_process.start()
+
+        self.running_sessions = {}
+        self.session_ids = []
+
         self._reset_session()
 
-    def _reset_session(self):
+    def _reset_session(self, id=None):
         """
         Resets session state variables
         Should be called only when test is not running
         """
+        if not id:
+            return
         logger.info("Resetting current session variables")
-        self.session_id = None
-        self.test_runner = None
-        self.last_test_status = 'not started'
+        if id in self.session_ids:
+            self.session_ids.remove(id)
+        self.running_sessions[id] = {}
 
     def _handle_cmd_stop(self, msg):
-        """Check running session and kill tank"""
-        if msg['session'] == self.session_id:
-            self.test_runner.stop()
-        else:
-            logger.error("Can stop only current session")
+        """Check running session and kill test"""
+        self.running_sessions[msg['session']].stop()
 
     def _handle_cmd_new_session(self, msg):
         """Start new session"""
@@ -131,7 +133,7 @@ class Manager(object):
                 "both config and test should be present:%s\n", json.dumps(msg))
             return
         try:
-            self.test_runner = TestRunner(
+            self.running_sessions[msg['session']] = TestRunner(
                 cfg=self.cfg,
                 manager_queue=self.manager_queue,
                 session_id=msg['session'],
@@ -146,7 +148,7 @@ class Manager(object):
                 'reason': 'Failed to start test:\n' + traceback.format_exc(ex)
             })
         else:
-            self.session_id = msg['session']
+            self.session_ids.append(msg['session'])
 
     def _handle_cmd(self, msg):
         """Process command from webserver"""
@@ -178,28 +180,27 @@ class Manager(object):
             except multiprocessing.queues.Empty:
                 break
             self._handle_msg(msg)
-        if self.last_test_status == 'running'\
-                or not self.test_runner\
-                or self.test_runner.get_exitcode() != 0:
-            # Report unexpected death
-            self.webserver_queue.put({
-                'session': self.session_id,
-                'status': 'failed',
-                'reason': "Test died unexpectedly. Last reported "
-                "status: % s, worker exitcode: % s" % (
-                    self.last_test_status,
-                    self.test_runner.get_exitcode() if self.test_runner else None)
-            })
+        #if self.last_test_status == 'running'\
+        #        or not self.test_runner\
+        #        or self.test_runner.get_exitcode() != 0:
+        #    # Report unexpected death
+        #    self.webserver_queue.put({
+        #        'session': self.session_id,
+        #        'status': 'failed',
+        #        'reason': "Test died unexpectedly. Last reported "
+        #        "status: % s, worker exitcode: % s" % (
+        #            self.last_test_status,
+        #            self.test_runner.get_exitcode() if self.test_runner else None)
+        #    })
         # In any case, reset the session
-        self._reset_session()
+            self._reset_session(msg['session'])
 
     def _handle_webserver_exit(self):
         """Stop tank and raise RuntimeError"""
         logger.error("Webserver died unexpectedly.")
-        if self.test_runner is not None:
-            logger.warning("Stopping test...")
-            self.test_runner.stop()
-            self.test_runner.join()
+        if len(self.running_sessions) >= 1:
+            [session.stop() for session in self.running_sessions]
+            [session.join() for session in self.running_sessions]
         raise RuntimeError("Unexpected webserver exit")
 
     def run(self):
@@ -211,8 +212,8 @@ class Manager(object):
         """
 
         while True:
-            if self.session_id is not None and not self.test_runner.is_alive():
-                self._handle_test_exit()
+            #if self.session_ids is not None and not self.test_runner.is_alive():
+            #    self._handle_test_exit()
             if not self.webserver_process.is_alive():
                 self._handle_webserver_exit()
             try:
@@ -236,17 +237,14 @@ class Manager(object):
 
     def _handle_test_status(self, msg):
         """
-        Wait for tank exit if it stopped.
+        Wait for test exit if it stopped.
         Remember new status and notify webserver.
         """
         new_status = msg['status']
 
-        if self.last_test_status not in ['success', 'failed'] \
-                and new_status in ['success', 'failed']:
-            self.test_runner.join()
-            self._reset_session()
-
-        self.last_test_status = msg['status']
+        if new_status in ['success', 'failed']:
+            self.running_sessions[msg['session']].join()
+            self._reset_session(msg['session'])
 
         self.webserver_queue.put(msg)
 

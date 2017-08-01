@@ -2,6 +2,8 @@ import logging
 import queue as q
 import time
 import os
+import datetime
+import tempfile
 
 from volta.core.validator import VoltaConfig
 from volta.common.util import Tee
@@ -45,15 +47,15 @@ class Factory(object):
         Returns:
             appropriate VoltaBox class for config.type
         """
-        type = config.get_option('volta', 'type')
-        if not type:
+        type_ = config.get_option('volta', 'type')
+        if not type_:
             raise RuntimeError('Mandatory option volta.type not specified')
-        type = type.lower()
-        if type in self.voltas:
-            logger.debug('Volta type detected: %s', type)
-            return self.voltas[type](config)
+        type_ = type_.lower()
+        if type_ in self.voltas:
+            logger.debug('Volta type detected: %s', type_)
+            return self.voltas[type_](config)
         else:
-            raise RuntimeError('Unknown VoltaBox type: %s', type)
+            raise RuntimeError('Unknown VoltaBox type: %s', type_)
 
     def detect_phone(self, config):
         """
@@ -63,15 +65,15 @@ class Factory(object):
         Returns:
             appropriate Phone class for config.type
         """
-        type = config.get_option('phone', 'type')
-        if not type:
+        type_ = config.get_option('phone', 'type')
+        if not type_:
             raise RuntimeError('Mandatory option phone.type not specified')
-        type = type.lower()
-        if type in self.phones:
-            logger.debug('Phone type detected: %s', type)
-            return self.phones[type](config)
+        type_ = type_.lower()
+        if type_ in self.phones:
+            logger.debug('Phone type detected: %s', type_)
+            return self.phones[type_](config)
         else:
-            raise RuntimeError('Unknown Phone type: %s', type)
+            raise RuntimeError('Unknown Phone type: %s', type_)
 
 
 class Core(object):
@@ -80,7 +82,6 @@ class Core(object):
     Attributes:
         config (dict): test config
         test_id (string): local test id
-        key_date (string): clickhouse key (sharding)
         event_types (list): currently supported event types
         event_fnames (dict): filename for FileListener for each event type
         currents_fname (string): filename for FileListener for electrical currents
@@ -89,8 +90,9 @@ class Core(object):
         grabber_q (queue.Queue): queue for electrical currents
         phone_q (queue.Queue): queue for phone events
     """
+    SECTION = 'core'
+
     def __init__(self, config):
-        SECTION = 'core'
         """ Configures core, parse config
 
         Args:
@@ -110,27 +112,36 @@ class Core(object):
         self.grabber_listeners = []
         self.start_time = None
         self.artifacts = []
-        self.artifacts_dir = self.config.get_option(SECTION, 'artifacts_dir')
-        self.test_id = self.config.get_option(SECTION, 'test_id')
-        logger.info('Local test id: %s', self.config.get_option(SECTION, 'test_id'))
+        self._artifacts_dir = None
+        self._sync_points = {}
+        self.test_id = self.config.get_option(self.SECTION, 'test_id')
+        logger.info('Local test id: %s', self.config.get_option(self.SECTION, 'test_id'))
         self.event_types = ['event', 'sync', 'fragment', 'metric', 'unknown']
-        self.event_listeners = {key:[] for key in self.event_types}
-
-    def init_artifacts(self):
-        if not os.path.exists(self.artifacts_dir):
-            os.makedirs(self.artifacts_dir)
-        if not os.path.exists(os.path.join(self.artifacts_dir, self.test_id)):
-            os.makedirs(os.path.join(self.artifacts_dir, self.test_id))
-        self.currents_fname = "{artifacts_dir}/{test_id}/currents.data".format(
-            artifacts_dir=self.artifacts_dir, test_id=self.test_id
+        self.event_listeners = {key: [] for key in self.event_types}
+        self.currents_fname = "{artifacts_dir}/currents.data".format(
+            artifacts_dir=self.artifacts_dir
         )
         self.event_fnames = {
-            key:"{artifacts_dir}/{test_id}/{data}.data".format(
+            key: "{artifacts_dir}/{data}.data".format(
                 artifacts_dir=self.artifacts_dir,
-                test_id=self.test_id,
                 data=key
             ) for key in self.event_types
         }
+        self.finished = None
+
+    @property
+    def artifacts_dir(self):
+        if not self._artifacts_dir:
+            dir_name = self.config.get_option(self.SECTION, 'artifacts_dir')
+            if not dir_name:
+                date_str = datetime.datetime.now().strftime(
+                    "%Y-%m-%d_%H-%M-%S.")
+                dir_name = tempfile.mkdtemp("", date_str, '.')
+            elif not os.path.isdir(dir_name):
+                os.makedirs(dir_name)
+            os.chmod(dir_name, 0o755)
+            self._artifacts_dir = os.path.abspath(dir_name)
+        return self._artifacts_dir
 
     @property
     def volta(self):
@@ -156,14 +167,19 @@ class Core(object):
             self._uploader = DataUploader(self.config)
         return self._uploader
 
+    @property
+    def sync_points(self):
+        if not 'sync' in self.enabled_modules:
+            return {}
+        if not self._sync_points:
+            self._sync_points = self.sync.find_sync_points()
+        return self._sync_points
+
     def add_artifact_file(self, filename):
         self.artifacts.append(filename)
 
     def configure(self):
         """ Configures modules and prepare modules for test """
-        self.init_artifacts()
-        self.volta()
-
         if 'phone' in self.enabled_modules:
             self.phone.prepare()
 
@@ -173,20 +189,21 @@ class Core(object):
             self.event_listeners['sync'].append(self.sync)
 
         if 'uploader' in self.enabled_modules:
-            for type, fname in self.event_fnames.items():
-                self.event_listeners[type].append(self.uploader)
+            for type_, fname in self.event_fnames.items():
+                self.event_listeners[type_].append(self.uploader)
             self.grabber_listeners.append(self.uploader)
             self.uploader.create_job()
 
         self._setup_filelisteners()
+        return 0
 
     def _setup_filelisteners(self):
         logger.debug('Creating file listeners...')
-        for type, fname in self.event_fnames.items():
+        for type_, fname in self.event_fnames.items():
             listener_config = {'fname': fname}
             f = FileListener(listener_config)
             self.add_artifact_file(f)
-            self.event_listeners[type].append(f)
+            self.event_listeners[type_].append(f)
 
         listener_config = {'fname': self.currents_fname}
         grabber_f = FileListener(listener_config)
@@ -216,6 +233,9 @@ class Core(object):
             self.events_parser = EventsRouter(self.phone_q, self.event_listeners)
             self.events_parser.start()
 
+            while self.phone.test_performer.isAlive():
+                time.sleep(1)
+
     def end_test(self):
         """
         Interrupts test: stops grabbers and events parsers
@@ -238,15 +258,7 @@ class Core(object):
 
         """
         logger.info('Post process...')
-        for artifact in self.artifacts:
-            artifact.close()
-        sync_data = {}
-        if 'sync' in self.enabled_modules:
-            try:
-                sync_data = self.sync.find_sync_points()
-                logger.debug('Sync data: %s', sync_data)
-            except ValueError:
-                logger.error('Unable to sync', exc_info=True)
+        [artifact.close() for artifact in self.artifacts]
         if 'uploader' in self.enabled_modules:
             update_job_data = {
                 'test_id': self.config.get_option('core', 'test_id'),
@@ -261,17 +273,17 @@ class Core(object):
                 'ver': self.config.get_option('uploader', 'ver'),
                 'meta': self.config.get_option('uploader', 'meta'),
                 'task': self.config.get_option('uploader', 'task'),
-                'sys_uts_offset': sync_data.get('sys_uts_offset', None),
-                'log_uts_offset': sync_data.get('sys_uts_offset', None),
-                'sync_sample': sync_data.get('sync_sample', None)
+                'sys_uts_offset': self.sync_points.get('sys_uts_offset', None),
+                'log_uts_offset': self.sync_points.get('sys_uts_offset', None),
+                'sync_sample': self.sync_points.get('sync_sample', None)
             }
             self.uploader.update_job(update_job_data)
             if self.uploader.jobno:
                 logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
         logger.info('Finished!')
 
-    def get_current_test_info(self, per_module=False):
-        response = {'jobno': self.test_id, 'session_id': self.session_id}
+    def get_current_test_info(self, per_module=False, session_id=None):
+        response = {'jobno': self.test_id, 'session_id': session_id}
         if per_module:
             for module in self.enabled_modules:
                 try:

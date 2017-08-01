@@ -60,7 +60,7 @@ class EventsRouter(threading.Thread):
                         self.__route_data(df)
                 if self._interrupted.is_set():
                     break
-            time.sleep(1)
+            time.sleep(0.3)
             if self._interrupted.is_set():
                 break
         self._finished.set()
@@ -75,7 +75,6 @@ class EventsRouter(threading.Thread):
             put data to listeners
 
         """
-        logger.debug('Router dataframe before parse:\n %s', df)
         for dtype, data in df.apply(self.__parse_event, axis=1).groupby('type'):
             if dtype in self.router:
                 logger.debug('Detected %s metric type', dtype)
