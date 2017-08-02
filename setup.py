@@ -42,9 +42,7 @@ yandex package for mobile energy consumption measurements
     },
     license='MPLv2',
     package_data={
-        'volta.phones': [
-            'binary/*.apk'
-        ],
+        'volta.phones': ['binary/*'],
         'volta.core': ['config/*'],
     },
     classifiers=[
