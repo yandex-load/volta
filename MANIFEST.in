@@ -1,1 +1,3 @@
 include volta/reader/serial-reader
+
+recursive-include apk *
