@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='volta',
-    version='0.1.4',
+    version='0.1.7',
     description='yandex package for mobile energy consumption measurements',
     longer_description='''
 yandex package for mobile energy consumption measurements
@@ -42,9 +42,7 @@ yandex package for mobile energy consumption measurements
     },
     license='MPLv2',
     package_data={
-        'volta.phones': [
-            'binary/*.apk'
-        ],
+        'volta.providers.phones': ['binary/*.apk'],
         'volta.core': ['config/*'],
     },
     classifiers=[
