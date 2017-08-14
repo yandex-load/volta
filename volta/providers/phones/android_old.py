@@ -160,8 +160,9 @@ class AndroidOldPhone(Phone):
     def run_test(self):
         """ App stage: run app/phone tests """
         if self.test_package:
-            command = "adb shell am instrument -w -e class {test_class} {test_package}/{test_runner}".format(
+            command = "adb -s {device_id} shell am instrument -w -e class {test_class} {test_package}/{test_runner}".format(
                 test_class=self.test_class,
+                device_id=self.source,
                 test_package=self.test_package,
                 test_runner=self.test_runner
             )
