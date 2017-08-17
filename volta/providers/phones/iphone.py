@@ -47,8 +47,8 @@ class iPhone(Phone):
         self.log_stdout_reader = None
         self.log_stderr_reader = None
         self.drain_log_stdout = None
-        self.path_to_util = config.get('util', "/Applications/Apple\ Configurator\ 2.app/Contents/MacOS/")
-        self.source = config.get('source', '0x6382910F98C26')
+        self.path_to_util = config.get_option('util', "/Applications/Apple\ Configurator\ 2.app/Contents/MacOS/")
+        self.source = config.get_option('source', '0x6382910F98C26')
         self.test_performer = None
 
 
