@@ -233,8 +233,9 @@ class Core(object):
             self.events_parser = EventsRouter(self.phone_q, self.event_listeners)
             self.events_parser.start()
 
-            while self.phone.test_performer.isAlive():
-                time.sleep(1)
+            # FIXME infinite loop ?
+            # while self.phone.test_performer.isAlive():
+            #    time.sleep(1)
 
     def end_test(self):
         """
