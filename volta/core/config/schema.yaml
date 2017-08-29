@@ -33,8 +33,11 @@ volta:
     sample_rate:
       type: integer
     slope:
-      type: integer
+      type: float
       default: 1
+    precision:
+      type: integer
+      default: 10
     offset:
       type: integer
       default: 0

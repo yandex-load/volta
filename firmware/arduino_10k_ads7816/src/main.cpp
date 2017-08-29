@@ -59,26 +59,26 @@ void inline uart_write(uint16_t val) {
 
 void inline _ads7816_clock (void)
 {
-   digitalWrite(ADS_CLK, HIGH);
-   digitalWrite(ADS_CLK, LOW);
+   sbi(PORTD, ADS_CLK);
+   cbi(PORTD, ADS_CLK);
 }
 
 uint16_t inline ads7816_read() {
   uint16_t value=0;
 
   // start the conversion
-  digitalWrite(ADS_CS, LOW);
+  cbi(PORTD, ADS_CS);
   // wait three clock cycles
-  _ads7816_clock();
+  //_ads7816_clock();
   _ads7816_clock();
   _ads7816_clock();
   // read the 12 data bits from ADS 7817
   for (int i=0; i<12; i++)
   {
       _ads7816_clock();
-      value = (value << 1) + digitalRead(ADS_DATA);
+      value = (value << 1) + ((PIND & (1 << ADS_DATA)) || 0);
   }
-  digitalWrite(ADS_CS, HIGH);  //power down ADS7817
+  sbi(PORTD, ADS_CS);
   return value;
 }
 
@@ -114,8 +114,28 @@ ISR(TIMER1_OVF_vect) {
         buff.push(sensorValue);
 }
 
+int i = 0;
+
 void loop() {
         if(buff.remain()){
                 uart_write(buff.pop());
+                // char strbuff[128];
+                // itoa(i++, strbuff, 10);
+                // // itoa(buff.pop(), strbuff, 10);
+                // uart_write_string(strbuff);
+                // uart_write_string("\t");
+                //
+                // unsigned long startTime = micros();
+                // sensorValue = ads7816_read();
+                // unsigned long endTime = micros();
+                //
+                // sprintf(strbuff, "%u", sensorValue);
+                // uart_write_string(strbuff);
+                // uart_write_string("\t");
+                //
+                // itoa(sensorValue, strbuff, 2);
+                // uart_write_string(strbuff);
+                // uart_write_string("\r\n");
+
         }
 }
