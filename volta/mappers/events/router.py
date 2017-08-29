@@ -50,7 +50,7 @@ class EventsRouter(threading.Thread):
                 try:
                     df = self.source.get_nowait()
                     # detect syslog ts start
-                    if not self.sys_uts_start:
+                    if not self.sys_uts_start and df is not None:
                         self.sys_uts_start = df.sys_uts[0]
                         logger.debug('sys uts start detected: %s', self.sys_uts_start)
                 except q.Empty:

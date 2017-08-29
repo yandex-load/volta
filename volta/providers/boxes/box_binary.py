@@ -26,6 +26,7 @@ class VoltaBoxBinary(VoltaBox):
         baud_rate (int): baud rate for device if device specified in source
         grab_timeout (int): timeout for grabber
     """
+
     def __init__(self, config):
         VoltaBox.__init__(self, config)
         self.source = config.get_option('volta', 'source')
@@ -35,6 +36,7 @@ class VoltaBoxBinary(VoltaBox):
         self.grab_timeout = config.get_option('volta', 'grab_timeout')
         self.slope = config.get_option('volta', 'slope')
         self.offset = config.get_option('volta', 'offset')
+        self.precision = config.get_option('volta', 'precision')
         self.power_voltage = config.get_option('volta', 'power_voltage')
         # initialize data source
         self.source_opener = resource.get_opener(self.source)
@@ -45,7 +47,6 @@ class VoltaBoxBinary(VoltaBox):
         self.pipeline = None
         self.grabber_q = None
         self.process_currents = None
-
 
     def start_test(self, results):
         """ Grab stage - starts grabber thread and puts data to results queue
@@ -74,7 +75,12 @@ class VoltaBoxBinary(VoltaBox):
             pass
 
         self.reader = BoxBinaryReader(
-            self.data_source, self.sample_rate, self.slope, self.offset
+            self.data_source,
+            self.sample_rate,
+            self.slope,
+            self.offset,
+            self.power_voltage,
+            self.precision
         )
         self.pipeline = Drain(
             TimeChopper(
@@ -101,13 +107,12 @@ class VoltaBoxBinary(VoltaBox):
         return data
 
 
-
 class BoxBinaryReader(object):
     """
     Read chunks from source, convert and return numpy.array
     """
 
-    def __init__(self, source, sample_rate, slope=1, offset=0, power_voltage=4700):
+    def __init__(self, source, sample_rate, slope=1, offset=0, power_voltage=4700, precision=10):
         self.closed = False
         self.source = source
         self.sample_rate = sample_rate
@@ -115,18 +120,20 @@ class BoxBinaryReader(object):
         self.orphan_byte = None
         self.slope = slope
         self.offset = offset
+        self.precision = precision
         self.power_voltage = float(power_voltage)
 
     def _read_chunk(self):
         data = self.source.read(self.sample_rate * 2 * 10)
         if data:
             if self.orphan_byte:
-                data = self.orphan_byte+data
+                data = self.orphan_byte + data
                 self.orphan_byte = None
             if (len(data) % 2 != 0):
                 self.orphan_byte = data[-1:]
                 data = data[:-1]
-            chunk = string_to_np(data).astype(np.float32) * (self.power_voltage/1024) * self.slope + self.offset
+            chunk = string_to_np(data).astype(np.float32) * (
+                self.power_voltage / (2 ** self.precision)) * self.slope + self.offset
             return chunk
 
     def __iter__(self):
