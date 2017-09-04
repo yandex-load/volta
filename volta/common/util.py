@@ -216,12 +216,25 @@ def chunk_to_df(chunk, regexp):
                 continue
             match = regexp.match(line)
             if match:
-                ts = datetime.datetime.strptime("{date} {time}".format(
-                        date=match.group('date'),
-                        time=match.group('time')),
-                    '%m-%d %H:%M:%S.%f').replace(
-                    year=datetime.datetime.now().year
-                )
+                # FIXME raise IndexError because android logs have no separate 'month' group
+                # FIXME more flexible and stable logic should be here
+                try:
+                    # iphone fmt, sample: Aug 25 18:48:14
+                    ts = datetime.datetime.strptime("{month} {date} {time}".format(
+                            month=match.group('month'),
+                            date=match.group('date'),
+                            time=match.group('time')),
+                        '%b %d %H:%M:%S').replace(
+                        year=datetime.datetime.now().year
+                    )
+                # android fmt, sample: 02-12 12:12:12.121
+                except IndexError:
+                    ts = datetime.datetime.strptime("{date} {time}".format(
+                            date=match.group('date'),
+                            time=match.group('time')),
+                        '%m-%d %H:%M:%S.%f').replace(
+                        year=datetime.datetime.now().year
+                    )
                 # unix timestamp in microseconds
                 sys_uts = int(
                     (ts-datetime.datetime(1970,1,1)).total_seconds() * 10 ** 6
