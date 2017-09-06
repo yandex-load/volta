@@ -12,6 +12,7 @@ from volta.providers import phones
 from volta.listeners.sync.sync import SyncFinder
 from volta.listeners.uploader.uploader import DataUploader
 from volta.listeners.report.report import FileListener
+from volta.listeners.console import ConsoleListener
 from volta.mappers.events.router import EventsRouter
 
 
@@ -107,6 +108,7 @@ class Core(object):
         self._phone = None
         self._sync = None
         self._uploader = None
+        self._console = None
         self.grabber_q = q.Queue()
         self.phone_q = q.Queue()
         self.grabber_listeners = []
@@ -168,6 +170,12 @@ class Core(object):
         return self._uploader
 
     @property
+    def console(self):
+        if not self._console:
+            self._console = ConsoleListener(self.config)
+        return self._console
+
+    @property
     def sync_points(self):
         if not 'sync' in self.enabled_modules:
             return {}
@@ -193,6 +201,11 @@ class Core(object):
                 self.event_listeners[type_].append(self.uploader)
             self.grabber_listeners.append(self.uploader)
             self.uploader.create_job()
+
+        if 'console' in self.enabled_modules:
+            for type_, fname in self.event_fnames.items():
+                self.event_listeners[type_].append(self.console)
+            self.grabber_listeners.append(self.console)
 
         self._setup_filelisteners()
         return 0

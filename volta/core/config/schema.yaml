@@ -135,3 +135,9 @@ uploader:
       type: string
       default: null
       nullable: true
+console:
+  type: dict
+  schema:
+    enabled:
+      type: boolean
+      default: false
