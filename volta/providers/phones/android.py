@@ -116,6 +116,8 @@ class AndroidPhone(Phone):
                 runner=self.lightning_apk_class
             )
         )
+        logger.info('Waiting 15 seconds till flashlight app end its work...')
+        time.sleep(15)
         return
 
     def __start_async_logcat(self):

@@ -4,6 +4,7 @@
 import logging
 import re
 import queue as q
+import time
 import pkg_resources
 
 from volta.common.interfaces import Phone
@@ -140,6 +141,8 @@ class AndroidOldPhone(Phone):
                 runner=self.lightning_apk_class
             )
         )
+        logger.info('Waiting 15 seconds till flashlight app end its work...')
+        time.sleep(15)
         return
 
     def __start_async_logcat(self):
