@@ -294,6 +294,7 @@ class Core(object):
             self.uploader.update_job(update_job_data)
             if self.uploader.jobno:
                 logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
+        os.kill(os.getpid(), 9)
         logger.info('Finished!')
 
     def get_current_test_info(self, per_module=False, session_id=None):

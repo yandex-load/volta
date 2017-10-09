@@ -227,8 +227,8 @@ def chunk_to_df(chunk, regexp):
                         '%b %d %H:%M:%S').replace(
                         year=datetime.datetime.now().year
                     )
-                # android fmt, sample: 02-12 12:12:12.121
                 except IndexError:
+                    # android fmt, sample: 02-12 12:12:12.121
                     ts = datetime.datetime.strptime("{date} {time}".format(
                             date=match.group('date'),
                             time=match.group('time')),
