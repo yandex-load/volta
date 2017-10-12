@@ -95,7 +95,7 @@ class AndroidOldPhone(Phone):
         """
         # apps cleanup
         for apk in self.cleanup_apps:
-            execute("adb uninstall -s {device_id} {app}".format(device_id=self.source, app=apk))
+            execute("adb -s {device_id} uninstall {app}".format(device_id=self.source, app=apk))
 
         # install lightning
         self.lightning_apk_fname = resource.get_opener(self.lightning_apk_path).get_filename
@@ -193,7 +193,7 @@ class AndroidOldPhone(Phone):
 
         # apps cleanup
         for apk in self.cleanup_apps:
-            execute("adb uninstall -s {device_id} {app}".format(device_id=self.source, app=apk))
+            execute("adb -s {device_id} uninstall {app}".format(device_id=self.source, app=apk))
         return
 
     def get_info(self):
