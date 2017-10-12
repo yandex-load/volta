@@ -93,6 +93,10 @@ class AndroidOldPhone(Phone):
             install apks
             clean log
         """
+        # apps cleanup
+        for apk in self.cleanup_apps:
+            execute("adb uninstall -s {device_id} {app}".format(device_id=self.source, app=apk))
+
         # install lightning
         self.lightning_apk_fname = resource.get_opener(self.lightning_apk_path).get_filename
         logger.info('Installing lightning apk...')
@@ -111,10 +115,6 @@ class AndroidOldPhone(Phone):
         #    logger.info('Detach the phone %s from USB and press enter to continue...', self.source)
         #    # TODO make API and remove this
         #    raw_input()
-
-        # apps cleanup
-        for apk in self.cleanup_apps:
-            execute("adb uninstall -s {device_id} {app}".format(device_id=self.source, app=apk))
 
 
     def start(self, results):

@@ -89,6 +89,10 @@ class AndroidPhone(Phone):
             install apks
             clean log
         """
+        # apps cleanup
+        for apk in self.cleanup_apps:
+            execute("adb uninstall -s {device_id} {app}".format(device_id=self.source, app=apk))
+
         # install lightning
         self.lightning_apk_fname = resource.get_opener(self.lightning_apk_path).get_filename
         logger.info('Installing lightning apk...')
@@ -102,9 +106,6 @@ class AndroidPhone(Phone):
         # clean logcat
         execute("adb -s {device_id} logcat -c".format(device_id=self.source))
 
-        # apps cleanup
-        for apk in self.cleanup_apps:
-            execute("adb uninstall -s {device_id} {app}".format(device_id=self.source, app=apk))
 
     def start(self, results):
         """ Grab stage: starts log reader, make sync w/ flashlight
