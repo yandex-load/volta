@@ -63,6 +63,9 @@ phone:
     lightning_class:
       type: string
       default: net.yandex.overload.lightning
+    cleanup_apps:
+      type: list
+      default: []
     test_apps:
       type: list
       default: []

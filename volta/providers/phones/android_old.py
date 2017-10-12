@@ -75,6 +75,7 @@ class AndroidOldPhone(Phone):
         self.test_class = config.get_option('phone', 'test_class')
         self.test_package = config.get_option('phone', 'test_package')
         self.test_runner = config.get_option('phone', 'test_runner')
+        self.cleanup_apps = config.get_option('phone', 'cleanup_apps')
         self.regexp = config.get_option('phone', 'event_regexp', event_regexp)
         try:
             self.compiled_regexp = re.compile(self.regexp, re.VERBOSE | re.IGNORECASE)
@@ -110,6 +111,10 @@ class AndroidOldPhone(Phone):
         #    logger.info('Detach the phone %s from USB and press enter to continue...', self.source)
         #    # TODO make API and remove this
         #    raw_input()
+
+        # apps cleanup
+        for apk in self.cleanup_apps:
+            execute("adb uninstall -s {device_id} {app}".format(device_id=self.source, app=apk))
 
 
     def start(self, results):
@@ -185,6 +190,10 @@ class AndroidOldPhone(Phone):
         self.logcat_process.kill()
         self.drain_logcat_stdout.close()
         self.drain_logcat_stderr.close()
+
+        # apps cleanup
+        for apk in self.cleanup_apps:
+            execute("adb uninstall -s {device_id} {app}".format(device_id=self.source, app=apk))
         return
 
     def get_info(self):
