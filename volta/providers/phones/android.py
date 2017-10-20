@@ -71,6 +71,7 @@ class AndroidPhone(Phone):
         self.test_class = config.get_option('phone', 'test_class')
         self.test_package = config.get_option('phone', 'test_package')
         self.test_runner = config.get_option('phone', 'test_runner')
+        self.cleanup_apps = config.get_option('phone', 'cleanup_apps')
         self.regexp = config.get_option('phone', 'event_regexp', event_regexp)
         try:
             self.compiled_regexp = re.compile(self.regexp, re.VERBOSE | re.IGNORECASE)
@@ -88,6 +89,10 @@ class AndroidPhone(Phone):
             install apks
             clean log
         """
+        # apps cleanup
+        for apk in self.cleanup_apps:
+            execute("adb -s {device_id} uninstall {app}".format(device_id=self.source, app=apk))
+
         # install lightning
         self.lightning_apk_fname = resource.get_opener(self.lightning_apk_path).get_filename
         logger.info('Installing lightning apk...')
@@ -100,6 +105,7 @@ class AndroidPhone(Phone):
 
         # clean logcat
         execute("adb -s {device_id} logcat -c".format(device_id=self.source))
+
 
     def start(self, results):
         """ Grab stage: starts log reader, make sync w/ flashlight
@@ -160,6 +166,10 @@ class AndroidPhone(Phone):
         self.logcat_process.kill()
         self.drain_logcat_stdout.close()
         self.drain_logcat_stderr.close()
+
+        # apps cleanup
+        for apk in self.cleanup_apps:
+            execute("adb -s {device_id} uninstall {app}".format(device_id=self.source, app=apk))
         return
 
     def get_info(self):
