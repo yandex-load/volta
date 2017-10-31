@@ -46,22 +46,27 @@ class EventsRouter(threading.Thread):
 
     def run(self):
         while not self._interrupted.is_set():
-            for _ in range(self.source.qsize()):
-                try:
-                    df = self.source.get_nowait()
-                    # detect syslog ts start
-                    if not self.sys_uts_start and df is not None:
-                        self.sys_uts_start = df.sys_uts[0]
-                        logger.debug('sys uts start detected: %s', self.sys_uts_start)
-                except q.Empty:
-                    break
-                else:
-                    if df is not None:
-                        self.__route_data(df)
-                if self._interrupted.is_set():
-                    break
+            try:
+                for _ in range(self.source.qsize()):
+                    try:
+                        df = self.source.get_nowait()
+                        # detect syslog ts start
+                        if not self.sys_uts_start and df is not None:
+                            self.sys_uts_start = df.sys_uts[0]
+                            logger.debug('sys uts start detected: %s', self.sys_uts_start)
+                    except q.Empty:
+                        break
+                    else:
+                        if df is not None:
+                            self.__route_data(df)
+                    if self._interrupted.is_set():
+                        logger.info('Interrupted events router loop, qsize: %s', self.source.qsize())
+                        break
+            except:
+                logger.warn('Failed to route/parse event!', exc_info=True)
             time.sleep(0.3)
             if self._interrupted.is_set():
+                logger.info('Interrupted events router loop, qsize: %s', self.source.qsize())
                 break
         self._finished.set()
 
