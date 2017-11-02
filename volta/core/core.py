@@ -288,7 +288,7 @@ class Core(object):
                 'meta': self.config.get_option('uploader', 'meta'),
                 'task': self.config.get_option('uploader', 'task'),
                 'sys_uts_offset': self.sync_points.get('sys_uts_offset', None),
-                'log_uts_offset': self.sync_points.get('sys_uts_offset', None),
+                'log_uts_offset': self.sync_points.get('log_uts_offset', None),
                 'sync_sample': self.sync_points.get('sync_sample', None)
             }
             self.uploader.update_job(update_job_data)
