@@ -51,6 +51,8 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define LED_Pin GPIO_PIN_13
+#define LED_GPIO_Port GPIOC
 #define ADS_CS_Pin GPIO_PIN_13
 #define ADS_CS_GPIO_Port GPIOB
 #define ADS_CLK_Pin GPIO_PIN_14
@@ -58,10 +60,7 @@
 #define ADS_DATA_Pin GPIO_PIN_15
 #define ADS_DATA_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
-#define LED_Pin GPIO_PIN_13
-#define LED_GPIO_Port GPIOC
 
-#define ADS7816_WAIT_NS 30
 /* USER CODE END Private defines */
 
 /**

@@ -107,6 +107,43 @@ class VoltaBoxBinary(VoltaBox):
         return data
 
 
+class VoltaBoxStm32(VoltaBoxBinary):
+    """
+    Same as VoltaBoxBinary, but doesn't wait for handshake
+    """
+    def start_test(self, results):
+        """ Grab stage - starts grabber thread and puts data to results queue
+        + handshake w/ device, get samplerate
+
+            pipeline
+                read source data ->
+                chop by samplerate w/ ratio ->
+                make pandas DataFrame ->
+                drain DataFrame to queue `results`
+
+        Args:
+            results: object answers to put() and get() methods
+        """
+        self.grabber_q = results
+
+        self.reader = BoxBinaryReader(
+            self.data_source,
+            self.sample_rate,
+            self.slope,
+            self.offset,
+            self.power_voltage,
+            self.precision
+        )
+        self.pipeline = Drain(
+            TimeChopper(
+                self.reader, self.sample_rate, self.chop_ratio
+            ),
+            self.grabber_q
+        )
+        logger.info('Starting grab thread...')
+        self.pipeline.start()
+        logger.debug('Waiting grabber thread finish...')
+
 class BoxBinaryReader(object):
     """
     Read chunks from source, convert and return numpy.array

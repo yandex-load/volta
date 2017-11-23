@@ -44,39 +44,51 @@
 #include "main.h"
 #include "stm32f1xx_hal.h"
 #include "usb_device.h"
-#include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN Includes */
+#include "usbd_cdc_if.h"
+#include "buffer.h"
 
+#define SENDBUF_SIZE RINGBUF_SIZE/2
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim3;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+struct ringbuf_t rb;
 
+//const char welcome[] = "\nVOLTAHELLO\n{\"sps\":10000}\nDATASTART\n";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void Error_Handler(void);
 static void MX_GPIO_Init(void);
+static void MX_TIM3_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-inline uint16_t ReadADS7816(void);
-inline void _ADS7816Clock(void);
-inline void _ADS7816Wait(void);
+static inline uint16_t ReadADS7816(void);
+static inline void _ADS7816Clock(void);
+static inline void _ADS7816Wait(void);
+static inline void readNextValue(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	if (htim->Instance == TIM3) {
+		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+		readNextValue();
+	}
+}
 /* USER CODE END 0 */
 
 int main(void) {
 
 	/* USER CODE BEGIN 1 */
-	volatile uint16_t adcValue = 0;
+	rb_init(&rb);
 	/* USER CODE END 1 */
 
 	/* MCU Configuration----------------------------------------------------------*/
@@ -90,22 +102,30 @@ int main(void) {
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_USB_DEVICE_Init();
+	MX_TIM3_Init();
 
 	/* USER CODE BEGIN 2 */
-	char buff[128];
+	uint16_t buff[16];
+	//char* buff = "Hello world\r\n";
+
+	HAL_TIM_Base_Start_IT(&htim3);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
+	//while (CDC_Transmit_FS((uint8_t*) welcome, sizeof(welcome)) == USBD_BUSY);
 	while (1) {
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
-		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin); // Toggle the state of LED
-		HAL_Delay(200); //delay 100ms
-		adcValue = ReadADS7816();
-		itoa(adcValue, buff, 10);
-		while(CDC_Transmit_FS((uint8_t*)buff, strlen(buff)) == USBD_BUSY);
+//		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin); // Toggle the state of LED
+		//adcValue = ReadADS7816();
+		//itoa(adcValue, buff, 10);
+		if (rb_remain(&rb) > SENDBUF_SIZE) {
+			for (int i = 0; i < SENDBUF_SIZE; i++) buff[i] = rb_pop(&rb);
+			while (CDC_Transmit_FS((uint8_t*) buff, sizeof(buff)) == USBD_BUSY);
+			//while (CDC_Transmit_FS((uint8_t*) buff, strlen(buff)) == USBD_BUSY);
+		}
 	}
 	/* USER CODE END 3 */
 
@@ -163,6 +183,35 @@ void SystemClock_Config(void) {
 	HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
+/* TIM3 init function */
+static void MX_TIM3_Init(void) {
+
+	TIM_ClockConfigTypeDef sClockSourceConfig;
+	TIM_MasterConfigTypeDef sMasterConfig;
+
+	htim3.Instance = TIM3;
+	htim3.Init.Prescaler = 48000000 / 100000 - 1;
+	htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim3.Init.Period = 10 - 1;
+	htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	if (HAL_TIM_Base_Init(&htim3) != HAL_OK) {
+		Error_Handler();
+	}
+
+	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+	if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK) {
+		Error_Handler();
+	}
+
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+	if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+}
+
 /** Configure pins as 
  * Analog
  * Input
@@ -186,10 +235,21 @@ static void MX_GPIO_Init(void) {
 	__HAL_RCC_GPIOB_CLK_ENABLE()
 	;
 
-	/*Configure GPIO pin : PC13 */
-//  GPIO_InitStruct.Pin = GPIO_PIN_13;
-//  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-//  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(ADS_CS_GPIO_Port, ADS_CS_Pin, GPIO_PIN_SET);
+
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(ADS_CLK_GPIO_Port, ADS_CLK_Pin, GPIO_PIN_RESET);
+
+	/*Configure GPIO pin : LED_Pin */
+	GPIO_InitStruct.Pin = LED_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
+
 	/*Configure GPIO pins : PA0 PA1 PA2 PA3
 	 PA4 PA5 PA6 PA7
 	 PA8 PA9 PA10 PA15 */
@@ -215,27 +275,11 @@ static void MX_GPIO_Init(void) {
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-	/* USER CODE BEGIN Pins */
-
-	/*Configure GPIO pins : LED_Pin */
-	GPIO_InitStruct.Pin = LED_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
-
-	/* USER CODE END Pins */
-
 	/*Configure GPIO pin : ADS_DATA_Pin */
 	GPIO_InitStruct.Pin = ADS_DATA_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(ADS_DATA_GPIO_Port, &GPIO_InitStruct);
-
-	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(ADS_CS_GPIO_Port, ADS_CS_Pin, GPIO_PIN_SET);
-
-	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(ADS_CLK_GPIO_Port, ADS_CLK_Pin, GPIO_PIN_RESET);
 
 }
 
@@ -271,6 +315,12 @@ inline void _ADS7816Wait(void) {
 	for (i = 0; i < 5; i++) {
 		asm("");
 	}
+}
+
+inline void readNextValue(void) {
+	//static uint16_t i;
+	//rb_push(&rb, i++);
+	rb_push(&rb, ReadADS7816());
 }
 /* USER CODE END 4 */
 
@@ -315,3 +365,4 @@ void assert_failed(uint8_t* file, uint32_t line)
  * @}
  */
 
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -31,6 +31,7 @@ class Factory(object):
         self.voltas = {
             '500hz': boxes.VoltaBox500Hz,
             'binary': boxes.VoltaBoxBinary,
+            'stm32': boxes.VoltaBoxStm32,
 
         }
         self.phones = {
