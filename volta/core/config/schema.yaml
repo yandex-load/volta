@@ -16,6 +16,7 @@ volta:
     enabled:
       type: boolean
       default: true
+      required: true
     type:
       type: string
       required: true

@@ -60,8 +60,7 @@ class EventsRouter(threading.Thread):
                         if df is not None:
                             self.__route_data(df)
                     if self._interrupted.is_set():
-                        logger.info('Interrupted events router loop, qsize: %s', self.source.qsize())
-                        break
+                        logger.info('Processing events... qsize: %s', self.source.qsize())
             except:
                 logger.warn('Failed to route/parse event!', exc_info=True)
             time.sleep(0.3)
