@@ -64,6 +64,7 @@ class VoltaBoxBinary(VoltaBox):
         self.grabber_q = results
 
         # handshake
+        logger.info('Awaiting handshake')
         while self.data_source.readline() != "VOLTAHELLO\n":
             pass
 
