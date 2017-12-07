@@ -59,7 +59,6 @@ TIM_HandleTypeDef htim3;
 /* Private variables ---------------------------------------------------------*/
 struct ringbuf_t rb;
 
-//const char welcome[] = "\nVOLTAHELLO\n{\"sps\":10000}\nDATASTART\n";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -88,6 +87,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 int main(void) {
 
 	/* USER CODE BEGIN 1 */
+	uint16_t buff[16];
 	rb_init(&rb);
 	/* USER CODE END 1 */
 
@@ -105,26 +105,22 @@ int main(void) {
 	MX_TIM3_Init();
 
 	/* USER CODE BEGIN 2 */
-	uint16_t buff[16];
-	//char* buff = "Hello world\r\n";
+
+	// wait USB enumeration
+	HAL_Delay(1000);
 
 	HAL_TIM_Base_Start_IT(&htim3);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
-	//while (CDC_Transmit_FS((uint8_t*) welcome, sizeof(welcome)) == USBD_BUSY);
 	while (1) {
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
-//		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin); // Toggle the state of LED
-		//adcValue = ReadADS7816();
-		//itoa(adcValue, buff, 10);
 		if (rb_remain(&rb) > SENDBUF_SIZE) {
 			for (int i = 0; i < SENDBUF_SIZE; i++) buff[i] = rb_pop(&rb);
 			while (CDC_Transmit_FS((uint8_t*) buff, sizeof(buff)) == USBD_BUSY);
-			//while (CDC_Transmit_FS((uint8_t*) buff, strlen(buff)) == USBD_BUSY);
 		}
 	}
 	/* USER CODE END 3 */
@@ -318,8 +314,6 @@ inline void _ADS7816Wait(void) {
 }
 
 inline void readNextValue(void) {
-	//static uint16_t i;
-	//rb_push(&rb, i++);
 	rb_push(&rb, ReadADS7816());
 }
 /* USER CODE END 4 */
