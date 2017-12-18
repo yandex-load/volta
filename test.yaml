@@ -1,0 +1,8 @@
+volta:
+  enabled: true
+  source: '/dev/cu.wchusbserial14610'
+  type: 'binary'
+  chop_ratio: 5
+uploader:
+  enabled: true
+  task: LOAD-272

@@ -24,8 +24,8 @@ volta:
       type: string
       required: true
     chop_ratio:
-      type: integer
-      default: 1
+      type: float
+      default: 1.0
     baud_rate:
       type: integer
     grab_timeout:
