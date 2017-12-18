@@ -52,14 +52,6 @@ class DataUploader(DataListener):
         self.worker.start()
 
     def put(self, data, type):
-        """ Process data
-
-        Args:
-            data (pandas.DataFrame): dfs w/ data contents,
-                differs for each data type.
-                Should be processed differently from each other
-            type (string): dataframe type
-        """
         self.inner_queue.put((data, type))
 
     def create_job(self):
@@ -103,6 +95,14 @@ class DataUploader(DataListener):
 
 
 class WorkerThread(threading.Thread):
+    """ Process data
+
+    Args:
+        data (pandas.DataFrame): dfs w/ data contents,
+            differs for each data type.
+            Should be processed differently from each other
+        type (string): dataframe type
+    """
     def __init__(self, uploader):
         super(WorkerThread, self).__init__()
         self._finished = threading.Event()
