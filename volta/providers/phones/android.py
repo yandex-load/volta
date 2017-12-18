@@ -89,6 +89,12 @@ class AndroidPhone(Phone):
             install apks
             clean log
         """
+        rcode, stdout, stderr = execute("adb -s {device_id} get-state".format(device_id=self.source))
+        if stdout.strip('\n') == 'unknown':
+            raise RuntimeError(
+                'Phone "%s" has an unknown state. Please check device authorization and current state' % self.source
+            )
+
         # apps cleanup
         for apk in self.cleanup_apps:
             execute("adb -s {device_id} uninstall {app}".format(device_id=self.source, app=apk))
