@@ -137,21 +137,7 @@ class WorkerThread(threading.Thread):
                                 query="INSERT INTO {table} FORMAT TSV".format(
                                     table=self.uploader.data_types_to_tables[type])
                             )
-                            try:
-                                r = requests.post(url, data=data, verify=False, timeout=5)
-                            except requests.ConnectionError, requests.ConnectTimeout:
-                                logger.debug('Connection error, retrying in 1 sec...', exc_info=True)
-                                time.sleep(1)
-                                try:
-                                    r = requests.post(url, data=data, verify=False, timeout=5)
-                                except:
-                                    logger.warning('Failed retrying connection error! Dropping data', exc_info=True)
-                            else:
-                                if r.status_code != 200:
-                                    logger.warning('Request w/ bad status code: %s. Error message:\n%s. Data: %s',
-                                        r.status_code, r.text, data
-                                    )
-                                r.raise_for_status()
+                            self.__send_chunk(url, data)
                         else:
                             logger.warning('Unknown data type for DataUplaoder: %s', exc_info=True)
                             return
@@ -160,3 +146,20 @@ class WorkerThread(threading.Thread):
                 if self._interrupted.is_set():
                     logger.info('Processing uploader queue... qsize: %s', self.uploader.inner_queue.qsize())
 
+    def __send_chunk(self, url, data):
+        """ TODO: add more stable and flexible retries """
+        try:
+            r = requests.post(url, data=data, verify=False, timeout=5)
+        except requests.ConnectionError, requests.ConnectTimeout:
+            logger.debug('Connection error, retrying in 1 sec...', exc_info=True)
+            time.sleep(1)
+            try:
+                r = requests.post(url, data=data, verify=False, timeout=5)
+            except:
+                logger.warning('Failed retrying connection error! Dropping data', exc_info=True)
+        else:
+            if r.status_code != 200:
+                logger.warning('Request w/ bad status code: %s. Error message:\n%s. Data: %s',
+                               r.status_code, r.text, data
+                               )
+            r.raise_for_status()
