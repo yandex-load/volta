@@ -78,10 +78,13 @@ class DataUploader(DataListener):
             self.dump_jobno_to_file()
 
     def dump_jobno_to_file(self):
-        with open(self.JOBNO_FNAME, 'w') as jobnofile:
-            jobnofile.write(
-                "{path}/mobile/{jobno}".format(path=self.hostname, jobno=self.jobno)
-            )
+        try:
+            with open(self.JOBNO_FNAME, 'w') as jobnofile:
+                jobnofile.write(
+                    "{path}/mobile/{jobno}".format(path=self.hostname, jobno=self.jobno)
+                )
+        except:
+            logger.error('Failed to dump jobno to file: %s', self.JOBNO_FNAME, exc_info=True)
 
     def update_job(self, data):
         url = "{url}{path}".format(url=self.hostname, path=self.update_job_url)
@@ -98,11 +101,11 @@ class DataUploader(DataListener):
 class WorkerThread(threading.Thread):
     """ Process data
 
-    Args:
-        data (pandas.DataFrame): dfs w/ data contents,
+    read data from queue (each chunk is a tuple of (data,type)), send contents to clickhouse via http
+        - data (pandas.DataFrame): dfs w/ data contents,
             differs for each data type.
             Should be processed differently from each other
-        type (string): dataframe type
+        - type (string): dataframe type
     """
     def __init__(self, uploader):
         super(WorkerThread, self).__init__()
