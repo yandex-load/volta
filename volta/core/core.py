@@ -315,6 +315,7 @@ class Core(object):
                             jobno=self.uploader.jobno
                         )
                         response['api_jobno'] = "{jobno}".format(jobno=self.uploader.jobno)
+                        response['uploader_sender_alive'] = self.uploader.worker.isAlive()
                 except AttributeError:
                     logger.info('Unable to get per_module %s current test info', per_module, exc_info=True)
                     pass
