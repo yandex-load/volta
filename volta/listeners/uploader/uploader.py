@@ -156,7 +156,7 @@ class WorkerThread(threading.Thread):
             try:
                 r = requests.post(url, data=data, verify=False, timeout=5)
             except:
-                logger.warning('Failed retrying connection error! Dropping data', exc_info=True)
+                logger.warning('Failed retrying sending data. Dropped', exc_info=True)
         else:
             if r.status_code != 200:
                 logger.warning('Request w/ bad status code: %s. Error message:\n%s. Data: %s',
