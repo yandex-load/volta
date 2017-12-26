@@ -122,6 +122,25 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
     return returncode, stdout, stderr
 
 
+class TimedExecute(object):
+    def __init__(self, cmd):
+        self.cmd = cmd
+        self.process = None
+
+    def run(self, timeout):
+        def target():
+            self.process = subprocess.Popen(self.cmd, shell=True)
+            self.process.communicate()
+
+        thread = threading.Thread(target=target)
+        thread.start()
+
+        thread.join(timeout)
+        if thread.is_alive():
+            self.process.terminate()
+            thread.join()
+
+
 class Tee(threading.Thread):
     """
     Drain a queue and put its contents to list of destinations
