@@ -60,13 +60,9 @@ class EventsRouter(threading.Thread):
                         if df is not None:
                             self.__route_data(df)
                     if self._interrupted.is_set():
-                        logger.info('Processing events... qsize: %s', self.source.qsize())
+                        logger.info('Processing pending events queue... qsize: %s', self.source.qsize())
             except:
                 logger.warn('Failed to route/parse event!', exc_info=True)
-            time.sleep(0.3)
-            if self._interrupted.is_set():
-                logger.info('Interrupted events router loop, qsize: %s', self.source.qsize())
-                break
         self._finished.set()
 
     def __route_data(self, df):
@@ -81,7 +77,7 @@ class EventsRouter(threading.Thread):
         """
         for dtype, data in df.apply(self.__parse_event, axis=1).groupby('type'):
             if dtype in self.router:
-                logger.debug('Detected %s metric type', dtype)
+                # logger.debug('Detected %s metric type', dtype)
                 if dtype == 'metric':
                     data.loc[:, ('value')] = data.message.astype(np.float64)
                 if dtype != 'unknown':

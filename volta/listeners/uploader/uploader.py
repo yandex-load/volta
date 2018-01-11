@@ -6,6 +6,7 @@ import time
 
 from urlparse import urlparse
 from volta.common.interfaces import DataListener
+from volta.common.util import get_nowait_from_queue
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -94,8 +95,15 @@ class DataUploader(DataListener):
         req.raise_for_status()
         return
 
+    def get_info(self):
+        pass
+
     def close(self):
-        self.worker._interrupted.set()
+        self.worker.stop()
+        while not self.worker.is_finished():
+            logger.info('Processing pending uploader queue... qsize: %s', self.inner_queue.qsize())
+            time.sleep(5)
+        self.worker.join()
 
 
 class WorkerThread(threading.Thread):
@@ -115,46 +123,46 @@ class WorkerThread(threading.Thread):
 
     def run(self):
         while not self._interrupted.is_set():
-            for _ in range(self.uploader.inner_queue.qsize()):
-                try:
-                    data, type = self.uploader.inner_queue.get_nowait()
-                except q.Empty:
-                    break
+            q_data = get_nowait_from_queue(self.uploader.inner_queue)
+            pending_data = {}
+            for type_ in self.uploader.data_types_to_tables:
+                pending_data[type_] = []
+            for data, type_ in q_data:
+                if type_ in self.uploader.data_types_to_tables:
+                    data.loc[:, ('key_date')] = self.uploader.key_date
+                    data.loc[:, ('test_id')] = self.uploader.test_id
+                    data = data.to_csv(
+                        sep='\t',
+                        header=False,
+                        index=False,
+                        na_rep="",
+                        columns=self.uploader.clickhouse_output_fmt.get(type_, [])
+                    )
+                    pending_data[type_].append(data)
                 else:
-                    try:
-                        if type in self.uploader.data_types_to_tables:
-                            data.loc[:, ('key_date')] = self.uploader.key_date
-                            data.loc[:, ('test_id')] = self.uploader.test_id
-                            data = data.to_csv(
-                                sep='\t',
-                                header=False,
-                                index=False,
-                                na_rep="",
-                                columns=self.uploader.clickhouse_output_fmt.get(type, [])
-                            )
-                            url = "{addr}/?query={query}".format(
-                                addr=self.uploader.addr,
-                                query="INSERT INTO {table} FORMAT TSV".format(
-                                    table=self.uploader.data_types_to_tables[type])
-                            )
-                            self.__send_chunk(url, data)
-                        else:
-                            logger.warning('Unknown data type for DataUplaoder: %s', exc_info=True)
-                            return
-                    except:
-                        logger.info('Error sending data to Lunapark: %s', exc_info=True)
-                if self._interrupted.is_set():
-                    logger.info('Processing uploader queue... qsize: %s', self.uploader.inner_queue.qsize())
+                    logger.warning('Unknown data type for DataUplaoder, dropped: %s', exc_info=True)
+            for type_ in self.uploader.data_types_to_tables:
+                if pending_data[type_]:
+                    prepared_body = "".join(key for key in pending_data[type_])
+                    url = "{addr}/?query={query}".format(
+                        addr=self.uploader.addr,
+                        query="INSERT INTO {table} FORMAT TSV".format(
+                            table=self.uploader.data_types_to_tables[type_])
+                    )
+                    self.__send_chunk(url, prepared_body)
+            time.sleep(0.5)
+        self._finished.set()
 
     def __send_chunk(self, url, data):
         """ TODO: add more stable and flexible retries """
+        timeout = 10
         try:
-            r = requests.post(url, data=data, verify=False, timeout=5)
+            r = requests.post(url, data=data, verify=False, timeout=timeout)
         except requests.ConnectionError, requests.ConnectTimeout:
             logger.debug('Connection error, retrying in 1 sec...', exc_info=True)
             time.sleep(1)
             try:
-                r = requests.post(url, data=data, verify=False, timeout=5)
+                r = requests.post(url, data=data, verify=False, timeout=timeout)
             except:
                 logger.warning('Failed retrying sending data. Dropped', exc_info=True)
         else:
@@ -163,3 +171,9 @@ class WorkerThread(threading.Thread):
                                r.status_code, r.text, data
                                )
             r.raise_for_status()
+
+    def is_finished(self):
+        return self._finished
+
+    def stop(self):
+        self._interrupted.set()

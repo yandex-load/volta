@@ -39,7 +39,10 @@ class VoltaBoxBinary(VoltaBox):
         self.precision = config.get_option('volta', 'precision')
         self.power_voltage = config.get_option('volta', 'power_voltage')
         # initialize data source
-        self.source_opener = resource.get_opener(self.source)
+        try:
+            self.source_opener = resource.get_opener(self.source)
+        except:
+            raise RuntimeError('Device %s not found. Please check VoltaBox USB connection', self.source)
         self.source_opener.baud_rate = self.baud_rate
         self.source_opener.read_timeout = self.grab_timeout
         self.data_source = self.source_opener()

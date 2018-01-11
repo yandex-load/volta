@@ -130,6 +130,8 @@ class Core(object):
                 data=key
             ) for key in self.event_types
         }
+        self.process_currents = None
+        self.events_parser = None
         self.finished = None
 
     @property
@@ -247,10 +249,6 @@ class Core(object):
             self.events_parser = EventsRouter(self.phone_q, self.event_listeners)
             self.events_parser.start()
 
-            # FIXME infinite loop ?
-            # while self.phone.test_performer.isAlive():
-            #    time.sleep(1)
-
     def end_test(self):
         """
         Interrupts test: stops grabbers and events parsers
@@ -259,13 +257,11 @@ class Core(object):
         if 'volta' in self.enabled_modules:
             self.volta.end_test()
             self.process_currents.close()
+            self.process_currents.join()
         if 'phone' in self.enabled_modules:
             self.phone.end()
-            if self.phone_q.qsize() >= 1:
-                logger.debug('qsize: %s', self.phone_q.qsize())
-                logger.debug('Waiting additional 3 seconds for phone events processing...')
-                time.sleep(3)
             self.events_parser.close()
+            self.events_parser.join()
 
     def post_process(self):
         """
@@ -295,7 +291,7 @@ class Core(object):
             self.uploader.update_job(update_job_data)
             if self.uploader.jobno:
                 logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
-        os.kill(os.getpid(), 9)
+            self.uploader.close()
         logger.info('Finished!')
 
     def get_current_test_info(self, per_module=False, session_id=None):

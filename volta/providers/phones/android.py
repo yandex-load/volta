@@ -170,11 +170,14 @@ class AndroidPhone(Phone):
         """ Stop test and grabbers """
         if self.test_performer:
             self.test_performer.close()
+            self.test_performer.join()
         self.logcat_reader_stdout.close()
         self.logcat_reader_stderr.close()
         self.logcat_process.kill()
         self.drain_logcat_stdout.close()
+        self.drain_logcat_stdout.join()
         self.drain_logcat_stderr.close()
+        self.drain_logcat_stderr.join()
 
         # apps cleanup
         for apk in self.cleanup_apps:
