@@ -162,6 +162,7 @@ class BoxBinaryReader(object):
         self.offset = offset
         self.precision = precision
         self.power_voltage = float(power_voltage)
+        self.swap = False
 
     def _read_chunk(self):
         data = self.source.read(self.sample_rate * 2 * 10)
