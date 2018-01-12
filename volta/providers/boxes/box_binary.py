@@ -158,21 +158,28 @@ class BoxBinaryReader(object):
         self.source = source
         self.sample_rate = sample_rate
         self.buffer = ""
-        self.orphan_byte = None
         self.slope = slope
         self.offset = offset
         self.precision = precision
         self.power_voltage = float(power_voltage)
+        self.swap = False
 
     def _read_chunk(self):
         data = self.source.read(self.sample_rate * 2 * 10)
         if data:
-            if self.orphan_byte:
-                data = self.orphan_byte + data
-                self.orphan_byte = None
-            if (len(data) % 2 != 0):
-                self.orphan_byte = data[-1:]
-                data = data[:-1]
+            lst = list(data)
+            for i in range(len(lst)/2):
+                lo = ord(lst[i*2])
+                hi = ord(lst[i*2+1])
+                word = (hi << 8) + lo
+                if word>0x0FFF or (self.swap and (word&0x00F0)==0):
+                    self.swap = True
+                    tmp = lst[i*2]
+                    lst[i*2] = lst[i*2+1]
+                    lst[i*2+1] = tmp
+                else:
+                    self.swap = False
+            data = ''.join(lst)
             chunk = string_to_np(data).astype(np.float32) * (
                 self.power_voltage / (2 ** self.precision)) * self.slope + self.offset
             return chunk
