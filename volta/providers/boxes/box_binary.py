@@ -38,6 +38,7 @@ class VoltaBoxBinary(VoltaBox):
         self.offset = config.get_option('volta', 'offset')
         self.precision = config.get_option('volta', 'precision')
         self.power_voltage = config.get_option('volta', 'power_voltage')
+        self.sample_swap = config.get_option('volta', 'sample_swap', False)
         # initialize data source
         try:
             self.source_opener = resource.get_opener(self.source)
@@ -84,7 +85,8 @@ class VoltaBoxBinary(VoltaBox):
             self.slope,
             self.offset,
             self.power_voltage,
-            self.precision
+            self.precision,
+            sample_swap=self.sample_swap
         )
         self.pipeline = Drain(
             TimeChopper(
@@ -153,7 +155,7 @@ class BoxBinaryReader(object):
     Read chunks from source, convert and return numpy.array
     """
 
-    def __init__(self, source, sample_rate, slope=1, offset=0, power_voltage=4700, precision=10):
+    def __init__(self, source, sample_rate, slope=1, offset=0, power_voltage=4700, precision=10, sample_swap=False):
         self.closed = False
         self.source = source
         self.sample_rate = sample_rate
@@ -164,7 +166,24 @@ class BoxBinaryReader(object):
         self.precision = precision
         self.power_voltage = float(power_voltage)
         self.swap = False
+        self.sample_swap = sample_swap
 
+    def __sample_swap(self, data):
+        lst = list(data)
+        for i in range(len(lst)/2):
+            lo = ord(lst[i*2])
+            hi = ord(lst[i*2+1])
+            word = (hi << 8) + lo
+            if word>0x0FFF or (self.swap and (word&0x00F0)==0):
+                self.swap = True
+                tmp = lst[i*2]
+                lst[i*2] = lst[i*2+1]
+                lst[i*2+1] = tmp
+            else:
+                self.swap = False
+        data = ''.join(lst)
+        return data
+    
     def _read_chunk(self):
         data = self.source.read(self.sample_rate * 2 * 10)
         if data:
@@ -174,19 +193,8 @@ class BoxBinaryReader(object):
             if (len(data) % 2 != 0):
                 self.orphan_byte = data[-1:]
                 data = data[:-1]
-            lst = list(data)
-            for i in range(len(lst)/2):
-                lo = ord(lst[i*2])
-                hi = ord(lst[i*2+1])
-                word = (hi << 8) + lo
-                if word>0x0FFF or (self.swap and (word&0x00F0)==0):
-                    self.swap = True
-                    tmp = lst[i*2]
-                    lst[i*2] = lst[i*2+1]
-                    lst[i*2+1] = tmp
-                else:
-                    self.swap = False
-            data = ''.join(lst)
+            if self.sample_swap:
+                data = self.__sample_swap(data)
             chunk = string_to_np(data).astype(np.float32) * (
                 self.power_voltage / (2 ** self.precision)) * self.slope + self.offset
             return chunk
