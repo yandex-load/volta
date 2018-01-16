@@ -223,7 +223,7 @@ class LogReader(object):
     def __iter__(self):
         while not self.closed:
             yield self._read_chunk()
-        yield self._read_chunk()
+        # yield self._read_chunk()
 
     def close(self):
         self.closed = True

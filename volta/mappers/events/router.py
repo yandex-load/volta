@@ -7,6 +7,7 @@ import threading
 import time
 import numpy as np
 
+from volta.common.util import get_nowait_from_queue
 
 logger = logging.getLogger(__name__)
 
@@ -46,23 +47,29 @@ class EventsRouter(threading.Thread):
 
     def run(self):
         while not self._interrupted.is_set():
-            try:
-                for _ in range(self.source.qsize()):
+            data = get_nowait_from_queue(self.source)
+            for item in data:
+                if not self.sys_uts_start and item is not None:
+                    self.sys_uts_start = item.sys_uts[0]  # detect syslog ts start
+                    logger.debug('sys uts start detected: %s', self.sys_uts_start)
+                if item is not None:
                     try:
-                        df = self.source.get_nowait()
-                        # detect syslog ts start
-                        if not self.sys_uts_start and df is not None:
-                            self.sys_uts_start = df.sys_uts[0]
-                            logger.debug('sys uts start detected: %s', self.sys_uts_start)
-                    except q.Empty:
-                        break
-                    else:
-                        if df is not None:
-                            self.__route_data(df)
-                    if self._interrupted.is_set():
-                        logger.info('Processing pending events queue... qsize: %s', self.source.qsize())
-            except:
-                logger.warn('Failed to route/parse event!', exc_info=True)
+                        self.__route_data(item)
+                    except:
+                        logger.warn('Failed to route/parse event!', exc_info=True)
+        logger.info('Events processing got interrupt signal...')
+        logger.info('Post-routing pending events... qsize: %s', self.source.qsize())
+        data = get_nowait_from_queue(self.source)
+        for item in data:
+            if not self.sys_uts_start and item is not None:
+                self.sys_uts_start = item.sys_uts[0]  # detect syslog ts start
+                logger.debug('sys uts start detected: %s', self.sys_uts_start)
+            if item is not None:
+                try:
+                    self.__route_data(item)
+                except:
+                    logger.warn('Failed to route/parse event!', exc_info=True)
+        logger.info('Finished routing events!')
         self._finished.set()
 
     def __route_data(self, df):
@@ -77,7 +84,6 @@ class EventsRouter(threading.Thread):
         """
         for dtype, data in df.apply(self.__parse_event, axis=1).groupby('type'):
             if dtype in self.router:
-                # logger.debug('Detected %s metric type', dtype)
                 if dtype == 'metric':
                     data.loc[:, ('value')] = data.message.astype(np.float64)
                 if dtype != 'unknown':

@@ -101,7 +101,6 @@ class DataUploader(DataListener):
 
     def close(self):
         self.worker.stop()
-        self.inner_queue.join()
         while not self.worker.is_finished():
             logger.info('Processing pending uploader queue... qsize: %s', self.inner_queue.qsize())
             time.sleep(5)
@@ -178,4 +177,6 @@ class WorkerThread(threading.Thread):
         return self._finished
 
     def stop(self):
+        logger.info('Uploader got interrupt signal')
+        logger.info('Processing pending uploader queue, qsize: %s', self.uploader.qsize())
         self._interrupted.set()
