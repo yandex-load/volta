@@ -63,6 +63,7 @@ class DataUploader(DataListener):
             'version': self.config.get_option('core', 'version'),
             'task': self.config.get_option('uploader', 'task'),
             'person': self.config.get_option('core', 'operator'),
+            'regress': self.config.get_option('uploader', 'regress')
         }
         url = "{url}{path}".format(url=self.hostname, path=self.create_job_url)
         req = requests.post(url, data=data, verify=False)
@@ -100,6 +101,7 @@ class DataUploader(DataListener):
 
     def close(self):
         self.worker.stop()
+        self.inner_queue.join()
         while not self.worker.is_finished():
             logger.info('Processing pending uploader queue... qsize: %s', self.inner_queue.qsize())
             time.sleep(5)
@@ -150,7 +152,7 @@ class WorkerThread(threading.Thread):
                             table=self.uploader.data_types_to_tables[type_])
                     )
                     self.__send_chunk(url, prepared_body)
-            time.sleep(0.5)
+            time.sleep(1)
         self._finished.set()
 
     def __send_chunk(self, url, data):

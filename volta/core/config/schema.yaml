@@ -135,6 +135,9 @@ uploader:
     ver:
       type: string
       default: set app version via uploader.ver
+    regress:
+      type: string
+      default: ''
     meta:
       type: string
       default: null
