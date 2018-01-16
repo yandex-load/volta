@@ -27,7 +27,6 @@ def popen(cmnd):
     return subprocess.Popen(
         cmnd,
         bufsize=0,
-        preexec_fn=os.setsid,
         close_fds=True,
         shell=True,
         stdout=subprocess.PIPE,
@@ -258,12 +257,16 @@ def chunk_to_df(chunk, regexp):
                     )
                 except IndexError:
                     # android fmt, sample: 02-12 12:12:12.121
-                    ts = datetime.datetime.strptime("{date} {time}".format(
-                            date=match.group('date'),
-                            time=match.group('time')),
-                        '%m-%d %H:%M:%S.%f').replace(
-                        year=datetime.datetime.now().year
-                    )
+                    try:
+                        ts = datetime.datetime.strptime("{date} {time}".format(
+                                date=match.group('date'),
+                                time=match.group('time')),
+                            '%m-%d %H:%M:%S.%f').replace(
+                            year=datetime.datetime.now().year
+                        )
+                    except ValueError:
+                        logger.warning('Trash data in logs: %s, skipped', match.groups())
+                        continue
                 # unix timestamp in microseconds
                 sys_uts = int(
                     (ts-datetime.datetime(1970,1,1)).total_seconds() * 10 ** 6

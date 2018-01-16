@@ -6,6 +6,7 @@ import re
 import queue as q
 import pkg_resources
 import time
+import signal
 
 from volta.common.interfaces import Phone
 from volta.common.util import execute, Drain, popen, LogReader, PhoneTestPerformer
@@ -168,8 +169,8 @@ class AndroidPhone(Phone):
 
     def end(self):
         """ Stop test and grabbers """
-        self.logcat_process.communicate()
-        self.logcat_process.kill()
+        self.logcat_process.send_signal(signal.SIGINT)
+        # self.logcat_process.kill()
         if self.test_performer:
             self.test_performer.close()
             self.test_performer.join()
