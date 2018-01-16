@@ -178,5 +178,5 @@ class WorkerThread(threading.Thread):
 
     def stop(self):
         logger.info('Uploader got interrupt signal')
-        logger.info('Processing pending uploader queue, qsize: %s', self.uploader.qsize())
+        logger.info('Processing pending uploader queue, qsize: %s', self.uploader.inner_queue.qsize())
         self._interrupted.set()

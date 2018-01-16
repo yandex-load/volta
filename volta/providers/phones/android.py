@@ -168,6 +168,7 @@ class AndroidPhone(Phone):
 
     def end(self):
         """ Stop test and grabbers """
+        self.logcat_process.communicate()
         self.logcat_process.kill()
         if self.test_performer:
             self.test_performer.close()

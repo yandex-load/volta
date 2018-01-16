@@ -296,16 +296,26 @@ class PhoneTestPerformer(threading.Thread):
     def __init__(self, command):
         super(PhoneTestPerformer, self).__init__()
         self.command = command
+        self.process = None
         self._finished = threading.Event()
         self._interrupted = threading.Event()
-        self.retcode = None
 
     def run(self):
-        self.retcode, _, _ = execute(self.command, shell=True)
+        self.process = popen(self.command)
+        while not self.process.returncode:
+            if self._interrupted.is_set():
+                logger.info('Phone test performer interrupted!')
+                self.process.kill()
+            time.sleep(1)
+        logger.info('Phone test performer work finished, retcode: %s', self.process.returncode)
         self._finished.set()
 
     def wait(self, timeout=None):
         self._finished.wait(timeout=timeout)
 
     def close(self):
+        logger.info('Phone test performer got interrupt signal')
         self._interrupted.set()
+
+    def is_finished(self):
+        return self._finished
