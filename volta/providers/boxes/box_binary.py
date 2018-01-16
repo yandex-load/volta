@@ -158,6 +158,7 @@ class BoxBinaryReader(object):
         self.source = source
         self.sample_rate = sample_rate
         self.buffer = ""
+        self.orphan_byte = None
         self.slope = slope
         self.offset = offset
         self.precision = precision
@@ -167,6 +168,12 @@ class BoxBinaryReader(object):
     def _read_chunk(self):
         data = self.source.read(self.sample_rate * 2 * 10)
         if data:
+            if self.orphan_byte:
+                data = self.orphan_byte + data
+                self.orphan_byte = None
+            if (len(data) % 2 != 0):
+                self.orphan_byte = data[-1:]
+                data = data[:-1]
             lst = list(data)
             for i in range(len(lst)/2):
                 lo = ord(lst[i*2])
