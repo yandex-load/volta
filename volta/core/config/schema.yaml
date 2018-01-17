@@ -36,6 +36,9 @@ volta:
     slope:
       type: float
       default: 1
+    sample_swap:
+      type: boolean
+      default: false
     precision:
       type: integer
       default: 10
