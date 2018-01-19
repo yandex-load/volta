@@ -63,7 +63,7 @@ class DataUploader(DataListener):
             'version': self.config.get_option('core', 'version'),
             'task': self.config.get_option('uploader', 'task'),
             'person': self.config.get_option('core', 'operator'),
-            'regress': self.config.get_option('uploader', 'regress')
+            'component': self.config.get_option('uploader', 'component')
         }
         url = "{url}{path}".format(url=self.hostname, path=self.create_job_url)
         req = requests.post(url, data=data, verify=False)
