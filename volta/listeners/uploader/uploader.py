@@ -102,9 +102,9 @@ class DataUploader(DataListener):
     def close(self):
         self.worker.stop()
         while not self.worker.is_finished():
-            logger.info('Processing pending uploader queue... qsize: %s', self.inner_queue.qsize())
-            time.sleep(5)
+            logger.debug('Processing pending uploader queue... qsize: %s', self.inner_queue.qsize())
         self.worker.join()
+        logger.info('Uploader finished!')
 
 
 class WorkerThread(threading.Thread):
@@ -124,35 +124,46 @@ class WorkerThread(threading.Thread):
 
     def run(self):
         while not self._interrupted.is_set():
-            q_data = get_nowait_from_queue(self.uploader.inner_queue)
-            pending_data = {}
-            for type_ in self.uploader.data_types_to_tables:
-                pending_data[type_] = []
-            for data, type_ in q_data:
-                if type_ in self.uploader.data_types_to_tables:
-                    data.loc[:, ('key_date')] = self.uploader.key_date
-                    data.loc[:, ('test_id')] = self.uploader.test_id
-                    data = data.to_csv(
-                        sep='\t',
-                        header=False,
-                        index=False,
-                        na_rep="",
-                        columns=self.uploader.clickhouse_output_fmt.get(type_, [])
-                    )
-                    pending_data[type_].append(data)
-                else:
-                    logger.warning('Unknown data type for DataUplaoder, dropped: %s', exc_info=True)
-            for type_ in self.uploader.data_types_to_tables:
-                if pending_data[type_]:
-                    prepared_body = "".join(key for key in pending_data[type_])
-                    url = "{addr}/?query={query}".format(
-                        addr=self.uploader.addr,
-                        query="INSERT INTO {table} FORMAT TSV".format(
-                            table=self.uploader.data_types_to_tables[type_])
-                    )
-                    self.__send_chunk(url, prepared_body)
-            time.sleep(1)
+            self.__get_from_queue_prepare_and_send()
+        logger.info('Uploader thread main loop interrupted, '
+                    'finishing work and trying to send the rest of data, qsize: %s',
+                    self.uploader.inner_queue)
+        self.__get_from_queue_prepare_and_send()
         self._finished.set()
+
+    def __get_from_queue_prepare_and_send(self):
+        q_data = get_nowait_from_queue(self.uploader.inner_queue)
+        pending_batch = self.__prepare_batch_of_chunks(q_data)
+        for type_ in self.uploader.data_types_to_tables:
+            if pending_batch[type_]:
+                prepared_body = "".join(key for key in pending_batch[type_])
+                url = "{addr}/?query={query}".format(
+                    addr=self.uploader.addr,
+                    query="INSERT INTO {table} FORMAT TSV".format(
+                        table=self.uploader.data_types_to_tables[type_])
+                )
+                self.__send_chunk(url, prepared_body)
+
+    def __prepare_batch_of_chunks(self, q_data):
+        pending_data = {}
+        for type_ in self.uploader.data_types_to_tables:
+            pending_data[type_] = []
+        for data, type_ in q_data:
+            if type_ in self.uploader.data_types_to_tables:
+                data.loc[:, ('key_date')] = self.uploader.key_date
+                data.loc[:, ('test_id')] = self.uploader.test_id
+                data = data.to_csv(
+                    sep='\t',
+                    header=False,
+                    index=False,
+                    na_rep="",
+                    columns=self.uploader.clickhouse_output_fmt.get(type_, [])
+                )
+                pending_data[type_].append(data)
+            else:
+                logger.warning('Unknown data type for DataUplaoder, dropped: %s', exc_info=True)
+        return pending_data
+
 
     def __send_chunk(self, url, data):
         """ TODO: add more stable and flexible retries """
@@ -178,5 +189,4 @@ class WorkerThread(threading.Thread):
 
     def stop(self):
         logger.info('Uploader got interrupt signal')
-        logger.info('Processing pending uploader queue, qsize: %s', self.uploader.inner_queue.qsize())
         self._interrupted.set()
