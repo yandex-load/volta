@@ -132,8 +132,9 @@ class WorkerThread(threading.Thread):
         self._finished.set()
 
     def __get_from_queue_prepare_and_send(self):
-        q_data = get_nowait_from_queue(self.uploader.inner_queue)
-        pending_batch = self.__prepare_batch_of_chunks(q_data)
+        pending_batch = self.__prepare_batch_of_chunks(
+            get_nowait_from_queue(self.uploader.inner_queue)
+        )
         for type_ in self.uploader.data_types_to_tables:
             if pending_batch[type_]:
                 prepared_body = "".join(key for key in pending_batch[type_])
@@ -164,10 +165,8 @@ class WorkerThread(threading.Thread):
                 logger.warning('Unknown data type for DataUplaoder, dropped: %s', exc_info=True)
         return pending_data
 
-
-    def __send_chunk(self, url, data):
+    def __send_chunk(self, url, data, timeout=10):
         """ TODO: add more stable and flexible retries """
-        timeout = 10
         try:
             r = requests.post(url, data=data, verify=False, timeout=timeout)
         except requests.ConnectionError, requests.ConnectTimeout:
