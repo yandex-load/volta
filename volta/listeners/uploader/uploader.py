@@ -85,7 +85,7 @@ class DataUploader(DataListener):
                 jobnofile.write(
                     "{path}/mobile/{jobno}".format(path=self.hostname, jobno=self.jobno)
                 )
-        except:
+        except Exception:
             logger.error('Failed to dump jobno to file: %s', self.JOBNO_FNAME, exc_info=True)
 
     def update_job(self, data):
@@ -97,12 +97,14 @@ class DataUploader(DataListener):
         return
 
     def get_info(self):
+        """ mock """
         pass
 
     def close(self):
         self.worker.stop()
         while not self.worker.is_finished():
             logger.debug('Processing pending uploader queue... qsize: %s', self.inner_queue.qsize())
+        logger.debug('Joining uploader thread...')
         self.worker.join()
         logger.info('Uploader finished!')
 
@@ -127,7 +129,7 @@ class WorkerThread(threading.Thread):
             self.__get_from_queue_prepare_and_send()
         logger.info('Uploader thread main loop interrupted, '
                     'finishing work and trying to send the rest of data, qsize: %s',
-                    self.uploader.inner_queue)
+                    self.uploader.inner_queue.qsize())
         self.__get_from_queue_prepare_and_send()
         self._finished.set()
 
