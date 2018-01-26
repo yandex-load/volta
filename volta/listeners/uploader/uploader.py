@@ -152,6 +152,8 @@ class WorkerThread(threading.Thread):
         for type_ in self.uploader.data_types_to_tables:
             pending_data[type_] = []
         for data, type_ in q_data:
+            if data.empty:
+                continue
             if type_ in self.uploader.data_types_to_tables:
                 data.loc[:, ('key_date')] = self.uploader.key_date
                 data.loc[:, ('test_id')] = self.uploader.test_id

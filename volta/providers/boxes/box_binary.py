@@ -190,7 +190,7 @@ class BoxBinaryReader(object):
             if self.orphan_byte:
                 data = self.orphan_byte + data
                 self.orphan_byte = None
-            if (len(data) % 2 != 0):
+            if len(data) % 2 != 0:
                 self.orphan_byte = data[-1:]
                 data = data[:-1]
             if self.sample_swap:
