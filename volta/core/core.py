@@ -2,6 +2,7 @@ import logging
 import queue as q
 import time
 import os
+import shutil
 
 from volta.core.validator import VoltaConfig
 from volta.common.util import Tee
@@ -323,3 +324,25 @@ class Core(object):
                     logger.info('Unable to get per_module %s current test info', per_module, exc_info=True)
                     pass
         return response
+
+    def collect_file(self, filename, keep_original=False):
+        """
+        Move or copy single file to artifacts dir
+        """
+        dest = self.artifacts_dir + '/' + os.path.basename(filename)
+        logger.debug("Collecting file: %s to %s", filename, dest)
+        if not filename or not os.path.exists(filename):
+            logger.warning("File not found to collect: %s", filename)
+            return
+
+        if os.path.exists(dest):
+            # FIXME: find a way to store artifacts anyway
+            logger.warning("File already exists: %s", dest)
+            return
+
+        if keep_original:
+            shutil.copy(filename, self.artifacts_dir)
+        else:
+            shutil.move(filename, self.artifacts_dir)
+
+        os.chmod(dest, 0o644)

@@ -116,6 +116,7 @@ def main():
         logger.error('Uncaught exception in core\n', exc_info=True)
     finally:
         core.post_process()
+        core.collect_file(args.log)
 
 
 # ============= signals handler =========
