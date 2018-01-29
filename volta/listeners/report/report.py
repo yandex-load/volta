@@ -36,21 +36,20 @@ class FileListener(DataListener):
             'unknown': ['sys_uts', 'message']
         }
 
-
-    def put(self, df, type):
+    def put(self, df, type_):
         """ Process data
 
         Args:
             data (pandas.DataFrame): dfs w/ data contents,
                 differs for each data type.
                 Should be processed differently from each other
-            type (string): dataframe type
+            type_ (string): dataframe type
         """
         try:
             if not self.closed:
                 if self.init_header:
                     types = df.dtypes.apply(lambda x: x.name).to_dict()
-                    header = json.dumps({'type': type, 'names': self.file_output_fmt.get(type), 'dtypes': types})
+                    header = json.dumps({'type': type_, 'names': self.file_output_fmt.get(type_), 'dtypes': types})
                     self.fname.write(header)
                     self.fname.write('\n')
                     self.init_header = False
@@ -58,16 +57,19 @@ class FileListener(DataListener):
                     sep=self.output_separator,
                     header=False,
                     index=False,
-                    columns=self.file_output_fmt.get(type, [])
+                    columns=self.file_output_fmt.get(type_, [])
                 )
-                self.fname.write((data))
+                self.fname.write(data)
                 self.fname.flush()
-        except:
-            logger.warning('Unable to write data', exc_info=True)
+        except Exception:
+            logger.warning('Unable to write data')
+            logger.debug('Unable to write data', exc_info=True)
+
+    def get_info(self):
+        """ mock """
+        pass
 
     def close(self):
         self.closed = True
         if self.fname:
             self.fname.close()
-
-

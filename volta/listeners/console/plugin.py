@@ -13,7 +13,7 @@ class ConsoleListener(DataListener):
     def __init__(self, config):
         """
         Args:
-            config (dict): config to listeners, config.fname should store a name of file
+            config: config to listeners, config.fname should store a name of file
         """
         super(ConsoleListener, self).__init__(config)
         self.closed = None
@@ -26,6 +26,9 @@ class ConsoleListener(DataListener):
             'unknown': ['sys_uts', 'message']
         }
 
+    def get_info(self):
+        """ mock """
+        pass
 
     def put(self, df, type):
         """ Process data

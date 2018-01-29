@@ -2,8 +2,6 @@ import logging
 import queue as q
 import time
 import os
-import datetime
-import tempfile
 
 from volta.core.validator import VoltaConfig
 from volta.common.util import Tee
@@ -102,6 +100,8 @@ class Core(object):
         """
         self.config = VoltaConfig(config)
         self.enabled_modules = self.config.get_enabled_sections()
+        self.test_id = self.config.get_option(self.SECTION, 'test_id')
+        logger.info('Local test id: %s', self.test_id)
         if not self.config:
             raise RuntimeError('Empty config')
         self.factory = Factory()
@@ -117,8 +117,6 @@ class Core(object):
         self.artifacts = []
         self._artifacts_dir = None
         self._sync_points = {}
-        self.test_id = self.config.get_option(self.SECTION, 'test_id')
-        logger.info('Local test id: %s', self.config.get_option(self.SECTION, 'test_id'))
         self.event_types = ['event', 'sync', 'fragment', 'metric', 'unknown']
         self.event_listeners = {key: [] for key in self.event_types}
         self.currents_fname = "{artifacts_dir}/currents.data".format(
@@ -137,16 +135,21 @@ class Core(object):
     @property
     def artifacts_dir(self):
         if not self._artifacts_dir:
-            dir_name = self.config.get_option(self.SECTION, 'artifacts_dir')
-            if not dir_name:
-                date_str = datetime.datetime.now().strftime(
-                    "%Y-%m-%d_%H-%M-%S.")
-                dir_name = tempfile.mkdtemp("", date_str, '.')
-            elif not os.path.isdir(dir_name):
+            dir_name = "{dir}/{id}".format(dir=self.config.get_option(self.SECTION, 'artifacts_dir'), id=self.test_id)
+            if not os.path.isdir(dir_name):
                 os.makedirs(dir_name)
             os.chmod(dir_name, 0o755)
             self._artifacts_dir = os.path.abspath(dir_name)
         return self._artifacts_dir
+
+    def __test_id_link_to_jobno(self, name):
+        link_dir = os.path.join(self.config.get_option(self.SECTION, 'artifacts_dir'), 'lunapark')
+        if not os.path.exists(link_dir):
+            os.makedirs(link_dir)
+        os.symlink(
+            os.path.relpath(self.artifacts_dir, link_dir),
+            os.path.join(link_dir, str(name))
+        )
 
     @property
     def volta(self):
@@ -187,7 +190,9 @@ class Core(object):
         return self._sync_points
 
     def add_artifact_file(self, filename):
-        self.artifacts.append(filename)
+        if filename:
+            logger.debug('Adding %s to artifacts', filename)
+            self.artifacts.append(filename)
 
     def configure(self):
         """ Configures modules and prepare modules for test """
@@ -269,6 +274,7 @@ class Core(object):
 
         """
         logger.info('Post process...')
+
         [artifact.close() for artifact in self.artifacts]
         if 'uploader' in self.enabled_modules:
             update_job_data = {
@@ -291,6 +297,7 @@ class Core(object):
             self.uploader.update_job(update_job_data)
             if self.uploader.jobno:
                 logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
+                self.__test_id_link_to_jobno(self.uploader.jobno)
             self.uploader.close()
         logger.info('Finished!')
 
