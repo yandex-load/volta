@@ -16,6 +16,7 @@ volta:
     enabled:
       type: boolean
       default: true
+      required: true
     type:
       type: string
       required: true
@@ -23,8 +24,8 @@ volta:
       type: string
       required: true
     chop_ratio:
-      type: integer
-      default: 1
+      type: float
+      default: 1.0
     baud_rate:
       type: integer
     grab_timeout:
@@ -35,6 +36,9 @@ volta:
     slope:
       type: float
       default: 1
+    sample_swap:
+      type: boolean
+      default: false
     precision:
       type: integer
       default: 10
@@ -63,6 +67,9 @@ phone:
     lightning_class:
       type: string
       default: net.yandex.overload.lightning
+    cleanup_apps:
+      type: list
+      default: []
     test_apps:
       type: list
       default: []
@@ -131,7 +138,16 @@ uploader:
     ver:
       type: string
       default: set app version via uploader.ver
+    component:
+      type: string
+      default: ''
     meta:
       type: string
       default: null
       nullable: true
+console:
+  type: dict
+  schema:
+    enabled:
+      type: boolean
+      default: false

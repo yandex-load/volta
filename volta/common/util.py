@@ -13,11 +13,20 @@ import datetime
 logger = logging.getLogger(__name__)
 
 
+def get_nowait_from_queue(queue):
+    data = []
+    for _ in range(queue.qsize()):
+        try:
+            data.append(queue.get_nowait())
+        except q.Empty:
+            break
+    return data
+
+
 def popen(cmnd):
     return subprocess.Popen(
         cmnd,
         bufsize=0,
-        preexec_fn=os.setsid,
         close_fds=True,
         shell=True,
         stdout=subprocess.PIPE,
@@ -36,6 +45,7 @@ class Drain(threading.Thread):
         self.destination = destination
         self._finished = threading.Event()
         self._interrupted = threading.Event()
+        self.setDaemon(True)  # bdk+ytank stuck w/o this at join of this thread
 
     def run(self):
         for item in self.source:
@@ -82,7 +92,7 @@ class TimeChopper(object):
                     # add time offset to start time in order to determine current timestamp and make date_range for df
                     current_ts = int((sample_num * (1./self.sample_rate)) * 10 ** 9)
                     df.loc[:, ('uts')] = pd.date_range(current_ts, periods=len(ready_sample), freq=idx).astype(np.int64) // 1000
-                    #df.set_index('uts', inplace=True)
+                    # df.set_index('uts', inplace=True)
                     sample_num = sample_num + len(ready_sample)
                     yield df
 
@@ -122,6 +132,25 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
     return returncode, stdout, stderr
 
 
+class TimedExecute(object):
+    def __init__(self, cmd):
+        self.cmd = cmd
+        self.process = None
+
+    def run(self, timeout):
+        def target():
+            self.process = subprocess.Popen(self.cmd, shell=True)
+            self.process.communicate()
+
+        thread = threading.Thread(target=target)
+        thread.start()
+
+        thread.join(timeout)
+        if thread.is_alive():
+            self.process.terminate()
+            thread.join()
+
+
 class Tee(threading.Thread):
     """
     Drain a queue and put its contents to list of destinations
@@ -134,19 +163,18 @@ class Tee(threading.Thread):
         self.type = type
         self._finished = threading.Event()
         self._interrupted = threading.Event()
+        self.setDaemon(True)  # just in case, bdk+ytank stuck w/o this at join of Drain thread
 
     def run(self):
         while not self._interrupted.is_set():
-            for _ in range(self.source.qsize()):
-                try:
-                    item = self.source.get_nowait()
-                except q.Queue.empty:
-                    break
-                else:
-                    for destination in self.destination:
-                        destination.put(item, self.type)
+            data = get_nowait_from_queue(self.source)
+            for item in data:
+                for destination in self.destination:
+                    destination.put(item, self.type)
                     if self._interrupted.is_set():
                         break
+                if self._interrupted.is_set():
+                    break
             if self._interrupted.is_set():
                 break
             time.sleep(0.5)
@@ -194,7 +222,7 @@ class LogReader(object):
     def __iter__(self):
         while not self.closed:
             yield self._read_chunk()
-        yield self._read_chunk()
+        # yield self._read_chunk()
 
     def close(self):
         self.closed = True
@@ -216,12 +244,29 @@ def chunk_to_df(chunk, regexp):
                 continue
             match = regexp.match(line)
             if match:
-                ts = datetime.datetime.strptime("{date} {time}".format(
-                        date=match.group('date'),
-                        time=match.group('time')),
-                    '%m-%d %H:%M:%S.%f').replace(
-                    year=datetime.datetime.now().year
-                )
+                # FIXME raise IndexError because android logs have no separate 'month' group
+                # FIXME more flexible and stable logic should be here
+                try:
+                    # iphone fmt, sample: Aug 25 18:48:14
+                    ts = datetime.datetime.strptime("{month} {date} {time}".format(
+                            month=match.group('month'),
+                            date=match.group('date'),
+                            time=match.group('time')),
+                        '%b %d %H:%M:%S').replace(
+                        year=datetime.datetime.now().year
+                    )
+                except IndexError:
+                    # android fmt, sample: 02-12 12:12:12.121
+                    try:
+                        ts = datetime.datetime.strptime("{date} {time}".format(
+                                date=match.group('date'),
+                                time=match.group('time')),
+                            '%m-%d %H:%M:%S.%f').replace(
+                            year=datetime.datetime.now().year
+                        )
+                    except ValueError:
+                        logger.warning('Trash data in logs: %s, skipped', match.groups())
+                        continue
                 # unix timestamp in microseconds
                 sys_uts = int(
                     (ts-datetime.datetime(1970,1,1)).total_seconds() * 10 ** 6
@@ -260,10 +305,15 @@ class PhoneTestPerformer(threading.Thread):
 
     def run(self):
         self.retcode, _, _ = execute(self.command, shell=True)
+        logger.info('Phone test performer work finished, retcode: %s', self.retcode)
         self._finished.set()
 
     def wait(self, timeout=None):
         self._finished.wait(timeout=timeout)
 
     def close(self):
+        logger.info('Phone test performer got interrupt signal')
         self._interrupted.set()
+
+    def is_finished(self):
+        return self._finished

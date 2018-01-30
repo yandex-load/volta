@@ -2,8 +2,7 @@ import logging
 import queue as q
 import time
 import os
-import datetime
-import tempfile
+import shutil
 
 from volta.core.validator import VoltaConfig
 from volta.common.util import Tee
@@ -12,6 +11,7 @@ from volta.providers import phones
 from volta.listeners.sync.sync import SyncFinder
 from volta.listeners.uploader.uploader import DataUploader
 from volta.listeners.report.report import FileListener
+from volta.listeners.console import ConsoleListener
 from volta.mappers.events.router import EventsRouter
 
 
@@ -30,6 +30,7 @@ class Factory(object):
         self.voltas = {
             '500hz': boxes.VoltaBox500Hz,
             'binary': boxes.VoltaBoxBinary,
+            'stm32': boxes.VoltaBoxStm32,
 
         }
         self.phones = {
@@ -100,6 +101,8 @@ class Core(object):
         """
         self.config = VoltaConfig(config)
         self.enabled_modules = self.config.get_enabled_sections()
+        self.test_id = self.config.get_option(self.SECTION, 'test_id')
+        logger.info('Local test id: %s', self.test_id)
         if not self.config:
             raise RuntimeError('Empty config')
         self.factory = Factory()
@@ -107,6 +110,7 @@ class Core(object):
         self._phone = None
         self._sync = None
         self._uploader = None
+        self._console = None
         self.grabber_q = q.Queue()
         self.phone_q = q.Queue()
         self.grabber_listeners = []
@@ -114,8 +118,6 @@ class Core(object):
         self.artifacts = []
         self._artifacts_dir = None
         self._sync_points = {}
-        self.test_id = self.config.get_option(self.SECTION, 'test_id')
-        logger.info('Local test id: %s', self.config.get_option(self.SECTION, 'test_id'))
         self.event_types = ['event', 'sync', 'fragment', 'metric', 'unknown']
         self.event_listeners = {key: [] for key in self.event_types}
         self.currents_fname = "{artifacts_dir}/currents.data".format(
@@ -127,21 +129,28 @@ class Core(object):
                 data=key
             ) for key in self.event_types
         }
+        self.process_currents = None
+        self.events_parser = None
         self.finished = None
 
     @property
     def artifacts_dir(self):
         if not self._artifacts_dir:
-            dir_name = self.config.get_option(self.SECTION, 'artifacts_dir')
-            if not dir_name:
-                date_str = datetime.datetime.now().strftime(
-                    "%Y-%m-%d_%H-%M-%S.")
-                dir_name = tempfile.mkdtemp("", date_str, '.')
-            elif not os.path.isdir(dir_name):
+            dir_name = "{dir}/{id}".format(dir=self.config.get_option(self.SECTION, 'artifacts_dir'), id=self.test_id)
+            if not os.path.isdir(dir_name):
                 os.makedirs(dir_name)
             os.chmod(dir_name, 0o755)
             self._artifacts_dir = os.path.abspath(dir_name)
         return self._artifacts_dir
+
+    def __test_id_link_to_jobno(self, name):
+        link_dir = os.path.join(self.config.get_option(self.SECTION, 'artifacts_dir'), 'lunapark')
+        if not os.path.exists(link_dir):
+            os.makedirs(link_dir)
+        os.symlink(
+            os.path.relpath(self.artifacts_dir, link_dir),
+            os.path.join(link_dir, str(name))
+        )
 
     @property
     def volta(self):
@@ -168,6 +177,12 @@ class Core(object):
         return self._uploader
 
     @property
+    def console(self):
+        if not self._console:
+            self._console = ConsoleListener(self.config)
+        return self._console
+
+    @property
     def sync_points(self):
         if not 'sync' in self.enabled_modules:
             return {}
@@ -176,7 +191,9 @@ class Core(object):
         return self._sync_points
 
     def add_artifact_file(self, filename):
-        self.artifacts.append(filename)
+        if filename:
+            logger.debug('Adding %s to artifacts', filename)
+            self.artifacts.append(filename)
 
     def configure(self):
         """ Configures modules and prepare modules for test """
@@ -193,6 +210,11 @@ class Core(object):
                 self.event_listeners[type_].append(self.uploader)
             self.grabber_listeners.append(self.uploader)
             self.uploader.create_job()
+
+        if 'console' in self.enabled_modules:
+            for type_, fname in self.event_fnames.items():
+                self.event_listeners[type_].append(self.console)
+            self.grabber_listeners.append(self.console)
 
         self._setup_filelisteners()
         return 0
@@ -233,10 +255,6 @@ class Core(object):
             self.events_parser = EventsRouter(self.phone_q, self.event_listeners)
             self.events_parser.start()
 
-            # FIXME infinite loop ?
-            # while self.phone.test_performer.isAlive():
-            #    time.sleep(1)
-
     def end_test(self):
         """
         Interrupts test: stops grabbers and events parsers
@@ -245,13 +263,11 @@ class Core(object):
         if 'volta' in self.enabled_modules:
             self.volta.end_test()
             self.process_currents.close()
+            self.process_currents.join()
         if 'phone' in self.enabled_modules:
             self.phone.end()
-            if self.phone_q.qsize() >= 1:
-                logger.debug('qsize: %s', self.phone_q.qsize())
-                logger.debug('Waiting additional 3 seconds for phone events processing...')
-                time.sleep(3)
             self.events_parser.close()
+            self.events_parser.join()
 
     def post_process(self):
         """
@@ -259,6 +275,7 @@ class Core(object):
 
         """
         logger.info('Post process...')
+
         [artifact.close() for artifact in self.artifacts]
         if 'uploader' in self.enabled_modules:
             update_job_data = {
@@ -275,12 +292,14 @@ class Core(object):
                 'meta': self.config.get_option('uploader', 'meta'),
                 'task': self.config.get_option('uploader', 'task'),
                 'sys_uts_offset': self.sync_points.get('sys_uts_offset', None),
-                'log_uts_offset': self.sync_points.get('sys_uts_offset', None),
+                'log_uts_offset': self.sync_points.get('log_uts_offset', None),
                 'sync_sample': self.sync_points.get('sync_sample', None)
             }
             self.uploader.update_job(update_job_data)
             if self.uploader.jobno:
                 logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
+                self.__test_id_link_to_jobno(self.uploader.jobno)
+            self.uploader.close()
         logger.info('Finished!')
 
     def get_current_test_info(self, per_module=False, session_id=None):
@@ -300,7 +319,30 @@ class Core(object):
                             jobno=self.uploader.jobno
                         )
                         response['api_jobno'] = "{jobno}".format(jobno=self.uploader.jobno)
+                        response['uploader_sender_alive'] = self.uploader.worker.isAlive()
                 except AttributeError:
                     logger.info('Unable to get per_module %s current test info', per_module, exc_info=True)
                     pass
         return response
+
+    def collect_file(self, filename, keep_original=False):
+        """
+        Move or copy single file to artifacts dir
+        """
+        dest = self.artifacts_dir + '/' + os.path.basename(filename)
+        logger.debug("Collecting file: %s to %s", filename, dest)
+        if not filename or not os.path.exists(filename):
+            logger.warning("File not found to collect: %s", filename)
+            return
+
+        if os.path.exists(dest):
+            # FIXME: find a way to store artifacts anyway
+            logger.warning("File already exists: %s", dest)
+            return
+
+        if keep_original:
+            shutil.copy(filename, self.artifacts_dir)
+        else:
+            shutil.move(filename, self.artifacts_dir)
+
+        os.chmod(dest, 0o644)

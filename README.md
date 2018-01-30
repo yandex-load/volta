@@ -240,7 +240,7 @@ To install apps on iPhone and control them you need to use `Apple's Instruments`
 Everithing else is the same as for AndroidPhone class.
 
 Available configuration options:
-* **source** (mandatory) - Apple device id
+* **source** (mandatory) - Apple device ECID. Run `/Applications/Apple\ Configurator\ 2.app/Contents/MacOS/cfgutil list` for getting ECID.
 * **util** - path to Apple Configurator 2. Default: `/Applications/Apple\ Configurator\ 2.app/Contents/MacOS/`
 
 Sample usage:

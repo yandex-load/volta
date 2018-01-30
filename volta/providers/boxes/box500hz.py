@@ -34,7 +34,10 @@ class VoltaBox500Hz(VoltaBox):
         self.baud_rate = config.get_option('volta', 'baud_rate', 115200)
         self.grab_timeout = config.get_option('volta', 'grab_timeout')
         # initialize data source
-        self.source_opener = resource.get_opener(self.source)
+        try:
+            self.source_opener = resource.get_opener(self.source)
+        except:
+            raise RuntimeError('Device %s not found. Please check VoltaBox USB connection', self.source)
         self.source_opener.baud_rate = self.baud_rate
         self.source_opener.read_timeout = self.grab_timeout
         self.data_source = self.source_opener()
