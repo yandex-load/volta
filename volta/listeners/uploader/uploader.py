@@ -25,12 +25,15 @@ def send_chunk(url, data, timeout=10):
         try:
             r = requests.post(url, data=data, verify=False, timeout=timeout)
         except requests.ConnectionError, requests.ConnectTimeout:
-            logger.warning('Failed retrying sending data. Dropped', exc_info=True)
+            logger.warning('Failed retrying sending data. Dropped')
+            logger.debug('Failed retring sending data. Dropped', exc_info=True)
+        else:
+            return r
     else:
         if r.status_code != 200:
             logger.warning('Request w/ bad status code: %s. Error message:\n%s. Data: %s',
                            r.status_code, r.text, data)
-    return r
+        return r
 
 
 class DataUploader(DataListener):
