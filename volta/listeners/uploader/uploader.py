@@ -15,6 +15,24 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 logger = logging.getLogger(__name__)
 
 
+def send_chunk(url, data, timeout=10):
+    """ TODO: add more stable and flexible retries """
+    try:
+        r = requests.post(url, data=data, verify=False, timeout=timeout)
+    except requests.ConnectionError, requests.ConnectTimeout:
+        logger.debug('Connection error, retrying in 1 sec...', exc_info=True)
+        time.sleep(1)
+        try:
+            r = requests.post(url, data=data, verify=False, timeout=timeout)
+        except requests.ConnectionError, requests.ConnectTimeout:
+            logger.warning('Failed retrying sending data. Dropped', exc_info=True)
+    else:
+        if r.status_code != 200:
+            logger.warning('Request w/ bad status code: %s. Error message:\n%s. Data: %s',
+                           r.status_code, r.text, data)
+    return r
+
+
 class DataUploader(DataListener):
     """ Uploads data to Clickhouse
     have non-interface private method __upload_meta() for meta information upload
@@ -66,7 +84,7 @@ class DataUploader(DataListener):
             'component': self.config.get_option('uploader', 'component')
         }
         url = "{url}{path}".format(url=self.hostname, path=self.create_job_url)
-        req = requests.post(url, data=data, verify=False)
+        req = send_chunk(url, data)
         logger.debug('Lunapark create job status: %s', req.status_code)
         logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
         req.raise_for_status()
@@ -90,7 +108,7 @@ class DataUploader(DataListener):
 
     def update_job(self, data):
         url = "{url}{path}".format(url=self.hostname, path=self.update_job_url)
-        req = requests.post(url, data=data, verify=False)
+        req = send_chunk(url, data)
         logger.debug('Lunapark update job status: %s', req.status_code)
         logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
         req.raise_for_status()
@@ -145,7 +163,7 @@ class WorkerThread(threading.Thread):
                     query="INSERT INTO {table} FORMAT TSV".format(
                         table=self.uploader.data_types_to_tables[type_])
                 )
-                self.__send_chunk(url, prepared_body)
+                send_chunk(url, prepared_body)
 
     def __prepare_batch_of_chunks(self, q_data):
         pending_data = {}
@@ -154,38 +172,24 @@ class WorkerThread(threading.Thread):
         for data, type_ in q_data:
             if data.empty:
                 continue
-            if type_ in self.uploader.data_types_to_tables:
-                data.loc[:, ('key_date')] = self.uploader.key_date
-                data.loc[:, ('test_id')] = self.uploader.test_id
-                data = data.to_csv(
-                    sep='\t',
-                    header=False,
-                    index=False,
-                    na_rep="",
-                    columns=self.uploader.clickhouse_output_fmt.get(type_, [])
-                )
-                pending_data[type_].append(data)
-            else:
-                logger.warning('Unknown data type for DataUplaoder, dropped: %s', exc_info=True)
-        return pending_data
-
-    def __send_chunk(self, url, data, timeout=10):
-        """ TODO: add more stable and flexible retries """
-        try:
-            r = requests.post(url, data=data, verify=False, timeout=timeout)
-        except requests.ConnectionError, requests.ConnectTimeout:
-            logger.debug('Connection error, retrying in 1 sec...', exc_info=True)
-            time.sleep(1)
             try:
-                r = requests.post(url, data=data, verify=False, timeout=timeout)
+                if type_ in self.uploader.data_types_to_tables:
+                    data.loc[:, ('key_date')] = self.uploader.key_date
+                    data.loc[:, ('test_id')] = self.uploader.test_id
+                    data = data.to_csv(
+                        sep='\t',
+                        header=False,
+                        index=False,
+                        na_rep="",
+                        columns=self.uploader.clickhouse_output_fmt.get(type_, [])
+                    )
+                    pending_data[type_].append(data)
+                else:
+                    logger.warning('Unknown data type for DataUplaoder, dropped: %s', exc_info=True)
             except:
-                logger.warning('Failed retrying sending data. Dropped', exc_info=True)
-        else:
-            if r.status_code != 200:
-                logger.warning('Request w/ bad status code: %s. Error message:\n%s. Data: %s',
-                               r.status_code, r.text, data
-                               )
-            r.raise_for_status()
+                logger.warning('Failed to format data for uploader of type %s.', type_)
+                logger.debug('Failed to format data of type %s.', type_, exc_info=True)
+        return pending_data
 
     def is_finished(self):
         return self._finished
