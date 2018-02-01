@@ -88,17 +88,20 @@ class DataUploader(DataListener):
         }
         url = "{url}{path}".format(url=self.hostname, path=self.create_job_url)
         req = send_chunk(url, data)
-        logger.debug('Lunapark create job status: %s', req.status_code)
-        logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
-        req.raise_for_status()
+        if req:
+            logger.debug('Lunapark create job status: %s', req.status_code)
+            logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
+            req.raise_for_status()
 
-        if req.json()['success'] == False:
-            raise RuntimeError('Lunapark id not created: %s' % req.json()['error'])
+            if req.json()['success'] == False:
+                raise RuntimeError('Lunapark id not created: %s' % req.json()['error'])
+            else:
+                self.jobno = req.json()['jobno']
+                logger.info('Lunapark test id: %s', self.jobno)
+                logger.info('Report url: %s/mobile/%s', self.hostname, self.jobno)
+                self.dump_jobno_to_file()
         else:
-            self.jobno = req.json()['jobno']
-            logger.info('Lunapark test id: %s', self.jobno)
-            logger.info('Report url: %s/mobile/%s', self.hostname, self.jobno)
-            self.dump_jobno_to_file()
+            raise RuntimeError('Failed to create Lunapark test_id, is there a connection to Lunapark?')
 
     def dump_jobno_to_file(self):
         try:
@@ -112,10 +115,10 @@ class DataUploader(DataListener):
     def update_job(self, data):
         url = "{url}{path}".format(url=self.hostname, path=self.update_job_url)
         req = send_chunk(url, data)
-        logger.debug('Lunapark update job status: %s', req.status_code)
-        logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
-        req.raise_for_status()
-        return
+        if req:
+            logger.debug('Lunapark update job status: %s', req.status_code)
+            logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
+            req.raise_for_status()
 
     def get_info(self):
         """ mock """
