@@ -1,10 +1,11 @@
+from __future__ import absolute_import
 import logging
 import requests
 import queue as q
 import threading
 import time
 
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 from volta.common.interfaces import DataListener
 from volta.common.util import get_nowait_from_queue
 
@@ -19,12 +20,14 @@ def send_chunk(url, data, timeout=10):
     """ TODO: add more stable and flexible retries """
     try:
         r = requests.post(url, data=data, verify=False, timeout=timeout)
-    except requests.ConnectionError, requests.ConnectTimeout:
+    except requests.ConnectionError as xxx_todo_changeme1:
+        requests.ConnectTimeout = xxx_todo_changeme1
         logger.debug('Connection error, retrying in 1 sec...', exc_info=True)
         time.sleep(1)
         try:
             r = requests.post(url, data=data, verify=False, timeout=timeout)
-        except requests.ConnectionError, requests.ConnectTimeout:
+        except requests.ConnectionError as xxx_todo_changeme:
+            requests.ConnectTimeout = xxx_todo_changeme
             logger.warning('Failed retrying sending data. Dropped')
             logger.debug('Failed retring sending data. Dropped', exc_info=True)
         else:

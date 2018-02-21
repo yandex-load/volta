@@ -1,10 +1,12 @@
 from __future__ import print_function
+from __future__ import absolute_import
 import serial
 import sys
 import json
 import argparse
 import progressbar
 import logging
+from six.moves import range
 
 logger = logging.getLogger(__name__)
 

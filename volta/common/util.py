@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import threading
 import pandas as pd
 import numpy as np
@@ -8,6 +9,8 @@ import os
 import shlex
 import time
 import datetime
+import six
+from six.moves import range
 
 
 logger = logging.getLogger(__name__)
@@ -108,7 +111,7 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
     stdout = ""
     stderr = ""
 
-    if not shell and isinstance(cmd, basestring):
+    if not shell and isinstance(cmd, six.string_types):
         cmd = shlex.split(cmd)
 
     if catch_out:

@@ -1,7 +1,8 @@
 """ Binary Volta box
 """
+from __future__ import absolute_import
 import logging
-import Queue as queue
+import six.moves.queue as queue
 import time
 import numpy as np
 import json
@@ -9,6 +10,7 @@ import json
 from volta.common.interfaces import VoltaBox
 from volta.common.util import Drain, TimeChopper, string_to_np
 from volta.common.resource import manager as resource
+from six.moves import range
 
 logger = logging.getLogger(__name__)
 

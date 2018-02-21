@@ -1,5 +1,6 @@
 """ 500Hz Volta Box
 """
+from __future__ import absolute_import
 import logging
 import queue as q
 import time
@@ -7,6 +8,7 @@ import time
 from volta.common.interfaces import VoltaBox
 from volta.common.util import Drain, TimeChopper, string_to_np
 from volta.common.resource import manager as resource
+from six.moves import range
 
 
 logger = logging.getLogger(__name__)

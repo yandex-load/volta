@@ -1,5 +1,6 @@
 """ Android phone worker
 """
+from __future__ import absolute_import
 import logging
 import re
 import queue as q

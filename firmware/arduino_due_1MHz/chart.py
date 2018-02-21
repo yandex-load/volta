@@ -2,6 +2,7 @@
 
 # from http://forum.arduino.cc/index.php?topic=137635.msg1270996#msg1270996
 
+from __future__ import absolute_import
 import pyqtgraph as pg
 import time, threading, sys
 import serial

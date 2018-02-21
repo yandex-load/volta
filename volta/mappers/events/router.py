@@ -1,5 +1,6 @@
 """ Events router - phone custom messsage parser and router
 """
+from __future__ import absolute_import
 import queue as q
 import logging
 import re

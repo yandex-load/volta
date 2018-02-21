@@ -1,5 +1,6 @@
 """ iPhone phone worker
 """
+from __future__ import absolute_import
 import logging
 import queue as q
 import re

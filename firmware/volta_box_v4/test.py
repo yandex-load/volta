@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from volta.common.resource import SerialOpener
 from volta.providers.boxes.box_binary import BoxBinaryReader
 

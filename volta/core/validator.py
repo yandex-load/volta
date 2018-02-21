@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import yaml
 import imp
 import pkg_resources
@@ -8,6 +9,7 @@ import os
 import logging
 import pwd
 from cerberus import Validator
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +73,7 @@ class VoltaConfig(object):
 
     def get_enabled_sections(self):
         return [
-            section_name for section_name, section_config in self.__raw_config_dict.iteritems()
+            section_name for section_name, section_config in six.iteritems(self.__raw_config_dict)
             if section_config.get('enabled', False)
         ]
 

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import tornado.web
 import tornado.ioloop
 import logging
@@ -6,6 +7,7 @@ import datetime
 import os
 import multiprocessing
 import errno
+from six.moves import range
 
 DEFAULT_HEARTBEAT_TIMEOUT = 600
 
@@ -104,7 +106,7 @@ class StopHandler(APIHandler):  # pylint: disable=R0904
         except KeyError:
             self.reply_reason(404, 'No session with this ID.')
             return
-        if session_id in self.srv.running_sessions.keys():
+        if session_id in list(self.srv.running_sessions.keys()):
             self.srv.cmd({'cmd': 'stop', 'session': session_id})
             self.reply_reason(200, 'Will try to stop test process.')
             return
@@ -218,7 +220,7 @@ class ApiServer(object):
         if not offered_id:
             offered_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         # This should use one or two attempts in typical cases
-        for n_attempt in xrange(10000000000):
+        for n_attempt in range(10000000000):
             session_id = "%s_%010d" % (offered_id, n_attempt)
             session_dir = self.session_dir(session_id)
             try:
