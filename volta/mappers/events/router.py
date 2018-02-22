@@ -7,7 +7,7 @@ import threading
 import time
 import numpy as np
 
-from volta.common.util import get_nowait_from_queue
+from netort.data_processing import get_nowait_from_queue
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +55,9 @@ class EventsRouter(threading.Thread):
                 if item is not None:
                     try:
                         self.__route_data(item)
-                    except:
+                    except Exception:
                         logger.warn('Failed to route/parse event!', exc_info=True)
+            time.sleep(0.5)
         logger.info('Events processing got interrupt signal...')
         logger.info('Post-routing pending events... qsize: %s', self.source.qsize())
         data = get_nowait_from_queue(self.source)
@@ -67,7 +68,7 @@ class EventsRouter(threading.Thread):
             if item is not None:
                 try:
                     self.__route_data(item)
-                except:
+                except Exception:
                     logger.warn('Failed to route/parse event!', exc_info=True)
         logger.info('Finished routing events!')
         self._finished.set()
@@ -93,7 +94,6 @@ class EventsRouter(threading.Thread):
             else:
                 logger.warning('Unknown event type! %s. Message: %s', type, data, exc_info=True)
 
-
     def __parse_event(self, row):
         """
         Parse event entry and modify
@@ -102,9 +102,8 @@ class EventsRouter(threading.Thread):
         try:
             if row.message != '':
                 match = re_.match(row.message)
-        except:
+        except Exception:
             logger.debug('Unknown error in message parse: %s', exc_info=True)
-            pass
         if match:
             row["app"] = 'testapp'
             try:
@@ -117,7 +116,7 @@ class EventsRouter(threading.Thread):
                     row["log_uts"] = 0
                 else:
                     row["log_uts"] = int(log_ts - self.log_uts_start)
-            except:
+            except Exception:
                 logger.warning('Trash logtimestamp found: %s', row)
             row["type"] = match.group('type')
             row["tag"] = match.group('tag')

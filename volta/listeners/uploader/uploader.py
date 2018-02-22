@@ -6,7 +6,8 @@ import time
 
 from urlparse import urlparse
 from volta.common.interfaces import DataListener
-from volta.common.util import get_nowait_from_queue
+
+from netort.data_processing import get_nowait_from_queue
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -19,14 +20,14 @@ def send_chunk(url, data, timeout=10):
     """ TODO: add more stable and flexible retries """
     try:
         r = requests.post(url, data=data, verify=False, timeout=timeout)
-    except requests.ConnectionError, requests.ConnectTimeout:
+    except (requests.ConnectionError, requests.ConnectTimeout):
         logger.debug('Connection error, retrying in 1 sec...', exc_info=True)
         time.sleep(1)
         try:
             r = requests.post(url, data=data, verify=False, timeout=timeout)
-        except requests.ConnectionError, requests.ConnectTimeout:
+        except (requests.ConnectionError, requests.ConnectTimeout):
             logger.warning('Failed retrying sending data. Dropped')
-            logger.debug('Failed retring sending data. Dropped', exc_info=True)
+            logger.debug('Failed retrying sending data. Dropped', exc_info=True)
         else:
             return r
     else:
@@ -44,7 +45,6 @@ class DataUploader(DataListener):
 
     def __init__(self, config):
         super(DataUploader, self).__init__(config)
-        self.config = config
         self.addr = self.config.get_option('uploader', 'address')
         self.hostname = urlparse(self.addr).scheme+'://'+urlparse(self.addr).netloc
         self.task = self.config.get_option('uploader', 'task')
@@ -74,8 +74,8 @@ class DataUploader(DataListener):
         self.worker = WorkerThread(self)
         self.worker.start()
 
-    def put(self, data, type):
-        self.inner_queue.put((data, type))
+    def put(self, data, type_):
+        self.inner_queue.put((data, type_))
 
     def create_job(self):
         data = {
@@ -93,7 +93,7 @@ class DataUploader(DataListener):
             logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
             req.raise_for_status()
 
-            if req.json()['success'] == False:
+            if not req.json()['success']:
                 raise RuntimeError('Lunapark id not created: %s' % req.json()['error'])
             else:
                 self.jobno = req.json()['jobno']
@@ -109,7 +109,7 @@ class DataUploader(DataListener):
                 jobnofile.write(
                     "{path}/mobile/{jobno}".format(path=self.hostname, jobno=self.jobno)
                 )
-        except Exception:
+        except IOError:
             logger.error('Failed to dump jobno to file: %s', self.JOBNO_FNAME, exc_info=True)
 
     def update_job(self, data):
@@ -151,6 +151,7 @@ class WorkerThread(threading.Thread):
     def run(self):
         while not self._interrupted.is_set():
             self.__get_from_queue_prepare_and_send()
+            time.sleep(0.5)
         logger.info('Uploader thread main loop interrupted, '
                     'finishing work and trying to send the rest of data, qsize: %s',
                     self.uploader.inner_queue.qsize())
@@ -192,9 +193,9 @@ class WorkerThread(threading.Thread):
                     pending_data[type_].append(data)
                 else:
                     logger.warning('Unknown data type for DataUplaoder, dropped: %s', exc_info=True)
-            except:
+            except Exception:
                 logger.warning('Failed to format data for uploader of type %s.', type_)
-                logger.debug('Failed to format data of type %s.', type_, exc_info=True)
+                logger.debug('Failed to format data of type %s.\n data: %s', type_, data, exc_info=True)
         return pending_data
 
     def is_finished(self):

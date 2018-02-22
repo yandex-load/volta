@@ -67,31 +67,29 @@ class SyncFinder(DataListener):
         logger.debug('Cross correlation: %s', cc)
 
         # [sample_offset] volta sample <-> first sync event
-        volta_to_sync_offset_sample = np.argmax(cc)
-        logger.debug('[sample_offset] volta sample <-> first sync event: %s', volta_to_sync_offset_sample)
+        first_sync_offset_sample = np.argmax(cc)
+        logger.debug('[sample_offset] volta sample <-> first sync event: %s', first_sync_offset_sample)
 
         # [uts_offset] volta uts <-> first sync event
-        volta_to_sync_offset_uts = self.volta_sync_stage_df.iloc[volta_to_sync_offset_sample]['uts']
-        logger.debug('[uts_offset] volta uts <-> first sync event: %s', volta_to_sync_offset_uts)
+        sync_offset = self.volta_sync_stage_df.iloc[first_sync_offset_sample]['uts']
+        logger.debug('[uts_offset] volta uts <-> first sync event: %s', sync_offset)
 
-        sync = {}
-        # [uts_offset] volta uts <-> phone system uts
-        sync['sys_uts_offset'] = int(
-            volta_to_sync_offset_uts - self.sync_df[self.sync_df.message > 0].iloc[0]['sys_uts']
-        )
-        # [uts_offset] volta uts <-> phone log uts
-        sync['log_uts_offset'] = int(
-            volta_to_sync_offset_uts - self.sync_df[self.sync_df.message > 0].iloc[0]["log_uts"]
-        )
-        sync['sync_sample'] = volta_to_sync_offset_sample
-        logger.info('Sync results: %s', sync)
-        return sync
+        return {
+            # [uts_offset] volta uts <-> phone system uts
+            'sys_uts_offset':  int(
+                sync_offset - self.sync_df[self.sync_df.message > 0].iloc[0]['sys_uts']
+            ),
+            # [uts_offset] volta uts <-> phone log uts
+            'log_uts_offset': int(
+                sync_offset - self.sync_df[self.sync_df.message > 0].iloc[0]["log_uts"]
+            ),
+            'sync_sample': first_sync_offset_sample
+        }
 
     def __prepare_sync_df(self):
         """ Reset idx, drop excessive sync data, map sync events and make offset """
         # map messages
         self.sync_df.loc[:, ('message')] = self.sync_df.message.map({'rise': 1, 'fall': 0})
-
         self.sync_df.reset_index(inplace=True)
 
         # drop sync events after search interval - we don't need this
@@ -103,9 +101,9 @@ class SyncFinder(DataListener):
                 (x - self.sync_df['sys_uts'][0])
             ) * self.sample_rate // 10**6
         )
-        return
 
-    def ref_signal(self, sync):
+    @staticmethod
+    def ref_signal(sync):
         """ Generate square reference signal """
         logger.info("Generating ref signal...")
         if len(sync) == 0:
@@ -115,7 +113,14 @@ class SyncFinder(DataListener):
         rs = f(X)
         return rs - np.mean(rs)
 
-    def cross_correlate(self, sig, ref, first=30000):
+    @staticmethod
+    def cross_correlate(sig, ref, first=30000):
         """ Calculate cross-correlation with lag. Take only first n lags """
         logger.info("Calculating cross-correlation...")
         return signal.fftconvolve(sig[:first], ref[::-1], mode="valid")
+
+    def close(self):
+        return
+
+    def get_info(self):
+        return

@@ -5,9 +5,10 @@ import queue as q
 import time
 
 from volta.common.interfaces import VoltaBox
-from volta.common.util import Drain, TimeChopper, string_to_np
-from volta.common.resource import manager as resource
+from volta.common.util import TimeChopper, string_to_np
 
+from netort.data_processing import Drain
+from netort.resource import manager as resource
 
 logger = logging.getLogger(__name__)
 

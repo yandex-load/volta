@@ -30,17 +30,17 @@ class ConsoleListener(DataListener):
         """ mock """
         pass
 
-    def put(self, df, type):
+    def put(self, df, type_):
         """ Process data
 
         Args:
-            data (pandas.DataFrame): dfs w/ data contents,
+            df (pandas.DataFrame): dfs w/ data contents,
                 differs for each data type.
                 Should be processed differently from each other
-            type (string): dataframe type
+            type_ (string): dataframe type
         """
         if not self.closed:
-            logger.info("Data type: %s", type)
+            logger.info("Data type: %s", type_)
             logger.info("\n%s\n", df.describe())
 
     def close(self):

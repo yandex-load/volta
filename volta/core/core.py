@@ -4,8 +4,9 @@ import time
 import os
 import shutil
 
+from netort.data_processing import Tee
+
 from volta.core.validator import VoltaConfig
-from volta.common.util import Tee
 from volta.providers import boxes
 from volta.providers import phones
 from volta.listeners.sync.sync import SyncFinder
@@ -192,11 +193,17 @@ class Core(object):
 
     def add_artifact_file(self, filename):
         if filename:
-            logger.debug('Adding %s to artifacts', filename)
+            logger.debug('Adding %s to artifacts', filename.fname)
             self.artifacts.append(filename)
 
     def configure(self):
         """ Configures modules and prepare modules for test """
+        if 'uploader' in self.enabled_modules:
+            self.uploader.create_job()
+            for type_, fname in self.event_fnames.items():
+                self.event_listeners[type_].append(self.uploader)
+            self.grabber_listeners.append(self.uploader)
+
         if 'phone' in self.enabled_modules:
             self.phone.prepare()
 
@@ -204,12 +211,6 @@ class Core(object):
             self.sync.sample_rate = self.volta.sample_rate
             self.grabber_listeners.append(self.sync)
             self.event_listeners['sync'].append(self.sync)
-
-        if 'uploader' in self.enabled_modules:
-            for type_, fname in self.event_fnames.items():
-                self.event_listeners[type_].append(self.uploader)
-            self.grabber_listeners.append(self.uploader)
-            self.uploader.create_job()
 
         if 'console' in self.enabled_modules:
             for type_, fname in self.event_fnames.items():
@@ -266,8 +267,9 @@ class Core(object):
             self.process_currents.join()
         if 'phone' in self.enabled_modules:
             self.phone.end()
-            self.events_parser.close()
-            self.events_parser.join()
+            if self.events_parser:
+                self.events_parser.close()
+                self.events_parser.join()
 
     def post_process(self):
         """

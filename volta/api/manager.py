@@ -36,7 +36,7 @@ class TestRunner(object):
         # Create load.ini
         logger.info("Saving test config to %s", load_ini_path)
         try:
-            with open(load_ini_path,'w') as test_config_file:
+            with open(load_ini_path, 'w') as test_config_file:
                 test_config_file.write(test_config)
         except:
             logger.info('Failed to write config file to %s', load_ini_path, exc_info=True)

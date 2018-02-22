@@ -40,30 +40,27 @@ class FileListener(DataListener):
         """ Process data
 
         Args:
-            data (pandas.DataFrame): dfs w/ data contents,
+            df (pandas.DataFrame): dfs w/ data contents,
                 differs for each data type.
                 Should be processed differently from each other
             type_ (string): dataframe type
         """
-        try:
-            if not self.closed:
-                if self.init_header:
-                    types = df.dtypes.apply(lambda x: x.name).to_dict()
-                    header = json.dumps({'type': type_, 'names': self.file_output_fmt.get(type_), 'dtypes': types})
-                    self.fname.write(header)
-                    self.fname.write('\n')
-                    self.init_header = False
-                data = df.to_csv(
-                    sep=self.output_separator,
-                    header=False,
-                    index=False,
-                    columns=self.file_output_fmt.get(type_, [])
-                )
-                self.fname.write(data)
-                self.fname.flush()
-        except Exception:
-            logger.warning('Unable to write data')
-            logger.debug('Unable to write data', exc_info=True)
+        if self.init_header:
+            types = df.dtypes.apply(lambda x: x.name).to_dict()
+            header = json.dumps({'type': type_, 'names': self.file_output_fmt.get(type_), 'dtypes': types})
+            self.fname.write(header)
+            self.fname.write('\n')
+            self.init_header = False
+
+        if not self.closed:
+            data = df.to_csv(
+                sep=self.output_separator,
+                header=False,
+                index=False,
+                columns=self.file_output_fmt.get(type_, [])
+            )
+            self.fname.write(data)
+            self.fname.flush()
 
     def get_info(self):
         """ mock """

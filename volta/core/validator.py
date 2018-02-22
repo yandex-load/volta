@@ -59,14 +59,9 @@ class VoltaConfig(object):
         self.__raw_config_dict = config
         self.with_dynamic_options = with_dynamic_options
 
-    def get_option(self, section, option, default=None):
-        try:
-            self.validated[section][option]
-        except KeyError:
-            if default:
-                return default
-            else:
-                raise KeyError()
+    def get_option(self, section, option, default=False):
+        if default:
+            return default
         return self.validated[section][option]
 
     def get_enabled_sections(self):
@@ -89,12 +84,7 @@ class VoltaConfig(object):
             yaml.dump(self.validated, f)
 
     def __validate(self):
-        core_validated = self.__validate_core()
-        errors = {}
-        if len(errors) > 0:
-            raise ValidationError(dict(errors))
-
-        return core_validated
+        return self.__validate_core()
 
     def __validate_core(self):
         v = Validator(self.BASE_SCHEMA)

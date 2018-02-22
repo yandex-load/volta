@@ -5,7 +5,7 @@ class VoltaBox(object):
         Args:
             config (VoltaConfig): module configuration data
         """
-        pass
+        self.config = config
 
     def start_test(self, results):
         """ Grab stage - starts grabber thread and puts data to results queue
@@ -27,7 +27,7 @@ class Phone(object):
     """ Phone interface - parent class for phones """
     def __init__(self, config):
         """ Configure phone module """
-        pass
+        self.config = config
 
     def prepare(self):
         """ Phone preparements stage: install apps etc """
@@ -57,9 +57,9 @@ class DataListener(object):
     """
 
     def __init__(self, config):
-        pass
+        self.config = config
 
-    def put(self, data, type):
+    def put(self, data, type_):
         """ Process data """
         raise NotImplementedError("Abstract method needs to be overridden")
 

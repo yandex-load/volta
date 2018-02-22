@@ -65,11 +65,13 @@ class RunHandler(APIHandler):
             return
 
         try:
-            cfg_data = self.get_body_argument("config")
+            cfg_data = self.request.body
+            # cfg_data = self.get_body_argument("config")
         except:
             self.reply_reason(
-                500, "Config MUST be specified by 'config' body argument"
+                500, "Config MUST be specified"
             )
+            logger.warning('Failed to get config', exc_info=True)
             return
         logger.debug('Received config: %s. Starting test', cfg_data)
         try:

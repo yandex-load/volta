@@ -95,7 +95,7 @@ def main():
     with open(args.config, 'r') as cfg_stream:
         try:
             cfg_dict = yaml.safe_load(cfg_stream)
-        except:
+        except Exception:
             logger.debug('Config file format not yaml or json...', exc_info=True)
             raise RuntimeError('Unknown config file format. Malformed?')
 
@@ -107,12 +107,13 @@ def main():
         core.start_test()
 
         while True:
-            time.sleep(1) # infinite loop until SIGTERM
+            time.sleep(1)  # infinite loop until SIGTERM
 
     except KeyboardInterrupt:
-        logger.info('Keyboard interrupt, trying graceful shutdown. Do not press interrupt again...')
+        logger.info('Keyboard interrupt, trying graceful shutdown. Do not press interrupt again, '
+                    'otherwise test might be broken')
         core.end_test()
-    except:
+    except Exception:
         logger.error('Uncaught exception in core\n', exc_info=True)
     finally:
         core.post_process()

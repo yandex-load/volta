@@ -8,9 +8,10 @@ import time
 import pkg_resources
 
 from volta.common.interfaces import Phone
-from volta.common.util import execute, Drain, popen, LogReader, PhoneTestPerformer
-from volta.common.resource import manager as resource
+from volta.common.util import execute, popen, LogReader
 
+from netort.data_processing import Drain
+from netort.resource import manager as resource
 
 logger = logging.getLogger(__name__)
 
