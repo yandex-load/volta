@@ -12,7 +12,7 @@ Simply put config into a POST body.
 
 Start test sample:
 ```bash
-curl 'http://localhost:9998/api/v1/run/' --data 'config={"volta":{"source":"/dev/cu.wchusbserial1420","type":"500hz","enabled":True}, "uploader": {"enabled": True, "task":"LOAD-272"},"phone":{"source":"1f434a75","type":"android","enabled":True}}' -v
+curl 'http://localhost:9998/api/v1/run' --data 'config={"volta":{"source":"/dev/cu.wchusbserial1420","type":"500hz","enabled":True}, "uploader": {"enabled": True, "task":"LOAD-272"},"phone":{"source":"1f434a75","type":"android","enabled":True}}' -v
 ```
 
 Stop test sample:
