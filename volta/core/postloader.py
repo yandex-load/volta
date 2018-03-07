@@ -39,18 +39,20 @@ def main():
 
     uploader = DataUploader(config)
     uploader.create_job()
+
     for log in args.logs:
         try:
             with open(log, 'r') as logname:
                 meta = json.loads(logname.readline())
-        except:
-            raise RuntimeError('There is no json header in logfile or json malformed')
+        except Exception:
+            logger.warning('Skipped data file: no json header in logfile %s or json malformed...', log)
+            logger.debug('Skipped data file: no json header in logfile %s or json malformed', log, exc_info=True)
+            continue
         else:
             df = pd.read_csv(log, sep='\t', skiprows=1, names=meta['names'], dtype=meta['dtypes'])
 
-        logger.info('Uploading %s', log)
-        logger.info('Meta type: %s', meta['type'])
-        logger.info('New created for this log: %s', uploader.jobno)
+        logger.info('Uploading %s, meta type: %s', log, meta['type'])
+
         uploader.put(df, meta['type'])
     uploader.close()
     logger.info('Done!')
