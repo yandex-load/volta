@@ -25,7 +25,7 @@ yandex package for mobile energy consumption measurements
         'pyyaml',
         'cerberus',
         'future',
-        'netort>=0.0.7'
+        'netort>=0.0.11'
     ],
     setup_requires=[
         'pytest-runner',
