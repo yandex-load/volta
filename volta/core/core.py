@@ -270,8 +270,12 @@ class Core(object):
         logger.info('Finishing test...')
         if 'volta' in self.enabled_modules:
             self.volta.end_test()
-            self.process_currents.close()
-            self.process_currents.join()
+            try:
+                self.process_currents.close()
+            except AttributeError:
+                logger.warn('Core has no process currents thread. Seems like VoltaBox initialization failed')
+            else:
+                self.process_currents.join()
         if 'phone' in self.enabled_modules:
             self.phone.end()
             if self.events_parser:
