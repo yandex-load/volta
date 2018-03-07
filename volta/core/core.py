@@ -3,6 +3,7 @@ import queue as q
 import time
 import os
 import shutil
+import pkg_resources
 
 from netort.data_processing import Tee
 from netort.validated_config import ValidatedConfig as VoltaConfig
@@ -102,6 +103,10 @@ class Core(object):
         Args:
             config (dict): core configuration dict
         """
+        try:
+            logger.info('Running Volta==%s', pkg_resources.get_distribution("volta").version)
+        except AttributeError:
+            pass
         self.config = VoltaConfig(config, DYNAMIC_OPTIONS, self.PACKAGE_SCHEMA_PATH)
         self.enabled_modules = self.config.get_enabled_sections()
         self.test_id = self.config.get_option(self.SECTION, 'test_id')

@@ -101,7 +101,11 @@ class VoltaBoxBinary(VoltaBox):
         logger.debug('Waiting grabber thread finish...')
 
     def end_test(self):
-        self.reader.close()
+        try:
+            self.reader.close()
+        except AttributeError:
+            logger.warn('VoltaBox has no Reader. Seems like VoltaBox initialization failed')
+            logger.debug('VoltaBox has no Reader. Seems like VoltaBox initialization failed', exc_info=True)
         self.pipeline.close()
         self.pipeline.join(10)
         self.data_source.close()
