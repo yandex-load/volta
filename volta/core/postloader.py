@@ -37,6 +37,8 @@ def main():
         except Exception:
             raise RuntimeError('Config file not in yaml or malformed')
 
+    uploader = DataUploader(config)
+    uploader.create_job()
     for log in args.logs:
         try:
             with open(log, 'r') as logname:
@@ -47,10 +49,8 @@ def main():
             df = pd.read_csv(log, sep='\t', skiprows=1, names=meta['names'], dtype=meta['dtypes'])
 
         logger.info('Uploading %s', log)
-        uploader = DataUploader(config)
         logger.info('Meta type: %s', meta['type'])
-        uploader.create_job()
         logger.info('New created for this log: %s', uploader.jobno)
         uploader.put(df, meta['type'])
-        uploader.close()
-        logger.info('Done!')
+    uploader.close()
+    logger.info('Done!')
