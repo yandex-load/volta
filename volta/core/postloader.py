@@ -4,6 +4,7 @@ import json
 import yaml
 
 from volta.listeners.uploader.uploader import DataUploader
+from volta.core.core import VoltaConfig
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +28,12 @@ def main():
     else:
         with open(args.config, 'r') as cfg_stream:
             try:
-                config = yaml.load(cfg_stream)
-            except:
-                raise RuntimeError('Config file not in yaml or malformed')
+                config = VoltaConfig(
+                    yaml.load(cfg_stream)
+                )
 
+            except Exception:
+                raise RuntimeError('Config file not in yaml or malformed')
 
     if not args.logs:
         raise RuntimeError('Empty log list')

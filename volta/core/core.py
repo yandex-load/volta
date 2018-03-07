@@ -5,8 +5,9 @@ import os
 import shutil
 
 from netort.data_processing import Tee
+from netort.validated_config import ValidatedConfig as VoltaConfig
+from config.dynamic_options import DYNAMIC_OPTIONS
 
-from volta.core.validator import VoltaConfig
 from volta.providers import boxes
 from volta.providers import phones
 from volta.listeners.sync.sync import SyncFinder
@@ -93,6 +94,7 @@ class Core(object):
         phone_q (queue.Queue): queue for phone events
     """
     SECTION = 'core'
+    PACKAGE_SCHEMA_PATH = 'volta.core'
 
     def __init__(self, config):
         """ Configures core, parse config
@@ -100,7 +102,7 @@ class Core(object):
         Args:
             config (dict): core configuration dict
         """
-        self.config = VoltaConfig(config)
+        self.config = VoltaConfig(config, DYNAMIC_OPTIONS, self.PACKAGE_SCHEMA_PATH)
         self.enabled_modules = self.config.get_enabled_sections()
         self.test_id = self.config.get_option(self.SECTION, 'test_id')
         logger.info('Local test id: %s', self.test_id)
