@@ -5,6 +5,8 @@ import yaml
 
 from volta.listeners.uploader.uploader import DataUploader
 from volta.core.core import VoltaConfig
+from volta.core.config.dynamic_options import DYNAMIC_OPTIONS
+
 
 logger = logging.getLogger(__name__)
 
@@ -22,21 +24,18 @@ def main():
         format='%(asctime)s [%(levelname)s] [Volta Post-loader] %(filename)s:%(lineno)d %(message)s')
 
     config = {}
+    PACKAGE_SCHEMA_PATH = 'volta.core'
     if not args.config:
-        # TODO switch to defaults
-        config = {'uploader': {'address': 'https://lunapark.test.yandex-team.ru/api/volta'}}
-    else:
-        with open(args.config, 'r') as cfg_stream:
-            try:
-                config = VoltaConfig(
-                    yaml.load(cfg_stream)
-                )
-
-            except Exception:
-                raise RuntimeError('Config file not in yaml or malformed')
+        raise RuntimeError('config should be specified')
 
     if not args.logs:
         raise RuntimeError('Empty log list')
+
+    with open(args.config, 'r') as cfg_stream:
+        try:
+            config = VoltaConfig(yaml.load(cfg_stream), DYNAMIC_OPTIONS, PACKAGE_SCHEMA_PATH)
+        except Exception:
+            raise RuntimeError('Config file not in yaml or malformed')
 
     for log in args.logs:
         try:
@@ -50,6 +49,8 @@ def main():
         logger.info('Uploading %s', log)
         uploader = DataUploader(config)
         logger.info('Meta type: %s', meta['type'])
-        logger.info('New test_id created for this log: %s', uploader.test_id)
+        uploader.create_job()
+        logger.info('New created for this log: %s', uploader.jobno)
         uploader.put(df, meta['type'])
+        uploader.close()
         logger.info('Done!')

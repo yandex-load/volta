@@ -6,8 +6,8 @@ import shutil
 
 from netort.data_processing import Tee
 from netort.validated_config import ValidatedConfig as VoltaConfig
-from config.dynamic_options import DYNAMIC_OPTIONS
 
+from volta.core.config.dynamic_options import DYNAMIC_OPTIONS
 from volta.providers import boxes
 from volta.providers import phones
 from volta.listeners.sync.sync import SyncFinder
