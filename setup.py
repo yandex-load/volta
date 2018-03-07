@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='volta',
-    version='0.4.9',
+    version='0.5.0',
     description='yandex package for mobile energy consumption measurements',
     longer_description='''
 yandex package for mobile energy consumption measurements
