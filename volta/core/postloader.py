@@ -44,7 +44,7 @@ def main():
         try:
             with open(log, 'r') as logname:
                 meta = json.loads(logname.readline())
-        except Exception:
+        except ValueError:
             logger.warning('Skipped data file: no json header in logfile %s or json malformed...', log)
             logger.debug('Skipped data file: no json header in logfile %s or json malformed', log, exc_info=True)
             continue
@@ -54,5 +54,25 @@ def main():
         logger.info('Uploading %s, meta type: %s', log, meta['type'])
 
         uploader.put(df, meta['type'])
+
+    logger.info('Updating job metadata...')
+    try:
+        update_job_data = {
+            'test_id': config.get_option('core', 'test_id'),
+            'name': config.get_option('uploader', 'name'),
+            'dsc': config.get_option('uploader', 'dsc'),
+            'device_id': config.get_option('uploader', 'device_id'),
+            'device_model': config.get_option('uploader', 'device_model'),
+            'device_os': config.get_option('uploader', 'device_os'),
+            'app': config.get_option('uploader', 'app'),
+            'ver': config.get_option('uploader', 'ver'),
+            'meta': config.get_option('uploader', 'meta'),
+            'task': config.get_option('uploader', 'task'),
+        }
+        logger.info(update_job_data)
+        uploader.update_job(update_job_data)
+    except Exception:
+        logger.warning('Exception updating metadata')
+
     uploader.close()
     logger.info('Done!')
