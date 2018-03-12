@@ -69,7 +69,6 @@ def main():
             'meta': config.get_option('uploader', 'meta'),
             'task': config.get_option('uploader', 'task'),
         }
-        logger.info(update_job_data)
         uploader.update_job(update_job_data)
     except Exception:
         logger.warning('Exception updating metadata')

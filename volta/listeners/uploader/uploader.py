@@ -114,8 +114,6 @@ class DataUploader(DataListener):
 
     def update_job(self, data):
         url = "{url}{path}".format(url=self.hostname, path=self.update_job_url)
-        logger.info(url)
-        logger.info(data)
         req = send_chunk(url, data)
         if req:
             logger.debug('Lunapark update job status: %s', req.status_code)
