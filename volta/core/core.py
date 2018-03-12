@@ -304,10 +304,16 @@ class Core(object):
                 'ver': self.config.get_option('uploader', 'ver'),
                 'meta': self.config.get_option('uploader', 'meta'),
                 'task': self.config.get_option('uploader', 'task'),
-                'sys_uts_offset': self.sync_points.get('sys_uts_offset', None),
-                'log_uts_offset': self.sync_points.get('log_uts_offset', None),
-                'sync_sample': self.sync_points.get('sync_sample', None)
             }
+            try:
+                logger.debug('Sync: %s', self.sync_points)
+            except ValueError:
+                logger.warning('Unable to find sync points')
+            else:
+                update_job_data['sys_uts_offset'] = self.sync_points.get('sys_uts_offset', None)
+                update_job_data['log_uts_offset'] = self.sync_points.get('log_uts_offset', None),
+                update_job_data['sync_sample'] = self.sync_points.get('sync_sample', None)
+
             self.uploader.update_job(update_job_data)
             if self.uploader.jobno:
                 logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
