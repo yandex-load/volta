@@ -4,6 +4,9 @@ import queue as q
 import threading
 import time
 
+import random
+
+from retrying import retry
 from urlparse import urlparse
 from volta.common.interfaces import DataListener
 
@@ -15,26 +18,19 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 logger = logging.getLogger(__name__)
 
+RETRY_ARGS = dict(
+    wrap_exception=True,
+    stop_max_delay=10000,
+    wait_fixed=1000,
+    stop_max_attempt_number=5
+)
 
-def send_chunk(url, data, timeout=10):
-    """ TODO: add more stable and flexible retries """
-    try:
-        r = requests.post(url, data=data, verify=False, timeout=timeout)
-    except (requests.ConnectionError, requests.ConnectTimeout):
-        logger.debug('Connection error, retrying in 1 sec...', exc_info=True)
-        time.sleep(1)
-        try:
-            r = requests.post(url, data=data, verify=False, timeout=timeout)
-        except (requests.ConnectionError, requests.ConnectTimeout):
-            logger.warning('Failed retrying sending data. Dropped')
-            logger.debug('Failed retrying sending data. Dropped', exc_info=True)
-        else:
-            return r
-    else:
-        if r.status_code != 200:
-            logger.warning('Request w/ bad status code: %s. Error message:\n%s. Data: %s',
-                           r.status_code, r.text, data)
-        return r
+
+@retry(**RETRY_ARGS)
+def send_chunk(url, data, timeout=5):
+    r = requests.post(url, data=data, verify=False, timeout=timeout)
+    r.raise_for_status()
+    return r
 
 
 class DataUploader(DataListener):
