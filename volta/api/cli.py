@@ -46,6 +46,7 @@ def main():
         core.end_test()
     except Exception:
         logger.error('Uncaught exception in core\n', exc_info=True)
+        core.end_test()
     finally:
         core.post_process()
         core.collect_file(args.log)

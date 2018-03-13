@@ -4,9 +4,7 @@ import queue as q
 import threading
 import time
 
-import random
-
-from retrying import retry
+from retrying import retry, RetryError
 from urlparse import urlparse
 from volta.common.interfaces import DataListener
 
@@ -83,21 +81,23 @@ class DataUploader(DataListener):
             'component': self.config.get_option('uploader', 'component')
         }
         url = "{url}{path}".format(url=self.hostname, path=self.create_job_url)
-        req = send_chunk(url, data)
-        if req:
+        try:
+            req = send_chunk(url, data)
+        except RetryError:
+            logger.warning('Failed to create Lunapark job')
+            logger.debug('Failed to create Lunapark job', exc_info=True)
+            raise RuntimeError('Failed to create Lunapark job')
+        else:
             logger.debug('Lunapark create job status: %s', req.status_code)
             logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
-            req.raise_for_status()
 
-            if not req.json()['success']:
+            if not req.json().get('success'):
                 raise RuntimeError('Lunapark id not created: %s' % req.json()['error'])
             else:
-                self.jobno = req.json()['jobno']
+                self.jobno = req.json().get('jobno')
                 logger.info('Lunapark test id: %s', self.jobno)
                 logger.info('Report url: %s/mobile/%s', self.hostname, self.jobno)
                 self.dump_jobno_to_file()
-        else:
-            raise RuntimeError('Failed to create Lunapark test_id, is there a connection to Lunapark?')
 
     def dump_jobno_to_file(self):
         try:
@@ -110,11 +110,14 @@ class DataUploader(DataListener):
 
     def update_job(self, data):
         url = "{url}{path}".format(url=self.hostname, path=self.update_job_url)
-        req = send_chunk(url, data)
-        if req:
+        try:
+            req = send_chunk(url, data)
+        except RetryError:
+            logger.warning('Failed to update job metadata')
+            logger.debug('Failed to update job metadata', exc_info=True)
+        else:
             logger.debug('Lunapark update job status: %s', req.status_code)
             logger.debug('Req data: %s\nAnsw data: %s', data, req.json())
-            req.raise_for_status()
 
     def get_info(self):
         """ mock """
@@ -166,7 +169,11 @@ class WorkerThread(threading.Thread):
                     query="INSERT INTO {table} FORMAT TSV".format(
                         table=self.uploader.data_types_to_tables[type_])
                 )
-                send_chunk(url, prepared_body)
+                try:
+                    send_chunk(url, prepared_body)
+                except RetryError:
+                    logger.warning('Failed to send chunk via uploader. Dropped')
+                    logger.debug('Failed to send chunk via uploader. Dropped: %s %s', url, prepared_body)
 
     def __prepare_batch_of_chunks(self, q_data):
         pending_data = {}
