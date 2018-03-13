@@ -325,7 +325,7 @@ class Core(object):
                 self.__test_id_link_to_jobno(self.uploader.jobno)
         [module_.close() for module_ in self.enabled_modules]
         logger.info('Finished!')
-        logger.debug('Threads still running...: %s', threading.enumerate())
+        logger.debug('Threads still running: %s', threading.enumerate())
 
     def get_current_test_info(self, per_module=False, session_id=None):
         response = {'jobno': self.test_id, 'session_id': session_id}
