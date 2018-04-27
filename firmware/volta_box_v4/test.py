@@ -1,4 +1,4 @@
-from volta.common.resource import SerialOpener
+from netort.resource import SerialOpener
 from volta.providers.boxes.box_binary import BoxBinaryReader
 
 def main():
