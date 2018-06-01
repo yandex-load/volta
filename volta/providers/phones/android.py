@@ -49,16 +49,18 @@ class AndroidPhone(Phone):
 
     """
 
-    def __init__(self, config):
+    def __init__(self, config, core):
         """
         Args:
             config (VoltaConfig): module configuration data
         """
-        Phone.__init__(self, config)
+        Phone.__init__(self, config, core)
         self.logcat_stdout_reader = None
         self.logcat_stderr_reader = None
+
         # mandatory options
         self.source = config.get_option('phone', 'source')
+
         # lightning app configuration
         self.lightning_apk_path = config.get_option(
             'phone', 'lightning', pkg_resources.resource_filename(
@@ -67,6 +69,7 @@ class AndroidPhone(Phone):
         )
         self.lightning_apk_class = config.get_option('phone', 'lightning_class')
         self.lightning_apk_fname = None
+
         # test app configuration
         self.test_apps = config.get_option('phone', 'test_apps')
         self.test_class = config.get_option('phone', 'test_class')
@@ -85,7 +88,19 @@ class AndroidPhone(Phone):
         self.logcat_pipeline = None
         self.test_performer = None
         self.phone_q = None
+
+        self.my_metrics = {}
+        self.__create_my_metrics()
+
         self.__test_interaction_with_phone()
+
+    def __create_my_metrics(self):
+        self.my_metrics['events'] = self.core.data_session.new_metric(
+            {
+                'type': 'events',
+                'name': 'events',
+            }
+        )
 
     def __test_interaction_with_phone(self):
         def read_process_queues_and_report(outs_q, errs_q):
@@ -198,7 +213,7 @@ class AndroidPhone(Phone):
             LogParser(
                 out_q, self.compiled_regexp, self.config.get_option('phone', 'type')
             ),
-            self.phone_q
+            self.my_metrics['events']
         )
         self.logcat_pipeline.start()
 

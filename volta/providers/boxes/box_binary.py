@@ -10,49 +10,31 @@ from volta.common.interfaces import VoltaBox
 from volta.common.util import TimeChopper, string_to_np
 
 from netort.data_processing import Drain
-from netort.resource import manager as resource
 
 logger = logging.getLogger(__name__)
 
 
 class VoltaBoxBinary(VoltaBox):
-    """ VoltaBoxBinary - works with binary box, grabs data and stores data to queue
+    """ VoltaBoxBinary - works with binary box, grabs data and stores data to queue """
 
-    Attributes:
-        source (string): path to data source, should be able to be opened by resource manager
-            may be url, e.g. 'http://myhost.tld/path/to/file'
-            may be device, e.g. '/dev/cu.wchusbserial1420'
-            may be path to file, e.g. '/home/users/netort/path/to/file.data'
-        sample_rate (int): volta box sample rate - depends on software and which type of volta box you use
-        chop_ratio (int): chop ratio for incoming data, 1 means 1 second (500 for sample_rate 500)
-        baud_rate (int): baud rate for device if device specified in source
-        grab_timeout (int): timeout for grabber
-    """
-
-    def __init__(self, config):
-        VoltaBox.__init__(self, config)
-        self.source = config.get_option('volta', 'source')
+    def __init__(self, config, core):
+        VoltaBox.__init__(self, config, core)
         self.sample_rate = config.get_option('volta', 'sample_rate', 10000)
-        self.chop_ratio = config.get_option('volta', 'chop_ratio')
         self.baud_rate = config.get_option('volta', 'baud_rate', 230400)
-        self.grab_timeout = config.get_option('volta', 'grab_timeout')
-        self.slope = config.get_option('volta', 'slope')
-        self.offset = config.get_option('volta', 'offset')
-        self.precision = config.get_option('volta', 'precision')
-        self.power_voltage = config.get_option('volta', 'power_voltage')
-        self.sample_swap = config.get_option('volta', 'sample_swap', False)
-        # initialize data source
-        try:
-            self.source_opener = resource.get_opener(self.source)
-        except:
-            raise RuntimeError('Device %s not found. Please check VoltaBox USB connection', self.source)
         self.source_opener.baud_rate = self.baud_rate
         self.source_opener.read_timeout = self.grab_timeout
         self.data_source = self.source_opener()
         logger.debug('Data source initialized: %s', self.data_source)
-        self.pipeline = None
-        self.grabber_q = None
-        self.process_currents = None
+        self.my_metrics = {}
+        self.__create_my_metrics()
+
+    def __create_my_metrics(self):
+        self.my_metrics['current'] = self.core.data_session.new_metric(
+            {
+                'type': 'metrics',
+                'name': 'current',
+            }
+        )
 
     def start_test(self, results):
         """ Grab stage - starts grabber thread and puts data to results queue
@@ -94,7 +76,7 @@ class VoltaBoxBinary(VoltaBox):
             TimeChopper(
                 self.reader, self.sample_rate, self.chop_ratio
             ),
-            self.grabber_q
+            self.my_metrics['current']
         )
         logger.info('Starting grab thread...')
         self.pipeline.start()
@@ -154,7 +136,7 @@ class VoltaBoxStm32(VoltaBoxBinary):
             TimeChopper(
                 self.reader, self.sample_rate, self.chop_ratio
             ),
-            self.grabber_q
+            self.my_metrics['current']
         )
         logger.info('Starting grab thread...')
         self.pipeline.start()
@@ -240,6 +222,7 @@ def main():
     logger.info('Queue size after test: %s', q.qsize())
     logger.info('Sample: %s', q.get())
     logger.info('test finished')
+
 
 if __name__ == "__main__":
     main()

@@ -8,6 +8,9 @@ import shlex
 import time
 import datetime
 import queue
+import re
+
+from netort.data_processing import get_nowait_from_queue
 
 
 logger = logging.getLogger(__name__)
@@ -43,8 +46,9 @@ class TimeChopper(object):
                     )
                     # add time offset to start time in order to determine current timestamp and make date_range for df
                     current_ts = int((sample_num * (1./self.sample_rate)) * 10 ** 9)
-                    df.loc[:, ('uts')] = pd.date_range(current_ts, periods=len(ready_sample), freq=idx).astype(np.int64) // 1000
-                    # df.set_index('uts', inplace=True)
+                    df.loc[:, ('ts')] = pd.date_range(
+                        current_ts, periods=len(ready_sample), freq=idx
+                    ).astype(np.int64) // 1000
                     sample_num = sample_num + len(ready_sample)
                     yield df
 
@@ -112,112 +116,219 @@ class Executioner(object):
 
 
 class LogParser(object):
-    def __init__(self, source, regexp, type_, cache_size=10):
+    # data sample: [volta] 12345678 fragment TagFragment start
+    # following regexp grabs 'nanotime', 'type', 'tag' and 'message' from sample above
+    volta_custom_event = re.compile(
+        r"""
+            ^
+            \[volta\]
+            \s+
+            (?P<nanotime>\S+)
+            \s+
+            (?P<custom_metric_type>\S+)
+            \s+
+            (?P<tag>\S+)
+            \s+
+            (?P<message>.*)
+            $
+        """, re.VERBOSE | re.IGNORECASE
+    )
+
+    def __init__(self, source, log_fmt_regexp, phone_type, expected_cols, cache_size=10):
         self.closed = False
         self.source = source
-        self.regexp = regexp
-        self.type_ = type_
+        self.log_fmt_regexp = log_fmt_regexp
+        self.phone_type = phone_type
         self.buffer = []
         self.cache_size = cache_size
+        self.expected_cols = expected_cols
+        self.log_uts_start = None
+        self.sys_uts_start = None
 
     def _read_chunk(self):
-        try:
-            data = self.source.get_nowait()
-        except q.Empty:
+        data = get_nowait_from_queue(self.source)
+        if not data:
             time.sleep(0.5)
         else:
-            return prepare_logstring(data, self.regexp, self.type_)
+            for chunk in data:
+                match = self.log_fmt_regexp.match(chunk)
+                # we need this for multiline log entries concatenation
+                if match:
+                    if not self.buffer:
+                        self.buffer.append(match.groupdict())
+                    else:
+                        ready_to_go_chunk = self.buffer.pop(0)
+                        self.buffer.append(match.groupdict())
+                        return ready_to_go_chunk
+                else:
+                    if not self.buffer:
+                        logger.warning('Trash data in logs, dropped data: \n%s', chunk)
+                    else:
+                        self.buffer[0]['value'] = self.buffer[0]['value'] + str(chunk)
 
     def __iter__(self):
         while not self.closed:
-            while len(self.buffer) < self.cache_size:
-                chunk = self._read_chunk()
-                if chunk:
-                    self.buffer.append(chunk)
-            df = pd.DataFrame(self.buffer, columns=['sys_uts', 'message'], dtype=np.int64)
-            self.buffer = []
-            yield df
+            log_entry = self._read_chunk()
+            if log_entry:
+                try:
+                    ts = self.__parse_timestamp(log_entry, self.phone_type)
+                    if ts:
+                        if not self.sys_uts_start:
+                            log_entry['ts'] = 0
+                            self.sys_uts_start = ts
+                        else:
+                            log_entry['ts'] = ts - self.sys_uts_start
+                    else:
+                        logger.debug('Timestamp of log entry malformed? %s', log_entry)
+                        continue
+                except ValueError:
+                    continue
+                else:
+                    log_entry = self.__parse_custom_message(log_entry)
+                    log_entry['value'] = log_entry['value']\
+                        .replace('\t', '__tab__') \
+                        .replace('\n', '__nl__') \
+                        .replace('\r', '') \
+                        .replace('\f', '') \
+                        .replace('\v', '')
+                    df = pd.DataFrame(
+                        data={
+                            log_entry['ts']:
+                                log_entry
+                        },
+                    ).T
+                    # logger.info('Df: %s', df)
+                    df.loc[:, ('value')] = df['value'].astype(np.str)
+                    yield df
+
+    @staticmethod
+    def __parse_timestamp(log_entry, phone_type):
+        """ split chunks by LF, parse contents and create dataframes
+
+        Args:
+            data (string): chunk of data read from source
+        Returns:
+            pandas.DataFrame, fmt: ['sys_uts', 'message']
+        """
+        formatter = {
+            'android': format_ts_from_android,
+            'iphone': format_ts_from_iphone
+        }
+        try:
+            ts = formatter[phone_type](log_entry)
+        except (ValueError, IndexError):
+            logger.debug('Malformed data in logs: %s', log_entry, exc_info=True)
+            return
+        else:
+            return int((ts - datetime.datetime(1970, 1, 1)).total_seconds() * 10 ** 6)
+
+    def __parse_custom_message(self, log_entry):
+        """
+        Parse event entry and modify
+        """
+        match = None
+        try:
+            if log_entry['value'] != '':
+                match = self.volta_custom_event.match(log_entry['value'])
+        except Exception:
+            logger.debug('Unknown error in custom message parse: %s', exc_info=True)
+            return log_entry
+        else:
+            if match:
+                try:
+                    # convert nanotime to us
+                    log_ts = int(match.group('nanotime')) // 1000
+                    # detect log ts start
+                    if not self.log_uts_start:
+                        self.log_uts_start = log_ts
+                        logger.debug('log uts start detected: %s', self.log_uts_start)
+                        log_entry['log_uts'] = 0
+                        return log_entry
+                    else:
+                        log_entry['log_uts'] = int(log_ts - self.log_uts_start)
+                        return log_entry
+                except Exception:
+                    logger.warning('Trash logtimestamp found: %s', log_entry)
+            else:
+                return log_entry
 
     def close(self):
         self.closed = True
 
 
-def format_ts_from_android(match_):
+def format_ts_from_android(log_entry):
     # android fmt, sample: 02-12 12:12:12.121
-    return datetime.datetime.strptime("{date} {time}".format(
-        date=match_.group('date'),
-        time=match_.group('time')),
+    return datetime.datetime.strptime(
+        "{date} {time}".format(
+            date=log_entry.get('date'),
+            time=log_entry.get('time')
+        ),
         '%m-%d %H:%M:%S.%f').replace(
-        year=datetime.datetime.now().year
-    )
+            year=datetime.datetime.now().year
+        )
 
 
-def format_ts_from_iphone(match_):
+def format_ts_from_iphone(log_entry):
     # iphone fmt, sample: Aug 25 18:48:14
-    return datetime.datetime.strptime("{month} {date} {time}".format(
-        month=match_.group('month'),
-        date=match_.group('date'),
-        time=match_.group('time')),
+    return datetime.datetime.strptime(
+        "{month} {date} {time}".format(
+            month=log_entry.get('month'),
+            date=log_entry.get('date'),
+            time=log_entry.get('time')
+        ),
         '%b %d %H:%M:%S').replace(
         year=datetime.datetime.now().year
     )
 
 
-def prepare_logstring(data, regexp, type_):
-    """ split chunks by LF, parse contents and create dataframes
+def string_to_np(data, type=np.uint16, sep=""):
+    chunk = np.fromstring(data, dtype=type, sep=sep)
+    return chunk
 
-    Args:
-        data (string): chunk of data read from source
+
+class LogReader(object):
+    """ Read chunks from source and make dataframes
+    Attributes:
+        cache_size (int): size of block to read from source
+        source (string): path to data source
     Returns:
         pandas.DataFrame, fmt: ['sys_uts', 'message']
     """
-    formatter = {
-        'android': format_ts_from_android,
-        'iphone': format_ts_from_iphone
-    }
 
-    if data.startswith('---------'):
-        return
+    def __init__(self, source, regexp, type_, cache_size=1024):
+        self.closed = False
+        self.cache_size = cache_size
+        self.source = source
+        self.buffer = ""
+        self.regexp = regexp
+        self.type_ = type_
 
-    match = regexp.match(data)
-    if match:
-        # FIXME more flexible and stable logic should be here
-        try:
-            ts = formatter[type_](match)
-        except (ValueError, IndexError):
-            logger.warning('Trash data in logs: %s, skipped', match.groups())
-            logger.debug('Trash data in logs: %s', data, exc_info=True)
-            return
-        # unix timestamp in microseconds
-        sys_uts = int(
-            (ts-datetime.datetime(1970, 1, 1)).total_seconds() * 10 ** 6
-        )
-        message = match.group('message')
-        message = message\
-            .replace('\t', '__tab__')\
-            .replace('\n', '__nl__')\
-            .replace('\r', '')\
-            .replace('\f', '')\
-            .replace('\v', '')
-        return [sys_uts, message]
-    else:
-        logger.debug('Trash data in logs: %s', data)
+    def _read_chunk(self):
+        data = self.source.read(self.cache_size)
+        if data:
+            parts = data.rsplit('\n', 1)
+            if len(parts) > 1:
+                ready_chunk = self.buffer + parts[0] + '\n'
+                self.buffer = parts[1]
+                return chunk_to_df(ready_chunk, self.regexp, self.type_)
+            else:
+                self.buffer += parts[0]
+        else:
+            self.buffer += self.source.readline()
+        return None
 
+    def __iter__(self):
+        while not self.closed:
+            yield self._read_chunk()
+        # yield self._read_chunk()
+
+    def close(self):
+        self.closed = True
 
 
-
-
-
-
-######################
-### OLD JUNK BELOW ###
-######################
-# FIXME
-
-
+# FIXME OLD JUNK
 def chunk_to_df(chunk, regexp, type_):
     """ split chunks by LF, parse contents and create dataframes
-
     Args:
         chunk (string): chunk of data read from source
     Returns:
@@ -260,50 +371,3 @@ def chunk_to_df(chunk, regexp, type_):
     if results:
         df = pd.DataFrame(results, columns=['sys_uts', 'message'], dtype=np.int64)
     return df
-
-
-def string_to_np(data, type=np.uint16, sep=""):
-    chunk = np.fromstring(data, dtype=type, sep=sep)
-    return chunk
-
-
-class LogReader(object):
-    """ Read chunks from source and make dataframes
-
-    Attributes:
-        cache_size (int): size of block to read from source
-        source (string): path to data source
-
-    Returns:
-        pandas.DataFrame, fmt: ['sys_uts', 'message']
-    """
-
-    def __init__(self, source, regexp, type_, cache_size=1024):
-        self.closed = False
-        self.cache_size = cache_size
-        self.source = source
-        self.buffer = ""
-        self.regexp = regexp
-        self.type_ = type_
-
-    def _read_chunk(self):
-        data = self.source.read(self.cache_size)
-        if data:
-            parts = data.rsplit('\n', 1)
-            if len(parts) > 1:
-                ready_chunk = self.buffer + parts[0] + '\n'
-                self.buffer = parts[1]
-                return chunk_to_df(ready_chunk, self.regexp, self.type_)
-            else:
-                self.buffer += parts[0]
-        else:
-            self.buffer += self.source.readline()
-        return None
-
-    def __iter__(self):
-        while not self.closed:
-            yield self._read_chunk()
-        # yield self._read_chunk()
-
-    def close(self):
-        self.closed = True

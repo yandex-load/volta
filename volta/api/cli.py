@@ -49,7 +49,6 @@ def main():
         core.end_test()
     finally:
         core.post_process()
-        core.collect_file(args.log)
 
 
 if __name__ == '__main__':
