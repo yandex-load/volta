@@ -142,7 +142,7 @@ class iPhone(Phone):
 
         self.logcat_pipeline = Drain(
             LogParser(
-                out_q, self.compiled_regexp, self.config.get_option('phone', 'type'), []
+                out_q, self.compiled_regexp, self.config.get_option('phone', 'type')
             ),
             self.my_metrics['events']
         )

@@ -134,14 +134,13 @@ class LogParser(object):
         """, re.VERBOSE | re.IGNORECASE
     )
 
-    def __init__(self, source, log_fmt_regexp, phone_type, expected_cols, cache_size=10):
+    def __init__(self, source, log_fmt_regexp, phone_type, cache_size=10):
         self.closed = False
         self.source = source
         self.log_fmt_regexp = log_fmt_regexp
         self.phone_type = phone_type
         self.buffer = []
         self.cache_size = cache_size
-        self.expected_cols = expected_cols
         self.log_uts_start = None
         self.sys_uts_start = None
 

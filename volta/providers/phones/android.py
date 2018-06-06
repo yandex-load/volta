@@ -28,7 +28,7 @@ event_regexp = r"""
     \s+
     \S+
     \s+
-    (?P<message>.*)
+    (?P<value>.*)
     $
     """
 
@@ -93,6 +93,8 @@ class AndroidPhone(Phone):
         self.__create_my_metrics()
 
         self.__test_interaction_with_phone()
+
+        self.worker = None
 
     def __create_my_metrics(self):
         self.my_metrics['events'] = self.core.data_session.new_metric(
@@ -235,7 +237,8 @@ class AndroidPhone(Phone):
 
     def end(self):
         """ Stop test and grabbers """
-        self.worker.close()
+        if self.worker:
+            self.worker.close()
         if self.test_performer:
             self.test_performer.close()
         if self.logcat_pipeline:
@@ -244,6 +247,9 @@ class AndroidPhone(Phone):
         # apps cleanup
         for apk in self.cleanup_apps:
             self.adb_execution("adb -s {device_id} uninstall {app}".format(device_id=self.source, app=apk))
+
+    def close(self):
+        pass
 
     def get_info(self):
         data = {}

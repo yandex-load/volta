@@ -108,7 +108,7 @@ class Core(object):
                 'clients': [
                     {
                         'type': 'luna',
-                        'api_address': self.config.get_option('uploader', 'address'),
+                        'api_address': 'https://volta-back-testing.common-int.yandex-team.ru',
                         'user_agent': 'Tank Test',
                     },
                     {
@@ -116,7 +116,7 @@ class Core(object):
                     },
                     {
                         'type': 'lunapark_volta',
-                        'api_address': 'https://lunapark.yandex-team.ru',
+                        'api_address': self.config.get_option('uploader', 'address'),
                         'task': 'LOAD-272'
                     }
                 ],
@@ -224,32 +224,34 @@ class Core(object):
 
         """
         logger.info('Post process...')
-        self.data_session.close()
         if 'uploader' in self.config_enabled:
-            pass
-            #self.uploader.update_job(
-            #    dict(
-            #        test_id=self.config.get_option('core', 'test_id'),
-            #        test_start=self.start_time,
-            #        name=self.config.get_option('uploader', 'name'),
-            #        dsc=self.config.get_option('uploader', 'dsc'),
-            #        person=self.config.get_option('core', 'operator'),
-            #        device_id=self.config.get_option('uploader', 'device_id'),
-            #        device_model=self.config.get_option('uploader', 'device_model'),
-            #        device_os=self.config.get_option('uploader', 'device_os'),
-            #        app=self.config.get_option('uploader', 'app'),
-            #        ver=self.config.get_option('uploader', 'ver'),
-            #        meta=self.config.get_option('uploader', 'meta'),
-            #        task=self.config.get_option('uploader', 'task'),
-            #        sys_uts_offset=self.sync_points.get('sys_uts_offset', None),
-            #        log_uts_offset=self.sync_points.get('log_uts_offset', None),
-            #        sync_sample=self.sync_points.get('sync_sample', None)
-            #    )
-            #)
-            #if self.uploader.jobno:
-            #    logger.info('Report url: %s/mobile/%s', self.uploader.hostname, self.uploader.jobno)
-            #    self.__test_id_link_to_jobno(self.uploader.jobno)
+            self.data_session.update_job(
+                dict(
+                    name=self.config.get_option('uploader', 'name'),
+                    dsc=self.config.get_option('uploader', 'dsc'),
+                    person=self.config.get_option('core', 'operator'),
+                    device_id=self.config.get_option('uploader', 'device_id'),
+                    device_model=self.config.get_option('uploader', 'device_model'),
+                    device_os=self.config.get_option('uploader', 'device_os'),
+                    app=self.config.get_option('uploader', 'app'),
+                    ver=self.config.get_option('uploader', 'ver'),
+                    meta=self.config.get_option('uploader', 'meta'),
+                    task=self.config.get_option('uploader', 'task'),
+                    sys_uts_offset=self.sync_points.get('sys_uts_offset', None),
+                    log_uts_offset=self.sync_points.get('log_uts_offset', None),
+                    sync_sample=self.sync_points.get('sync_sample', None)
+                )
+            )
+        if 'sync' in self.config_enabled:
+            self.data_session.update_metric(
+                dict(
+                    sys_uts_offset=self.sync_points.get('offset', None),
+                    log_uts_offset=self.sync_points.get('log_offset', None),
+                    sync_sample=self.sync_points.get('sync_sample', None)
+                )
+            )
         [module_.close() for module_ in self.enabled_modules]
+        self.data_session.close()
 
         logger.info('Threads still running: %s', threading.enumerate())
         if threading.enumerate() > 1:
