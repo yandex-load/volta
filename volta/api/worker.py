@@ -24,6 +24,7 @@ class InterruptTest(BaseException):
     def __init__(self):
         super(InterruptTest, self).__init__()
 
+
 class StopTest(BaseException):
     """Raised by sigterm handler"""
 

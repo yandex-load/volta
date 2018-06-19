@@ -69,6 +69,7 @@ class iPhone(Phone):
             {
                 'type': 'events',
                 'name': 'events',
+                'source': 'phone'
             }
         )
 
@@ -86,6 +87,17 @@ class iPhone(Phone):
             errors = get_nowait_from_queue(errs_q)
             if errors:
                 worker.close()
+                # FIXME
+                # keep in mind this Sierra bug:
+                # https://discussions.apple.com/thread/7690618
+                # that causes:
+                # RuntimeError:
+                # There were errors trying to test connection to the phone 0x819CE30D080A6.
+                # Errors :
+                # ['cfgutil: error: Error Domain=NSCocoaErrorDomain Code=4097
+                # "connection to service named com.apple.configurator.xpc.InternetService"
+                # UserInfo={NSDebugDescription=connection to service named com.apple.configurator.xpc.InternetService}
+                # FIXME
                 raise RuntimeError(
                     'There were errors trying to test connection to the phone %s. Errors :%s' % (
                         self.source, errors

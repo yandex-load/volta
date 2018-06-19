@@ -33,6 +33,7 @@ class TimeChopper(object):
         logger.debug('Chopper slicing data w/ %s ratio, slice size will be %s', self.chop_ratio, self.slice_size)
         sample_num = 0
         for chunk in self.source:
+            # exec_time_start = time.time()
             if chunk is not None:
                 logger.debug('Chopper got %s data', len(chunk))
                 self.buffer = np.append(self.buffer, chunk)
@@ -51,6 +52,7 @@ class TimeChopper(object):
                     ).astype(np.int64) // 1000
                     sample_num = sample_num + len(ready_sample)
                     yield df
+            # logger.debug('Chopping took %s time', time.time() - exec_time_start)
 
 
 class Executioner(object):
@@ -147,8 +149,9 @@ class LogParser(object):
     def _read_chunk(self):
         data = get_nowait_from_queue(self.source)
         if not data:
-            time.sleep(0.5)
+            time.sleep(1)
         else:
+            ready_to_go_chunks = []
             for chunk in data:
                 match = self.log_fmt_regexp.match(chunk)
                 # we need this for multiline log entries concatenation
@@ -158,47 +161,53 @@ class LogParser(object):
                     else:
                         ready_to_go_chunk = self.buffer.pop(0)
                         self.buffer.append(match.groupdict())
-                        return ready_to_go_chunk
+                        ready_to_go_chunks.append(ready_to_go_chunk)
                 else:
                     if not self.buffer:
                         logger.warning('Trash data in logs, dropped data: \n%s', chunk)
                     else:
                         self.buffer[0]['value'] = self.buffer[0]['value'] + str(chunk)
+            return ready_to_go_chunks
 
     def __iter__(self):
         while not self.closed:
-            log_entry = self._read_chunk()
-            if log_entry:
-                try:
-                    ts = self.__parse_timestamp(log_entry, self.phone_type)
-                    if ts:
-                        if not self.sys_uts_start:
-                            log_entry['ts'] = 0
-                            self.sys_uts_start = ts
+            log_entries = self._read_chunk()
+            if log_entries:
+                for log_entry in log_entries:
+                    # exec_time_start = time.time()
+                    try:
+                        ts = self.__parse_timestamp(log_entry, self.phone_type)
+                        if ts:
+                            if not self.sys_uts_start:
+                                log_entry['ts'] = 0
+                                self.sys_uts_start = ts
+                            else:
+                                log_entry['ts'] = ts - self.sys_uts_start
                         else:
-                            log_entry['ts'] = ts - self.sys_uts_start
-                    else:
-                        logger.debug('Timestamp of log entry malformed? %s', log_entry)
+                            logger.debug('Timestamp of log entry malformed? %s', log_entry)
+                            continue
+                    except ValueError:
                         continue
-                except ValueError:
-                    continue
-                else:
-                    log_entry = self.__parse_custom_message(log_entry)
-                    log_entry['value'] = log_entry['value']\
-                        .replace('\t', '__tab__') \
-                        .replace('\n', '__nl__') \
-                        .replace('\r', '') \
-                        .replace('\f', '') \
-                        .replace('\v', '')
-                    df = pd.DataFrame(
-                        data={
-                            log_entry['ts']:
-                                log_entry
-                        },
-                    ).T
-                    # logger.info('Df: %s', df)
-                    df.loc[:, ('value')] = df['value'].astype(np.str)
-                    yield df
+                    else:
+                        log_entry = self.__parse_custom_message(log_entry)
+                        log_entry['sys_uts'] = log_entry['ts']
+                        log_entry['value'] = log_entry['value']\
+                            .replace('\t', '__tab__') \
+                            .replace('\n', '__nl__') \
+                            .replace('\r', '') \
+                            .replace('\f', '') \
+                            .replace('\v', '')
+                        df = pd.DataFrame(
+                            data={
+                                log_entry['ts']:
+                                    log_entry
+                            },
+                        ).T
+                        df.loc[:, ('value')] = df['value'].astype(np.str)
+                        yield df
+                    # logger.debug('log event parsing took %s time', time.time() - exec_time_start)
+            else:
+                time.sleep(0.5)
 
     @staticmethod
     def __parse_timestamp(log_entry, phone_type):
@@ -237,6 +246,9 @@ class LogParser(object):
                 try:
                     # convert nanotime to us
                     log_ts = int(match.group('nanotime')) // 1000
+                    log_entry['custom_metric_type'] = match.group('custom_metric_type')
+                    log_entry['message'] = match.group('message')
+                    log_entry['tag'] = match.group('tag')
                     # detect log ts start
                     if not self.log_uts_start:
                         self.log_uts_start = log_ts

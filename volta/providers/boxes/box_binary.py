@@ -33,6 +33,7 @@ class VoltaBoxBinary(VoltaBox):
             {
                 'type': 'metrics',
                 'name': 'current',
+                'source': 'voltabox'
             }
         )
 
@@ -191,6 +192,8 @@ class BoxBinaryReader(object):
             chunk = string_to_np(data).astype(np.float32) * (
                 self.power_voltage / (2 ** self.precision)) * self.slope + self.offset
             return chunk
+        else:
+            time.sleep(1)
 
     def __iter__(self):
         while not self.closed:

@@ -90,10 +90,11 @@ class DataListener(object):
         config (VoltaConfig): module configuration information, differs for each type of listener
     """
 
-    def __init__(self, config):
+    def __init__(self, config, core):
         self.config = config
+        self.core = core
 
-    def put(self, data, type_):
+    def put(self, incoming_df):
         """ Process data """
         raise NotImplementedError("Abstract method needs to be overridden")
 

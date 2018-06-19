@@ -85,6 +85,9 @@ phone:
       type: string
       nullable: true
       default: null
+    shellexec_metrics:
+      type: dict
+      default: {}
     util:
       type: string
       default: /Applications/Apple\ Configurator\ 2.app/Contents/MacOS/
@@ -145,6 +148,35 @@ uploader:
       type: string
       default: null
       nullable: true
+
+data_session:
+  type: dict
+  default: {}
+  schema:
+    enabled:
+      type: boolean
+      default: true
+    clients:
+      type: list
+      default: []
+      schema:
+        type: dict
+        schema:
+          type:
+            type: string
+            required: true
+            nullable: false
+            allowed: [luna, lunapark_volta, local_storage]
+          api_address:
+            type: string
+          meta:
+            type: dict
+          task:
+            type: string
+    artifacts_base_dir:
+      type: string
+      default: './logs'
+
 console:
   type: dict
   schema:

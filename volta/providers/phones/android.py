@@ -5,6 +5,9 @@ import logging
 import re
 import pkg_resources
 import time
+import threading
+import subprocess
+import pandas as pd
 
 from netort.data_processing import Drain, get_nowait_from_queue
 from netort.resource import manager as resource
@@ -89,20 +92,35 @@ class AndroidPhone(Phone):
         self.test_performer = None
         self.phone_q = None
 
-        self.my_metrics = {}
-        self.__create_my_metrics()
-
         self.__test_interaction_with_phone()
 
         self.worker = None
+        self.closed = False
+
+        self.shellexec_metrics = config.get_option('phone', 'shellexec_metrics')
+        self.shellexec_executor = threading.Thread(target=self.__shell_executor)
+        self.shellexec_executor.setDaemon(True)
+        self.shellexec_executor.start()
+
+        self.my_metrics = {}
+        self.__create_my_metrics()
 
     def __create_my_metrics(self):
         self.my_metrics['events'] = self.core.data_session.new_metric(
             {
                 'type': 'events',
                 'name': 'events',
+                'source': 'phone'
             }
         )
+        for key, value in self.shellexec_metrics.items():
+            self.my_metrics[key] = self.core.data_session.new_metric(
+                {
+                    'type': 'metrics',
+                    'name': key,
+                    'source': 'phone'
+                }
+            )
 
     def __test_interaction_with_phone(self):
         def read_process_queues_and_report(outs_q, errs_q):
@@ -237,6 +255,7 @@ class AndroidPhone(Phone):
 
     def end(self):
         """ Stop test and grabbers """
+        self.closed = True
         if self.worker:
             self.worker.close()
         if self.test_performer:
@@ -258,3 +277,22 @@ class AndroidPhone(Phone):
         if self.test_performer:
             data['test_performer_is_finished'] = self.test_performer.is_finished()
         return data
+
+    def __shell_executor(self):
+        while not self.closed:
+            for key, value in self.shellexec_metrics.items():
+                try:
+                    proc = subprocess.Popen(value, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    (stdout, stderr) = proc.communicate()
+                    ts = int(time.time() * 10**6)
+                    val = stdout.strip('\n')
+                    self.my_metrics[key].put(
+                        pd.DataFrame(
+                            data={
+                                ts:
+                                    {'ts': ts, 'value': int(val)}
+                            },
+                        ).T
+                    )
+                except Exception:
+                    logger.debug('Failed to collect shellexec metric: %s', key)

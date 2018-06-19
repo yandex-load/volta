@@ -99,13 +99,26 @@ class Core(object):
             config (dict): core configuration dict
         """
         try:
-            logger.info('Running Volta==%s', pkg_resources.get_distribution("volta").version)
+            logger.info(
+                'Running Volta==%s. Netort==%s',
+                pkg_resources.get_distribution("volta").version,
+                pkg_resources.get_distribution("netort").version
+            )
         except AttributeError:
             pass
         self.config = VoltaConfig(config, DYNAMIC_OPTIONS, self.PACKAGE_SCHEMA_PATH)
-        self.data_session = data_manager.DataSession(
-            {
-                'clients': [
+        self.enabled_modules = []
+        self.config_enabled = self.config.get_enabled_sections()
+        logger.info(self.config.get_option('uploader', 'address'))
+        if 'data_session' in self.config_enabled:
+            if 'uplaoder' in self.config_enabled:
+                logger.warn('`uploader` config section ignored! Please clean up you config file')
+            clients = self.config.get_option('data_session', 'clients')
+        else:
+            try:
+                # FIXME cleanup later
+                logger.warn('Please setup `data_session` config section properly. Using defaults...')
+                clients = [
                     {
                         'type': 'luna',
                         'api_address': 'https://volta-back-testing.common-int.yandex-team.ru',
@@ -117,15 +130,18 @@ class Core(object):
                     {
                         'type': 'lunapark_volta',
                         'api_address': self.config.get_option('uploader', 'address'),
-                        'task': 'LOAD-272'
-                    }
-                ],
-                # 'artifacts_base_dir': './logs',
-                # 'operator': 'operator'
+                        'task': self.config.get_option('uploader', 'task')
+                    },
+                ]
+            except NotImplementedError:
+                logger.warning('Failed to get uploader address: %s', exc_info=True)
+        self.data_session = data_manager.DataSession(
+            {
+                'clients': clients,
+                'artifacts_base_dir': self.config.get_option('data_session', 'artifacts_base_dir'),
+                'test_id': self.config.get_option('core', 'test_id')
             }
         )
-        self.enabled_modules = []
-        self.config_enabled = self.config.get_enabled_sections()
         if not self.config:
             raise RuntimeError('Empty config')
 
@@ -141,7 +157,7 @@ class Core(object):
 
         self.start_time = None
 
-        self._sync_points = {}
+        self.sync_points = {}
 
         self.finished = None
 
@@ -160,30 +176,18 @@ class Core(object):
     @property
     def sync(self):
         if not self._sync:
-            self._sync = SyncFinder(self.config)
+            self._sync = SyncFinder(self.config, self)
         return self._sync
 
     @property
     def console(self):
         if not self._console:
-            self._console = ConsoleListener(self.config)
+            self._console = ConsoleListener(self.config, self)
         return self._console
-
-    @property
-    def sync_points(self):
-        if 'sync' not in self.config_enabled:
-            return {}
-        if not self._sync_points:
-            try:
-                sync_pts = self.sync.find_sync_points()
-            except ValueError:
-                logger.warning('Unable to find sync points!', exc_info=True)
-            else:
-                self._sync_points = sync_pts
-        return self._sync_points
 
     def configure(self):
         """ Configures modules and prepare modules for test """
+        logger.debug('Configure stage...')
         if 'phone' in self.config_enabled:
             self.enabled_modules.append(self.phone)
             self.phone.prepare()
@@ -224,6 +228,10 @@ class Core(object):
 
         """
         logger.info('Post process...')
+        if 'sync' in self.config_enabled:
+            self.sync_points = self.sync.find_sync_points()
+            logger.info('sync points: %s', self.sync_points)
+
         if 'uploader' in self.config_enabled:
             self.data_session.update_job(
                 dict(
@@ -242,7 +250,6 @@ class Core(object):
                     sync_sample=self.sync_points.get('sync_sample', None)
                 )
             )
-        if 'sync' in self.config_enabled:
             self.data_session.update_metric(
                 dict(
                     sys_uts_offset=self.sync_points.get('offset', None),
@@ -260,6 +267,7 @@ class Core(object):
             tries_before_exit = 0
             while len(threading.enumerate()) > 1:
                 if tries_before_exit > 10 or len(threading.enumerate()) == 1:
+                    logger.warn('Throwed away following list of threads: %s', threading.enumerate())
                     break
                 logger.debug('More than 1 threads still running: %s', threading.enumerate())
                 time.sleep(1)
@@ -276,13 +284,6 @@ class Core(object):
                         response[module] = self.volta.get_info()
                     elif module == 'phone':
                         response[module] = self.phone.get_info()
-                    #elif module == 'uploader':
-                    #    response['api_url'] = "{api}/mobile/{jobno}".format(
-                    #        api=self.uploader.hostname,
-                    #        jobno=self.uploader.jobno
-                    #    )
-                    #    response['api_jobno'] = "{jobno}".format(jobno=self.uploader.jobno)
-                    #    response['uploader_sender_alive'] = self.uploader.worker.isAlive()
                 except AttributeError:
                     logger.info('Unable to get per_module %s current test info', per_module, exc_info=True)
                     pass
