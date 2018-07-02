@@ -164,7 +164,7 @@ class LogParser(object):
                         ready_to_go_chunks.append(ready_to_go_chunk)
                 else:
                     if not self.buffer:
-                        logger.warning('Trash data in logs, dropped data: \n%s', chunk)
+                        logger.warn('Trash data in logs, dropped data: \n%s', chunk)
                     else:
                         self.buffer[0]['value'] = self.buffer[0]['value'] + str(chunk)
             return ready_to_go_chunks

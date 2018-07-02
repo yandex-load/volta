@@ -169,10 +169,8 @@ data_session:
             allowed: [luna, lunapark_volta, local_storage]
           api_address:
             type: string
-          meta:
-            type: dict
-          task:
-            type: string
+    meta:
+      type: dict
     artifacts_base_dir:
       type: string
       default: './logs'

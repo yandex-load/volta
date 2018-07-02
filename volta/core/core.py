@@ -109,32 +109,28 @@ class Core(object):
         self.config = VoltaConfig(config, DYNAMIC_OPTIONS, self.PACKAGE_SCHEMA_PATH)
         self.enabled_modules = []
         self.config_enabled = self.config.get_enabled_sections()
-        logger.info(self.config.get_option('uploader', 'address'))
         if 'data_session' in self.config_enabled:
-            if 'uplaoder' in self.config_enabled:
+            if 'uploader' in self.config_enabled:
                 logger.warn('`uploader` config section ignored! Please clean up you config file')
             clients = self.config.get_option('data_session', 'clients')
         else:
-            try:
-                # FIXME cleanup later
-                logger.warn('Please setup `data_session` config section properly. Using defaults...')
-                clients = [
-                    {
-                        'type': 'luna',
-                        'api_address': 'https://volta-back-testing.common-int.yandex-team.ru',
-                        'user_agent': 'Tank Test',
-                    },
-                    {
-                        'type': 'local_storage',
-                    },
-                    {
-                        'type': 'lunapark_volta',
-                        'api_address': self.config.get_option('uploader', 'address'),
-                        'task': self.config.get_option('uploader', 'task')
-                    },
-                ]
-            except NotImplementedError:
-                logger.warning('Failed to get uploader address: %s', exc_info=True)
+            # FIXME cleanup later
+            logger.warn('Please setup `data_session` config section properly. Using defaults...')
+            clients = [
+                {
+                    'type': 'luna',
+                    'api_address': 'https://volta-back.common-int.yandex-team.ru',
+                    'user_agent': 'Tank Test',
+                },
+                {
+                    'type': 'local_storage',
+                },
+                {
+                    'type': 'lunapark_volta',
+                    'api_address': self.config.get_option('uploader', 'address'),
+                    'task': self.config.get_option('uploader', 'task')
+                },
+            ]
         self.data_session = data_manager.DataSession(
             {
                 'clients': clients,
@@ -216,7 +212,7 @@ class Core(object):
         """
         Interrupts test: stops grabbers and events parsers
         """
-        logger.info('Finishing test...')
+        logger.info('Stopping test...')
         if 'volta' in self.config_enabled:
             self.volta.end_test()
         if 'phone' in self.config_enabled:
@@ -233,23 +229,6 @@ class Core(object):
             logger.info('sync points: %s', self.sync_points)
 
         if 'uploader' in self.config_enabled:
-            self.data_session.update_job(
-                dict(
-                    name=self.config.get_option('uploader', 'name'),
-                    dsc=self.config.get_option('uploader', 'dsc'),
-                    person=self.config.get_option('core', 'operator'),
-                    device_id=self.config.get_option('uploader', 'device_id'),
-                    device_model=self.config.get_option('uploader', 'device_model'),
-                    device_os=self.config.get_option('uploader', 'device_os'),
-                    app=self.config.get_option('uploader', 'app'),
-                    ver=self.config.get_option('uploader', 'ver'),
-                    meta=self.config.get_option('uploader', 'meta'),
-                    task=self.config.get_option('uploader', 'task'),
-                    sys_uts_offset=self.sync_points.get('sys_uts_offset', None),
-                    log_uts_offset=self.sync_points.get('log_uts_offset', None),
-                    sync_sample=self.sync_points.get('sync_sample', None)
-                )
-            )
             self.data_session.update_metric(
                 dict(
                     sys_uts_offset=self.sync_points.get('offset', None),
@@ -257,23 +236,42 @@ class Core(object):
                     sync_sample=self.sync_points.get('sync_sample', None)
                 )
             )
+
+        job_meta = {}
+        if 'data_session' in self.config_enabled:
+            if 'uploader' in self.config_enabled:
+                logger.warn('`uploader` config section ignored! Please clean up you config file')
+            job_meta = self.config.get_option('data_session', 'meta', {})
+            if not job_meta.get('person'):
+                job_meta['person'] = self.config.get_option('core', 'operator')
+        else:
+            # FIXME cleanup later
+            logger.warn('Please setup `data_session` config section properly... Using meta from `uploader`')
+            job_meta = dict(
+                name=self.config.get_option('uploader', 'name'),
+                dsc=self.config.get_option('uploader', 'dsc'),
+                person=self.config.get_option('core', 'operator'),
+                device_id=self.config.get_option('uploader', 'device_id'),
+                device_model=self.config.get_option('uploader', 'device_model'),
+                device_os=self.config.get_option('uploader', 'device_os'),
+                app=self.config.get_option('uploader', 'app'),
+                ver=self.config.get_option('uploader', 'ver'),
+                meta=self.config.get_option('uploader', 'meta'),
+                task=self.config.get_option('uploader', 'task'),
+                sys_uts_offset=self.sync_points.get('sys_uts_offset', None),
+                log_uts_offset=self.sync_points.get('log_uts_offset', None),
+                sync_sample=self.sync_points.get('sync_sample', None)
+            )
+        self.data_session.update_job(job_meta)
         [module_.close() for module_ in self.enabled_modules]
         self.data_session.close()
 
         logger.info('Threads still running: %s', threading.enumerate())
-        if threading.enumerate() > 1:
-            logger.info('More than 1 threads still running: %s', threading.enumerate())
-            logger.debug('Waiting 10 more seconds till all threads finish their work')
-            tries_before_exit = 0
-            while len(threading.enumerate()) > 1:
-                if tries_before_exit > 10 or len(threading.enumerate()) == 1:
-                    logger.warn('Throwed away following list of threads: %s', threading.enumerate())
-                    break
-                logger.debug('More than 1 threads still running: %s', threading.enumerate())
-                time.sleep(1)
-                tries_before_exit = tries_before_exit + 1
-            else:
-                logger.info('Finished!')
+        while len(threading.enumerate()) > 1:
+            logger.info('More than 1 threads still running, waiting for finish: %s', threading.enumerate())
+            time.sleep(1)
+        else:
+            logger.info('Finished!')
 
     def get_current_test_info(self, per_module=False, session_id=None):
         response = {'jobno': self.data_session.job_id, 'session_id': session_id}

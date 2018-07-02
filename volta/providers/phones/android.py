@@ -118,7 +118,8 @@ class AndroidPhone(Phone):
                 {
                     'type': 'metrics',
                     'name': key,
-                    'source': 'phone'
+                    'source': 'phone',
+                    '_apply': value.get('apply') if value.get('apply') else '',
                 }
             )
 
@@ -282,17 +283,34 @@ class AndroidPhone(Phone):
         while not self.closed:
             for key, value in self.shellexec_metrics.items():
                 try:
-                    proc = subprocess.Popen(value, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                    (stdout, stderr) = proc.communicate()
-                    ts = int(time.time() * 10**6)
-                    val = stdout.strip('\n')
-                    self.my_metrics[key].put(
-                        pd.DataFrame(
-                            data={
-                                ts:
-                                    {'ts': ts, 'value': int(val)}
-                            },
-                        ).T
-                    )
+                    if not self.shellexec_metrics[key].get('last_ts') \
+                            or self.shellexec_metrics[key]['last_ts'] < int(time.time()) * 10**6:
+                        metric_value = self.__execute_shellexec_metric(value.get('cmd'))
+                        ts = int(time.time()) * 10 ** 6
+                        if not value.get('start_time'):
+                            self.shellexec_metrics[key]['start_time'] = ts
+                            ts = 0
+                        else:
+                            ts = ts - self.shellexec_metrics[key]['start_time']
+                            self.shellexec_metrics[key]['last_ts'] = ts
+                            self.my_metrics[key].put(
+                                pd.DataFrame(
+                                    data={
+                                        ts:
+                                            {'ts': ts, 'value': metric_value}
+                                    },
+                                ).T
+                            )
+                    else:
+                        continue
                 except Exception:
-                    logger.debug('Failed to collect shellexec metric: %s', key)
+                    logger.warning('Failed to collect shellexec metric: %s', key)
+                    logger.debug('Failed to collect shellexec metric: %s', key, exc_info=True)
+
+            time.sleep(0.1)
+
+    @staticmethod
+    def __execute_shellexec_metric(cmd):
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        (stdout, stderr) = proc.communicate()
+        return stdout.strip('\n')
