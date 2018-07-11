@@ -92,6 +92,7 @@ class AndroidPhone(Phone):
         self.test_performer = None
         self.phone_q = None
 
+        subprocess.call('adb start-server', shell=True)  # start adb server
         self.__test_interaction_with_phone()
 
         self.worker = None
