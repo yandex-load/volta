@@ -82,7 +82,7 @@ class Core(object):
     """ Core, test performer
 
     Attributes:
-        config (dict): test config
+        configs (list): test configs
         event_types (list): currently supported event types
         grabber_listeners (list): list of electrical currents listeners
         event_listeners (list): list of events listeners
@@ -92,7 +92,7 @@ class Core(object):
     SECTION = 'core'
     PACKAGE_SCHEMA_PATH = 'volta.core'
 
-    def __init__(self, config):
+    def __init__(self, configs):
         """ Configures core, parse config
 
         Args:
@@ -106,7 +106,11 @@ class Core(object):
             )
         except AttributeError:
             pass
-        self.config = VoltaConfig(config, DYNAMIC_OPTIONS, self.PACKAGE_SCHEMA_PATH)
+        self.config = VoltaConfig(
+            configs,
+            DYNAMIC_OPTIONS,
+            self.PACKAGE_SCHEMA_PATH
+        )
         self.enabled_modules = []
         self.config_enabled = self.config.get_enabled_sections()
         if 'data_session' in self.config_enabled:

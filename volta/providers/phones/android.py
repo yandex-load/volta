@@ -294,14 +294,14 @@ class AndroidPhone(Phone):
                         else:
                             ts = ts - self.shellexec_metrics[key]['start_time']
                             self.shellexec_metrics[key]['last_ts'] = ts
-                            self.my_metrics[key].put(
-                                pd.DataFrame(
-                                    data={
-                                        ts:
-                                            {'ts': ts, 'value': metric_value}
-                                    },
-                                ).T
-                            )
+                        self.my_metrics[key].put(
+                            pd.DataFrame(
+                                data={
+                                    ts:
+                                        {'ts': ts, 'value': metric_value}
+                                },
+                            ).T
+                        )
                     else:
                         continue
                 except Exception:

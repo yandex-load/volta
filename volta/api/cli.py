@@ -19,16 +19,25 @@ def main():
     parser.add_argument('-q', '--quiet', dest='quiet', action='store_true', default=False)
     parser.add_argument('-l', '--log', dest='log', default='volta.log')
     parser.add_argument('-c', '--config', dest='config')
+    parser.add_argument(
+        '-p',
+        '--patch-cfg',
+        action='append',
+        help='Patch config with yaml snippet (similar to -o, but has full compatibility to\
+        and the exact scheme of yaml format config)',
+        dest='patches',
+        default=[]
+    )
     args = parser.parse_args()
 
     if not args.config:
         raise RuntimeError('Empty config')
 
     init_logging(args.log, args.verbose, args.quiet)
-    cfg_dict = {}
+    raw_config = []
     with open(args.config, 'r') as cfg_stream:
         try:
-            cfg_dict = yaml.safe_load(cfg_stream)
+            raw_config = [yaml.safe_load(cfg_stream)]
         except yaml.YAMLError:
             logger.debug('Config file format not yaml or json...', exc_info=True)
             raise RuntimeError('Unknown config file format. Malformed?')
@@ -37,15 +46,24 @@ def main():
         import statprof
         statprof.start()
 
-    perform_test(cfg_dict, args.log)
+    patched_config = raw_config+parse_and_check_patches(args.patches)
+    perform_test(patched_config, args.log)
 
     if args.trace:
         statprof.stop()
         statprof.display()
 
 
-def perform_test(cfg_dict, log):
-    core = Core(cfg_dict)
+def parse_and_check_patches(patches):
+    parsed = [yaml.load(p) for p in patches]
+    for patch in parsed:
+        if not isinstance(patch, dict):
+            raise RuntimeError('Config patch "{}" should be a dict'.format(patch))
+    return parsed
+
+
+def perform_test(configs, log):
+    core = Core(configs)
     try:
         core.configure()
         logger.info('Starting test... You can interrupt test w/ Ctrl+C or SIGTERM signal')
@@ -63,7 +81,11 @@ def perform_test(cfg_dict, log):
         core.end_test()
     finally:
         core.post_process()
-        shutil.move(log, os.path.join(core.data_session.artifacts_dir, log))
+        try:
+            shutil.move(log, os.path.join(core.data_session.artifacts_dir, log))
+        except Exception:
+            logger.warn('Failed to move logfile %s to artifacts dir', log)
+            logger.debug('Failed to move logfile %s to artifacts dir', log, exc_info=True)
 
 
 if __name__ == '__main__':
