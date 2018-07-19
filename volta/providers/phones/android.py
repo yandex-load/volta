@@ -162,11 +162,8 @@ class AndroidPhone(Phone):
             for chunk in outputs:
                 logger.debug('Command \'%s\' output: %s', cmd, chunk.strip('\n'))
             errors = get_nowait_from_queue(errs_q)
-            if errors:
-                worker.close()
-                raise RuntimeError(
-                    'There were errors executing \'%s\' on device %s. Errors :%s' % (cmd, self.source, errors)
-                )
+            for err_chunk in errors:
+                logger.warn('Errors in command \'%s\' output: %s', cmd, err_chunk.strip('\n'))
         worker = Executioner(cmd)
         outs_q, errs_q = worker.execute()
         while worker.is_finished() is None:
