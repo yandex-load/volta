@@ -3,9 +3,9 @@ import queue as q
 import time
 import pkg_resources
 import threading
+from retrying import retry, RetryError
 
 from netort.validated_config import ValidatedConfig as VoltaConfig
-
 from netort import data_manager
 
 from volta.core.config.dynamic_options import DYNAMIC_OPTIONS
@@ -14,8 +14,15 @@ from volta.providers import phones
 from volta.listeners.sync.sync import SyncFinder
 from volta.listeners.console import ConsoleListener
 
-
 logger = logging.getLogger(__name__)
+
+
+RETRY_ARGS = dict(
+    wrap_exception=True,
+    stop_max_delay=5000,
+    wait_fixed=500,
+    stop_max_attempt_number=30
+)
 
 
 class Factory(object):
@@ -271,11 +278,19 @@ class Core(object):
         self.data_session.close()
 
         logger.info('Threads still running: %s', threading.enumerate())
-        while len(threading.enumerate()) > 1:
+        try:
+            self.finish()
+        except RetryError:
+            logger.warn('Failed to finish test')
+
+    @retry(**RETRY_ARGS)
+    def finish(self):
+        if len(threading.enumerate()) > 1:
             logger.info('More than 1 threads still running, waiting for finish: %s', threading.enumerate())
-            time.sleep(1)
+            raise Exception('More than 1 threads still runnings')
         else:
             logger.info('Finished!')
+
 
     def get_current_test_info(self, per_module=False, session_id=None):
         response = {'jobno': self.data_session.job_id, 'session_id': session_id}
