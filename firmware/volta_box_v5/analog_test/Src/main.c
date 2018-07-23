@@ -53,20 +53,28 @@
 
 /* USER CODE BEGIN Includes */
 
+#include "buffer.h"
+
+#define SENDBUF_SIZE RINGBUF_SIZE/2
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi1;
 
+TIM_HandleTypeDef htim3;
+
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+const uint8_t cmd_read_current[] = {0x03, 0x82, 0x00, 0x00};
+const uint8_t cmd_read_voltage[] = {0x01, 0x82, 0x00, 0x00};
+struct ringbuf_t rb;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_TIM3_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -74,7 +82,25 @@ static void MX_SPI1_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+  if (htim->Instance == TIM3) {
+    HAL_StatusTypeDef status;
+    uint8_t receive_buffer[] = {0x00, 0x00, 0x00, 0x00};
 
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_RESET);
+    status = HAL_SPI_TransmitReceive(&hspi1, cmd_read_current, receive_buffer, 2, HAL_MAX_DELAY);
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
+    uint16_t current_value = ((uint16_t) receive_buffer[2] << 8) + (uint16_t) receive_buffer[3];
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_RESET);
+    status = HAL_SPI_TransmitReceive(&hspi1, cmd_read_voltage, receive_buffer, 2, HAL_MAX_DELAY);
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
+    uint16_t voltage_value = ((uint16_t) receive_buffer[2] << 8) + (uint16_t) receive_buffer[3];
+    if(status == HAL_OK) {
+      rb_push(&rb, current_value);
+      rb_push(&rb, voltage_value);
+    }
+  }
+}
 /* USER CODE END 0 */
 
 /**
@@ -85,15 +111,9 @@ static void MX_SPI1_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-//  uint8_t cmd_read_voltage[] = {0x01, 0x82};
-//  uint8_t cmd_read_current[] = {0x03, 0x82};
-  uint8_t cmd_read_current[] = {0x03, 0x82};
-  uint8_t cmd_read_voltage[] = {0x01, 0x82};
+  uint16_t buff[16];
+  rb_init(&rb);
 
-  //uint8_t cmd_test[] = {0xff, 0xff};
-  //uint8_t cmd_test2[] = {0x00, 0x00};
-  HAL_StatusTypeDef status;
-  uint8_t receive_buffer[4];
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -116,7 +136,13 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
   MX_USB_DEVICE_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+
+	// wait USB enumeration
+  HAL_Delay(1000);
+
+  HAL_TIM_Base_Start_IT(&htim3);
 
   /* USER CODE END 2 */
 
@@ -128,20 +154,10 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-	  //status = HAL_SPI_Transmit(&hspi1, cmd_read_current, 1, 10);
-	  //status = HAL_SPI_Receive(&hspi1, receive_buffer, 2, 10);
-	  //status = HAL_SPI_Transmit(&hspi1, cmd_read_voltage, 1, 10);
-	  //status = HAL_SPI_Receive(&hspi1, receive_buffer, 2, 10);
-	  HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_RESET);
-	  status = HAL_SPI_TransmitReceive(&hspi1, cmd_read_current, receive_buffer, 2, HAL_MAX_DELAY);
-	  HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
-	  HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_RESET);
-	  status = HAL_SPI_TransmitReceive(&hspi1, cmd_read_voltage, receive_buffer, 2, HAL_MAX_DELAY);
-	  HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
-	  //HAL_Delay(1);
-	  if (status == HAL_OK) {
-		  asm("");
-	  }
+    if (rb_remain(&rb) > SENDBUF_SIZE) {
+        for (int i = 0; i < SENDBUF_SIZE; i++) buff[i] = rb_pop(&rb);
+        while (CDC_Transmit_FS((uint8_t*) buff, sizeof(buff)) == USBD_BUSY);
+    }
   }
   /* USER CODE END 3 */
 
@@ -254,6 +270,39 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
   hspi1.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
   if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
+/* TIM3 init function */
+static void MX_TIM3_Init(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 799;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 9;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
