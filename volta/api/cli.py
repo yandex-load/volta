@@ -28,30 +28,42 @@ def main():
         dest='patches',
         default=[]
     )
+    parser.add_argument('--defaults', dest='defaults', default='/etc/volta.yaml')
     args = parser.parse_args()
 
     if not args.config:
         raise RuntimeError('Empty config')
 
     init_logging(args.log, args.verbose, args.quiet)
-    raw_config = []
-    with open(args.config, 'r') as cfg_stream:
-        try:
-            raw_config = [yaml.safe_load(cfg_stream)]
-        except yaml.YAMLError:
-            logger.debug('Config file format not yaml or json...', exc_info=True)
-            raise RuntimeError('Unknown config file format. Malformed?')
+    configs = []
+    try:
+        configs = configs + [load_cfg(args.defaults)]
+    except Exception:
+        logger.info('Unable to load default configs... %s', args.defaults)
+    configs = configs + [load_cfg(args.config)]
 
     if args.trace:
         import statprof
         statprof.start()
 
-    patched_config = raw_config+parse_and_check_patches(args.patches)
-    perform_test(patched_config, args.log)
+    patched_configs = configs+parse_and_check_patches(args.patches)
+    perform_test(patched_configs, args.log)
 
     if args.trace:
         statprof.stop()
         statprof.display()
+
+
+def load_cfg(cfg_filename):
+    """
+    :type cfg_filename: str
+    """
+    with open(cfg_filename) as f:
+        try:
+            return yaml.load(f)
+        except yaml.YAMLError:
+            logger.debug('Config file format not yaml or json...', exc_info=True)
+            raise RuntimeError('Unknown config file format. Malformed?')
 
 
 def parse_and_check_patches(patches):
