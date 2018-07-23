@@ -1,0 +1,64 @@
+Configuration	analog_test
+STM32CubeMX 	4.26.0
+Date	07/20/2018
+MCU	STM32L476RGTx
+
+
+
+PERIPHERALS	MODES	FUNCTIONS	PINS
+RCC	Crystal/Ceramic Resonator	RCC_OSC32_IN	PC14-OSC32_IN (PC14)
+RCC	Crystal/Ceramic Resonator	RCC_OSC32_OUT	PC15-OSC32_OUT (PC15)
+SPI1	Full-Duplex Master	SPI1_MISO	PA6
+SPI1	Full-Duplex Master	SPI1_MOSI	PA7
+SPI1	Full-Duplex Master	SPI1_SCK	PA5
+SPI1	Hardware NSS Output Signal	SPI1_NSS	PA4
+SYS	Trace Asynchronous Sw	SYS_JTMS-SWDIO	PA13 (JTMS-SWDIO)
+SYS	Trace Asynchronous Sw	SYS_JTCK-SWCLK	PA14 (JTCK-SWCLK)
+SYS	Trace Asynchronous Sw	SYS_JTDO-SWO	PB3 (JTDO-TRACESWO)
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+USB_OTG_FS	Device_Only	USB_OTG_FS_DM	PA11
+USB_OTG_FS	Device_Only	USB_OTG_FS_DP	PA12
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+2	PC13	GPIO_Input	BTN_USR
+3	PC14-OSC32_IN (PC14)	RCC_OSC32_IN	
+4	PC15-OSC32_OUT (PC15)	RCC_OSC32_OUT	
+20	PA4	SPI1_NSS	
+21	PA5	SPI1_SCK	
+22	PA6	SPI1_MISO	
+23	PA7	SPI1_MOSI	
+44	PA11	USB_OTG_FS_DM	
+45	PA12	USB_OTG_FS_DP	
+46	PA13 (JTMS-SWDIO)	SYS_JTMS-SWDIO	
+49	PA14 (JTCK-SWCLK)	SYS_JTCK-SWCLK	
+55	PB3 (JTDO-TRACESWO)	SYS_JTDO-SWO	
+
+
+
+SOFTWARE PROJECT
+
+Project Settings : 
+Project Name : analog_test
+Project Folder : /Users/direvius/git/volta/firmware/volta_box_v5/analog_test
+Toolchain / IDE : SW4STM32
+Firmware Package Name and Version : STM32Cube FW_L4 V1.12.0
+
+
+Code Generation Settings : 
+STM32Cube Firmware Library Package : Copy only the necessary library files
+Generate peripheral initialization as a pair of '.c/.h' files per peripheral : No
+Backup previously generated files when re-generating : No
+Delete previously generated files when not re-generated : Yes
+Set all free pins as analog (to optimize the power consumption) : No
+
+
+Toolchains Settings : 
+Compiler Optimizations : Balanced Size/Speed
+
+
+
+
+
+
