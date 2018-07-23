@@ -291,7 +291,6 @@ class Core(object):
         else:
             logger.info('Finished!')
 
-
     def get_current_test_info(self, per_module=False, session_id=None):
         response = {'jobno': self.data_session.job_id, 'session_id': session_id}
         if per_module:
