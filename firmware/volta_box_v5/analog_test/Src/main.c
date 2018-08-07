@@ -52,7 +52,7 @@
 #include "usb_device.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "usbd_cdc_if.h"
 #include "buffer.h"
 
 #define SENDBUF_SIZE RINGBUF_SIZE/2
