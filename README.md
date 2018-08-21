@@ -149,10 +149,10 @@ Available configuration options:
 Sample usage:
 ```python
 from volta.providers.boxes.box_binary import VoltaBoxBinary
-from volta.core.validator import VoltaConfig
+from volta.core.config.dynamic_options import DYNAMIC_OPTIONS
+from netort.validated_config import ValidatedConfig as VoltaConfig
 import queue
 import time
-import logging
 
 config_dict = {
     'volta': {
@@ -160,7 +160,7 @@ config_dict = {
         'type': 'binary'
     }
 }
-config = VoltaConfig(config_dict)
+config = VoltaConfig(config_dict, DYNAMIC_OPTIONS, 'volta.core')
 volta_box = VoltaBoxBinary(config) # VoltaBox class
 q = queue.Queue()  # queue for results
 volta_box.start_test(q)  # start acquiring data
@@ -197,7 +197,8 @@ Available configuration options:
 Sample usage:
 ```python
 from volta.providers.phones.android import AndroidPhone
-from volta.core.validator import VoltaConfig
+from volta.core.config.dynamic_options import DYNAMIC_OPTIONS
+from netort.validated_config import ValidatedConfig as VoltaConfig
 import queue
 import time
 import logging
@@ -208,14 +209,14 @@ config_dict = {
         'type': 'android',
         'test_apps': [
             'http://hostname.tld/path/to/first/apk1.apk',
-            'http://hostname.tld/path/to/second/apk2.apk',,
+            'http://hostname.tld/path/to/second/apk2.apk',
         ],
         'test_class': 'ru.yandex.test.highload.Tests',
         'test_package': 'ru.yandex.mobile.test',
         'test_runner': 'android.support.test.runner.AndroidJUnitRunner'
     }
 }
-config = VoltaConfig(config_dict)
+config = VoltaConfig(config_dict, DYNAMIC_OPTIONS, 'volta.core')
 
 phone = AndroidPhone(config)  # create Phone class
 q = queue.Queue()  # create python queue for results
@@ -245,12 +246,11 @@ Available configuration options:
 
 Sample usage:
 ```python
-from volta.phones.iphone import iPhone
-from volta.core.validator import VoltaConfig
+from volta.providers.phones.iphone import iPhone
+from netort.validated_config import ValidatedConfig as VoltaConfig
+from volta.core.config.dynamic_options import DYNAMIC_OPTIONS
 
 import queue
-import time
-import logging
 
 config_dict = {
     'phone': {
@@ -258,7 +258,7 @@ config_dict = {
         'type': 'iphone',
     }
 }
-config = VoltaConfig(config_dict)
+config = VoltaConfig(config_dict, DYNAMIC_OPTIONS, 'volta.core')
 phone = iPhone(config)  # create Phone class
 q = queue.Queue()  # create python queue for results
 phone.prepare()  # prepare for test
@@ -305,7 +305,9 @@ Sample usage:
 from volta.providers.phones.android import AndroidPhone
 from volta.mappers.events.router import EventsRouter
 from volta.listeners.report.report import FileListener
-from volta.core.validator import VoltaConfig
+from volta.core.config.dynamic_options import DYNAMIC_OPTIONS
+from netort.validated_config import ValidatedConfig as VoltaConfig
+
 
 import queue
 import time
@@ -319,7 +321,7 @@ config_dict = {
         'type': 'android',
     },
 }
-config = VoltaConfig(config_dict)
+config = VoltaConfig(config_dict, DYNAMIC_OPTIONS, 'volta.core')
 phone = AndroidPhone(config)  # create Phone instance
 phone_q = queue.Queue()  # create python queue for results
 phone.start(phone_q)  # start acquiring phone log messages
@@ -366,13 +368,16 @@ Available configuration options:
 
 Sample usage:
 ```python
+from volta.core.config.dynamic_options import DYNAMIC_OPTIONS
 from volta.providers.boxes.box500hz import VoltaBox500Hz
 from volta.providers.phones.android import AndroidPhone
 from volta.mappers.events.router import EventsRouter
 from volta.listeners.sync.sync import SyncFinder
-from volta.common.util import Tee
-from volta.core.validator import VoltaConfig
+from netort.data_processing import Tee
+from netort.validated_config import ValidatedConfig as VoltaConfig
 
+import queue
+import time
 
 # setup Volta and start
 config_dict = {
@@ -382,12 +387,13 @@ config_dict = {
     },
     'phone': {
         'source': '01e345da733a4764',
-        'type': 'android',
+        'type': 'android'
+    },
     'sync': {
         'search_interval': 30
     },
 }
-config = VoltaConfig(config_dict)
+config = VoltaConfig(config_dict, DYNAMIC_OPTIONS, 'volta.core')
 volta_box = VoltaBox500Hz(config)  # create VoltaBox class
 volta_q = queue.Queue()  # create python queue for volta results
 volta_listeners = []  # create electrical current listeners list
@@ -449,8 +455,9 @@ Sample usage:
 ```python
 from volta.providers.boxes.box500hz import VoltaBox500Hz
 from volta.listeners.report.report import FileListener
-from volta.common.util import Tee
-from volta.core.validator import VoltaConfig
+from volta.core.config.dynamic_options import DYNAMIC_OPTIONS
+from netort.data_processing import Tee
+from netort.validated_config import ValidatedConfig as VoltaConfig
 import queue
 import time
 import logging
@@ -461,7 +468,7 @@ config_dict = {
         'type': '500hz'
     }
 }
-config = VoltaConfig(config_dict)
+config = VoltaConfig(config_dict, DYNAMIC_OPTIONS, 'volta.core')
 volta_box = VoltaBox500Hz(config)  # VoltaBox class
 volta_q = queue.Queue()  # queue for results
 volta_listeners = []  # empty list for listeners
@@ -502,8 +509,9 @@ Sample usage:
 ```python
 from volta.providers.boxes.box500hz import VoltaBox500Hz
 from volta.listeners.uploader.uploader import DataUploader
-from volta.common.util import Tee
-from volta.core.validator import VoltaConfig
+from volta.core.config.dynamic_options import DYNAMIC_OPTIONS
+from netort.data_processing import Tee
+from netort.validated_config import ValidatedConfig as VoltaConfig
 import queue
 import time
 import logging
@@ -514,10 +522,10 @@ config_dict = {
         'type': '500hz'
     },
     'uploader': {
-        'task': LOAD-272
+        'task': 'LOAD-272'
     }
 }
-config = VoltaConfig(config_dict)
+config = VoltaConfig(config_dict, DYNAMIC_OPTIONS, 'volta.core')
 volta_box = VoltaBox500Hz(config)  # VoltaBox class
 volta_q = queue.Queue()  # queue for results
 volta_listeners = []  # emptry list for listeners

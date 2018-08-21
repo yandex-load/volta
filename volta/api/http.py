@@ -94,7 +94,7 @@ def main():
 
     app = VoltaApplication()
     app.settings['debug'] = True
-    app.listen(9998)
+    app.listen(args.port)
 
     url = "http://localhost:{port}".format(port=args.port)
     #webbrowser.open(url,new=2) #new=2 means open in new tab if possible
