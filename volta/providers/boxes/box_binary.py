@@ -87,12 +87,12 @@ class VoltaBoxBinary(VoltaBox):
         try:
             self.reader.close()
         except AttributeError:
-            logger.warn('VoltaBox has no Reader. Seems like VoltaBox initialization failed')
+            logger.warning('VoltaBox has no Reader. Seems like VoltaBox initialization failed')
             logger.debug('VoltaBox has no Reader. Seems like VoltaBox initialization failed', exc_info=True)
         try:
             self.pipeline.close()
         except AttributeError:
-            logger.warn('VoltaBox has no Pipeline. Seems like VoltaBox initialization failed')
+            logger.warning('VoltaBox has no Pipeline. Seems like VoltaBox initialization failed')
         else:
             self.pipeline.join(10)
         self.data_source.close()

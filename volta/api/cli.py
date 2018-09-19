@@ -96,7 +96,7 @@ def perform_test(configs, log):
         try:
             shutil.move(log, os.path.join(core.data_session.artifacts_dir, log))
         except Exception:
-            logger.warn('Failed to move logfile %s to artifacts dir', log)
+            logger.warning('Failed to move logfile %s to artifacts dir', log)
             logger.debug('Failed to move logfile %s to artifacts dir', log, exc_info=True)
 
 

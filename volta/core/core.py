@@ -122,11 +122,11 @@ class Core(object):
         self.config_enabled = self.config.get_enabled_sections()
         if 'data_session' in self.config_enabled:
             if 'uploader' in self.config_enabled:
-                logger.warn('`uploader` config section ignored! Please clean up you config file')
+                logger.warning('`uploader` config section ignored! Please clean up you config file')
             clients = self.config.get_option('data_session', 'clients')
         else:
             # FIXME cleanup later
-            logger.warn('Please setup `data_session` config section properly. Using defaults...')
+            logger.warning('Please setup `data_session` config section properly. Using defaults...')
             clients = [
                 {
                     'type': 'luna',
@@ -251,13 +251,13 @@ class Core(object):
         job_meta = {}
         if 'data_session' in self.config_enabled:
             if 'uploader' in self.config_enabled:
-                logger.warn('`uploader` config section ignored! Please clean up you config file')
+                logger.warning('`uploader` config section ignored! Please clean up you config file')
             job_meta = self.config.get_option('data_session', 'meta', {})
             if not job_meta.get('person'):
                 job_meta['person'] = self.config.get_option('core', 'operator')
         else:
             # FIXME cleanup later
-            logger.warn('Please setup `data_session` config section properly... Using meta from `uploader`')
+            logger.warning('Please setup `data_session` config section properly... Using meta from `uploader`')
             job_meta = dict(
                 name=self.config.get_option('uploader', 'name'),
                 dsc=self.config.get_option('uploader', 'dsc'),
@@ -281,7 +281,7 @@ class Core(object):
         try:
             self.finish()
         except RetryError:
-            logger.warn('Failed to finish test')
+            logger.warning('Failed to finish test')
 
     @retry(**RETRY_ARGS)
     def finish(self):
