@@ -285,8 +285,9 @@ class Core(object):
 
     @retry(**RETRY_ARGS)
     def finish(self):
-        if len(threading.enumerate()) > 1:
-            logger.info('More than 1 threads still running, waiting for finish: %s', threading.enumerate())
+        non_daemon_threads = [t for t in threading.enumerate() if not t.isDaemon()]
+        if len(non_daemon_threads) > 1:
+            logger.info('More than 1 non-daemon threads are still running, waiting to finish: %s', non_daemon_threads)
             raise Exception('More than 1 threads still runnings')
         else:
             logger.info('Finished!')
