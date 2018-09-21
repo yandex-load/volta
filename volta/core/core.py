@@ -242,9 +242,9 @@ class Core(object):
         if 'uploader' in self.config_enabled:
             self.data_session.update_metric(
                 dict(
-                    sys_uts_offset=self.sync_points.get('offset', None),
-                    log_uts_offset=self.sync_points.get('log_offset', None),
-                    sync_sample=self.sync_points.get('sync_sample', None)
+                    sys_uts_offset=self.sync_points.get('offset') or self.sync_points.get('sys_uts_offset'),
+                    log_uts_offset=self.sync_points.get('log_offset') or self.sync_points.get('log_uts_offset'),
+                    sync_sample=self.sync_points.get('sync_sample')
                 )
             )
 
