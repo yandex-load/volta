@@ -255,6 +255,8 @@ class Core(object):
             if not job_meta.get('person'):
                 job_meta['person'] = self.config.get_option('core', 'operator')
             job_meta.update(self.sync_points)
+            job_meta['offset'] = self.sync_points.get('offset') or self.sync_points.get('sys_uts_offset')
+            job_meta['log_offset'] = self.sync_points.get('log_offset') or self.sync_points.get('log_uts_offset')
         else:
             # FIXME cleanup later
             logger.warning('Please setup `data_session` config section properly... Using meta from `uploader`')
