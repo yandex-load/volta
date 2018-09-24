@@ -248,13 +248,13 @@ class Core(object):
                 )
             )
 
-        job_meta = {}
         if 'data_session' in self.config_enabled:
             if 'uploader' in self.config_enabled:
                 logger.warning('`uploader` config section ignored! Please clean up you config file')
             job_meta = self.config.get_option('data_session', 'meta', {})
             if not job_meta.get('person'):
                 job_meta['person'] = self.config.get_option('core', 'operator')
+            job_meta.update(self.sync_points)
         else:
             # FIXME cleanup later
             logger.warning('Please setup `data_session` config section properly... Using meta from `uploader`')
