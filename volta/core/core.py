@@ -276,6 +276,8 @@ class Core(object):
                 sync_sample=self.sync_points.get('sync_sample', None)
             )
         self.data_session.update_job(job_meta)
+        # setting metric offsets in luna
+        self.data_session.update_metric(self.sync_points)
         [module_.close() for module_ in self.enabled_modules]
         self.data_session.close()
 
