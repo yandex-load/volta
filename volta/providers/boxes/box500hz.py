@@ -136,5 +136,6 @@ def main():
     logger.info('3rd sample:\n %s', grabber_q.get())
     logger.info('test finished')
 
+
 if __name__ == "__main__":
     main()
