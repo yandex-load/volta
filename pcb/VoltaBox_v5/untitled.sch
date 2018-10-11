@@ -27906,7 +27906,7 @@ Created 2016-06-07, Hans Locher&lt;br&gt;
 <part name="GND1" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="GND2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="GND3" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="GND4" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
+<part name="GND" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="GND5" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="GND6" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="P+1" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
@@ -28006,7 +28006,7 @@ Created 2016-06-07, Hans Locher&lt;br&gt;
 <part name="C25" library="eagle-ltspice" library_urn="urn:adsk.eagle:library:217" deviceset="C" device="C1206" package3d_urn="urn:adsk.eagle:package:13279/1" value="1u"/>
 <part name="C23" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C2220K" package3d_urn="urn:adsk.eagle:package:23687/2" value="4.7u"/>
 <part name="GND14" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="J1" library="1050170001" deviceset="1050170001" device=""/>
+<part name="X7" library="1050170001" deviceset="1050170001" device=""/>
 <part name="C21" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="CPOL-US" device="150CLZ-1014" package3d_urn="urn:adsk.eagle:package:23405/1" value="100u"/>
 <part name="D1" library="untitled" deviceset="STPS5L60S" device=""/>
 <part name="X6" library="untitled" deviceset="XT60PW-M" device=""/>
@@ -28041,7 +28041,7 @@ Created 2016-06-07, Hans Locher&lt;br&gt;
 <instance part="GND1" gate="1" x="0" y="55.88"/>
 <instance part="GND2" gate="1" x="10.16" y="55.88"/>
 <instance part="GND3" gate="1" x="43.18" y="25.4"/>
-<instance part="GND4" gate="1" x="76.2" y="5.08"/>
+<instance part="GND" gate="1" x="76.2" y="12.7"/>
 <instance part="GND5" gate="1" x="-15.24" y="91.44"/>
 <instance part="GND6" gate="1" x="129.54" y="142.24"/>
 <instance part="P+1" gate="VCC" x="137.16" y="91.44"/>
@@ -28088,7 +28088,7 @@ Created 2016-06-07, Hans Locher&lt;br&gt;
 <instance part="+3V14" gate="G$1" x="134.62" y="88.9"/>
 <instance part="C9" gate="G$1" x="190.5" y="149.86"/>
 <instance part="GND14" gate="1" x="33.02" y="124.46"/>
-<instance part="J1" gate="G$1" x="154.94" y="76.2" rot="MR0"/>
+<instance part="X7" gate="G$1" x="154.94" y="76.2" rot="MR0"/>
 </instances>
 <busses>
 </busses>
@@ -28128,8 +28128,8 @@ Created 2016-06-07, Hans Locher&lt;br&gt;
 </segment>
 <segment>
 <pinref part="DD1" gate="G$1" pin="VSS_1"/>
-<pinref part="GND4" gate="1" pin="GND"/>
-<wire x1="76.2" y1="7.62" x2="76.2" y2="33.02" width="0.1524" layer="91"/>
+<pinref part="GND" gate="1" pin="GND"/>
+<wire x1="76.2" y1="15.24" x2="76.2" y2="33.02" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="DD1" gate="G$1" pin="VSS_4"/>
@@ -28230,8 +28230,8 @@ Created 2016-06-07, Hans Locher&lt;br&gt;
 <pinref part="GND16" gate="1" pin="GND"/>
 <junction x="137.16" y="68.58"/>
 <label x="137.16" y="76.2" size="1.778" layer="95"/>
-<pinref part="J1" gate="G$1" pin="5"/>
-<pinref part="J1" gate="G$1" pin="SHIELD"/>
+<pinref part="X7" gate="G$1" pin="5"/>
+<pinref part="X7" gate="G$1" pin="SHIELD"/>
 </segment>
 <segment>
 <pinref part="DD1" gate="G$1" pin="VSS_2"/>
@@ -28266,7 +28266,7 @@ Created 2016-06-07, Hans Locher&lt;br&gt;
 <wire x1="137.16" y1="88.9" x2="137.16" y2="83.82" width="0.1524" layer="91"/>
 <junction x="137.16" y="88.9"/>
 <label x="137.16" y="83.82" size="1.778" layer="95"/>
-<pinref part="J1" gate="G$1" pin="1"/>
+<pinref part="X7" gate="G$1" pin="1"/>
 </segment>
 </net>
 <net name="+3V3" class="0">
@@ -28496,7 +28496,7 @@ Created 2016-06-07, Hans Locher&lt;br&gt;
 <wire x1="121.92" y1="83.82" x2="121.92" y2="81.28" width="0.1524" layer="91"/>
 <wire x1="121.92" y1="81.28" x2="144.78" y2="81.28" width="0.1524" layer="91"/>
 <label x="137.16" y="81.28" size="1.778" layer="95"/>
-<pinref part="J1" gate="G$1" pin="2"/>
+<pinref part="X7" gate="G$1" pin="2"/>
 </segment>
 </net>
 <net name="D_P" class="1">
@@ -28509,7 +28509,7 @@ Created 2016-06-07, Hans Locher&lt;br&gt;
 <wire x1="124.46" y1="83.82" x2="124.46" y2="78.74" width="0.1524" layer="91"/>
 <junction x="124.46" y="78.74"/>
 <label x="137.16" y="78.74" size="1.778" layer="95"/>
-<pinref part="J1" gate="G$1" pin="3"/>
+<pinref part="X7" gate="G$1" pin="3"/>
 </segment>
 </net>
 <net name="DMCU_P" class="1">
@@ -29162,9 +29162,9 @@ Created 2016-06-07, Hans Locher&lt;br&gt;
 <segment>
 <pinref part="DA3" gate="G$1" pin="SDO"/>
 <wire x1="167.64" y1="-15.24" x2="177.8" y2="-15.24" width="0.1524" layer="91"/>
-<wire x1="177.8" y1="-15.24" x2="177.8" y2="-86.36" width="0.1524" layer="91"/>
-<wire x1="177.8" y1="-86.36" x2="53.34" y2="-86.36" width="0.1524" layer="91"/>
-<wire x1="53.34" y1="-86.36" x2="53.34" y2="-38.1" width="0.1524" layer="91"/>
+<wire x1="177.8" y1="-15.24" x2="177.8" y2="-76.2" width="0.1524" layer="91"/>
+<wire x1="177.8" y1="-76.2" x2="53.34" y2="-76.2" width="0.1524" layer="91"/>
+<wire x1="53.34" y1="-76.2" x2="53.34" y2="-38.1" width="0.1524" layer="91"/>
 <pinref part="DD2" gate="A" pin="VID"/>
 <wire x1="53.34" y1="-38.1" x2="76.2" y2="-38.1" width="0.1524" layer="91"/>
 </segment>
