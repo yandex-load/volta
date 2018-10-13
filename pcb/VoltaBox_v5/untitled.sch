@@ -7555,6 +7555,7 @@ Source: 008-0260-0_E.pdf</description>
 <wire x1="-7.75" y1="0.4" x2="-7.75" y2="1.85" width="0.127" layer="21"/>
 <wire x1="5.5" y1="-1.85" x2="7.75" y2="0.4" width="0.127" layer="21" curve="90"/>
 <wire x1="7.75" y1="0.4" x2="7.75" y2="1.86" width="0.127" layer="21"/>
+<text x="8.89" y="0" size="1.27" layer="21">&gt;NAME</text>
 </package>
 <package name="XT30PW-F">
 <pad name="P$1" x="-2.5" y="0" drill="1.7" diameter="3.4"/>
@@ -7565,6 +7566,7 @@ Source: 008-0260-0_E.pdf</description>
 <wire x1="-4.95" y1="6.4" x2="4.95" y2="6.4" width="0.127" layer="21"/>
 <wire x1="-6.65" y1="5" x2="6.65" y2="5" width="0.127" layer="21"/>
 <wire x1="-4.95" y1="3.6" x2="4.95" y2="3.6" width="0.127" layer="21"/>
+<text x="7.62" y="8.89" size="1.27" layer="21">&gt;NAME</text>
 </package>
 <package name="KLS1-233">
 <wire x1="-3.75" y1="1.23" x2="3.75" y2="1.23" width="0.127" layer="51"/>
@@ -27028,7 +27030,7 @@ Source: &lt;a href="http://focus.ti.com/lit/ds/symlink/ua78l05.pdf"&gt; Datashee
 </library>
 <library name="ADUM1401WTRWZ">
 <packages>
-<package name="SOIC127P1032X265-16N">
+<package name="SO-16W">
 <wire x1="-3.81" y1="4.191" x2="-3.81" y2="4.699" width="0.1524" layer="51"/>
 <wire x1="-3.81" y1="4.699" x2="-5.334" y2="4.699" width="0.1524" layer="51"/>
 <wire x1="-5.334" y1="4.699" x2="-5.334" y2="4.191" width="0.1524" layer="51"/>
@@ -27134,7 +27136,7 @@ Source: &lt;a href="http://focus.ti.com/lit/ds/symlink/ua78l05.pdf"&gt; Datashee
 </package>
 </packages>
 <symbols>
-<symbol name="ADUM1401WTRWZ">
+<symbol name="ADUM1401CRWZ">
 <wire x1="-12.7" y1="17.78" x2="-12.7" y2="-22.86" width="0.4064" layer="94"/>
 <wire x1="-12.7" y1="-22.86" x2="12.7" y2="-22.86" width="0.4064" layer="94"/>
 <wire x1="12.7" y1="-22.86" x2="12.7" y2="17.78" width="0.4064" layer="94"/>
@@ -27160,13 +27162,13 @@ Source: &lt;a href="http://focus.ti.com/lit/ds/symlink/ua78l05.pdf"&gt; Datashee
 </symbol>
 </symbols>
 <devicesets>
-<deviceset name="ADUM1401WTRWZ" prefix="U">
+<deviceset name="ADUM1401CRWZ" prefix="U">
 <description>IC, DIGITAL ISOLATOR</description>
 <gates>
-<gate name="A" symbol="ADUM1401WTRWZ" x="0" y="0" swaplevel="1"/>
+<gate name="A" symbol="ADUM1401CRWZ" x="0" y="0" swaplevel="1"/>
 </gates>
 <devices>
-<device name="" package="SOIC127P1032X265-16N">
+<device name="" package="SO-16W">
 <connects>
 <connect gate="A" pin="GND1" pad="8"/>
 <connect gate="A" pin="GND1_2" pad="2"/>
@@ -27190,7 +27192,7 @@ Source: &lt;a href="http://focus.ti.com/lit/ds/symlink/ua78l05.pdf"&gt; Datashee
 <attribute name="AVAILABILITY" value="Unavailable"/>
 <attribute name="DESCRIPTION" value=" Ic Isolator Dig 4ch 125c 16soic - Adum1401wtrwz "/>
 <attribute name="MF" value="Analog Devices"/>
-<attribute name="MP" value="ADUM1401WTRWZ"/>
+<attribute name="MP" value="ADUM1401CRWZ"/>
 <attribute name="PACKAGE" value="SOIC-16 Analog Devices"/>
 <attribute name="PRICE" value="None"/>
 </technology>
@@ -29000,7 +29002,6 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <part name="C14" library="eagle-ltspice" library_urn="urn:adsk.eagle:library:217" deviceset="C" device="C0603" package3d_urn="urn:adsk.eagle:package:13262/1" value="0.1u"/>
 <part name="GND10" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="C16" library="eagle-ltspice" library_urn="urn:adsk.eagle:library:217" deviceset="C" device="C0603" package3d_urn="urn:adsk.eagle:package:13262/1" value="15p"/>
-<part name="C17" library="eagle-ltspice" library_urn="urn:adsk.eagle:library:217" deviceset="C" device="C0603" package3d_urn="urn:adsk.eagle:package:13262/1" value="15p"/>
 <part name="GND11" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="GND12" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="GND13" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
@@ -29038,7 +29039,7 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <part name="P+3" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+5V" device=""/>
 <part name="P+8" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+5V" device=""/>
 <part name="P+9" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+5V" device=""/>
-<part name="DD2" library="ADUM1401WTRWZ" deviceset="ADUM1401WTRWZ" device=""/>
+<part name="DD2" library="ADUM1401WTRWZ" deviceset="ADUM1401CRWZ" device=""/>
 <part name="C26" library="eagle-ltspice" library_urn="urn:adsk.eagle:library:217" deviceset="C" device="C0603" package3d_urn="urn:adsk.eagle:package:13262/1" value="1u"/>
 <part name="U$14" library="untitled" deviceset="GND2" device=""/>
 <part name="U$15" library="untitled" deviceset="GND2" device=""/>
@@ -29091,6 +29092,7 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <part name="TP3" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TPSQ" device="B1,27" package3d_urn="urn:adsk.eagle:package:27944/1"/>
 <part name="U$3" library="untitled" deviceset="GND2" device=""/>
 <part name="U$9" library="untitled" deviceset="GND2" device=""/>
+<part name="C17" library="eagle-ltspice" library_urn="urn:adsk.eagle:library:217" deviceset="C" device="C0603" package3d_urn="urn:adsk.eagle:package:13262/1" value="15p"/>
 </parts>
 <sheets>
 <sheet>
@@ -29138,7 +29140,6 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <instance part="C14" gate="G$1" x="-20.32" y="96.52" rot="R90"/>
 <instance part="GND10" gate="1" x="132.08" y="99.06"/>
 <instance part="C16" gate="G$1" x="-25.4" y="63.5"/>
-<instance part="C17" gate="G$1" x="-10.16" y="63.5"/>
 <instance part="GND11" gate="1" x="-25.4" y="55.88"/>
 <instance part="GND12" gate="1" x="-10.16" y="55.88"/>
 <instance part="GND13" gate="1" x="25.4" y="96.52"/>
@@ -29166,6 +29167,7 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <instance part="C9" gate="G$1" x="190.5" y="149.86"/>
 <instance part="GND14" gate="1" x="33.02" y="124.46"/>
 <instance part="X7" gate="G$1" x="165.1" y="78.74"/>
+<instance part="C17" gate="G$1" x="-10.16" y="63.5"/>
 </instances>
 <busses>
 </busses>
@@ -29275,10 +29277,6 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <pinref part="GND11" gate="1" pin="GND"/>
 </segment>
 <segment>
-<pinref part="C17" gate="G$1" pin="2"/>
-<pinref part="GND12" gate="1" pin="GND"/>
-</segment>
-<segment>
 <pinref part="DD1" gate="G$1" pin="VSS_3"/>
 <wire x1="43.18" y1="101.6" x2="43.18" y2="104.14" width="0.1524" layer="91"/>
 <wire x1="43.18" y1="104.14" x2="30.48" y2="104.14" width="0.1524" layer="91"/>
@@ -29326,6 +29324,10 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <pinref part="X2" gate="G$1" pin="P$8"/>
 <pinref part="GND14" gate="1" pin="GND"/>
 <label x="35.56" y="127" size="1.778" layer="95"/>
+</segment>
+<segment>
+<pinref part="C17" gate="G$1" pin="2"/>
+<pinref part="GND12" gate="1" pin="GND"/>
 </segment>
 </net>
 <net name="VCC" class="0">
@@ -29496,10 +29498,10 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <wire x1="-10.16" y1="68.58" x2="-10.16" y2="78.74" width="0.1524" layer="91"/>
 <pinref part="DD1" gate="G$1" pin="PC15-OSC32_OUT"/>
 <wire x1="-10.16" y1="78.74" x2="25.4" y2="78.74" width="0.1524" layer="91"/>
-<pinref part="C17" gate="G$1" pin="1"/>
 <wire x1="-10.16" y1="68.58" x2="-10.16" y2="66.04" width="0.1524" layer="91"/>
 <junction x="-10.16" y="68.58"/>
 <pinref part="ZQ1" gate="G$1" pin="2"/>
+<pinref part="C17" gate="G$1" pin="1"/>
 </segment>
 </net>
 <net name="N$8" class="0">
