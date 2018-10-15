@@ -159,10 +159,10 @@
 <wire x1="80" y1="0" x2="80" y2="60" width="0" layer="20"/>
 <wire x1="80" y1="60" x2="0" y2="60" width="0" layer="20"/>
 <wire x1="0" y1="60" x2="0" y2="0" width="0" layer="20"/>
-<hole x="3" y="3" drill="3"/>
-<hole x="77" y="3" drill="3"/>
-<hole x="3" y="57" drill="3"/>
-<hole x="77" y="57" drill="3"/>
+<hole x="3" y="3" drill="3.2"/>
+<hole x="77" y="3" drill="3.2"/>
+<hole x="3" y="57" drill="3.2"/>
+<hole x="77" y="57" drill="3.2"/>
 <text x="71.59625" y="32.86125" size="3.81" layer="21" rot="R270">Yandex</text>
 <text x="76.04125" y="24.4475" size="2.54" layer="21" rot="R270">VoltaBox v5</text>
 <circle x="37.1475" y="58.89625" radius="0.22450625" width="0.3" layer="21"/>
