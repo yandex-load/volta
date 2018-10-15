@@ -289,7 +289,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <packages>
 <package name="112J-TDAR-R">
 <smd name="P$1" x="8.8" y="0" dx="1.6" dy="0.7" layer="1" rot="R90"/>
-<smd name="P$10" x="13.34" y="0.17" dx="1.6" dy="1.4" layer="1"/>
+<smd name="P$10" x="13.34" y="-0.4" dx="1.6" dy="1.4" layer="1"/>
 <smd name="P$11" x="14.37" y="-10.08" dx="2.2" dy="1.2" layer="1" rot="R90"/>
 <smd name="P$12" x="-1.15" y="-10.18" dx="2.2" dy="1.2" layer="1" rot="R90"/>
 <smd name="P$2" x="7.7" y="0" dx="1.6" dy="0.7" layer="1" rot="R90"/>
@@ -4070,7 +4070,7 @@ design rules under a new name.</description>
 <wire x1="24.5225" y1="24.58" x2="25.0825" y2="25.0825" width="0" layer="19" extent="1-16"/>
 <wire x1="19.5225" y1="36.38" x2="19.3675" y2="37.7825" width="0" layer="19" extent="1-16"/>
 <wire x1="32.9" y1="57.4875" x2="35.56" y2="55.245" width="0" layer="19" extent="1-1"/>
-<wire x1="18.41" y1="47.1375" x2="14.0914375" y2="47.14875" width="0" layer="19" extent="1-16"/>
+<wire x1="18.41" y1="47.7075" x2="14.0914375" y2="47.14875" width="0" layer="19" extent="1-16"/>
 <wire x1="32.95" y1="47.8075" x2="28.45" y2="48.135" width="0" layer="19" extent="1-1"/>
 <wire x1="17.38" y1="57.3875" x2="10.0076" y2="54.73065" width="0" layer="19" extent="1-1"/>
 </signal>
