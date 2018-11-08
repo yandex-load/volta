@@ -152,6 +152,8 @@ class Core(object):
         if not self.config:
             raise RuntimeError('Empty config')
 
+        self.time_limit = int(self.config.get_option('core', 'time_limit') or 0)
+
         self.factory = Factory()
 
         self._volta = None
@@ -218,6 +220,13 @@ class Core(object):
             self.phone.start(self.phone_q)
             logger.info('Starting test apps and waiting for finish...')
             self.phone.run_test()
+
+        if self.time_limit:
+            logger.info('Time limit is set %s sec', self.time_limit)
+            timer = threading.Timer(self.time_limit, self.end_test)
+            timer.start()
+            timer.join()
+            self.post_process()
 
     def end_test(self):
         """
