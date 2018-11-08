@@ -498,10 +498,10 @@
 <devices>
 <device name="" package="DS1097">
 <connects>
-<connect gate="G$1" pin="P$1" pad="P$1"/>
-<connect gate="G$1" pin="P$2" pad="P$2"/>
-<connect gate="G$1" pin="P$3" pad="P$3"/>
-<connect gate="G$1" pin="P$4" pad="P$4"/>
+<connect gate="G$1" pin="P$1" pad="P$4"/>
+<connect gate="G$1" pin="P$2" pad="P$3"/>
+<connect gate="G$1" pin="P$3" pad="P$2"/>
+<connect gate="G$1" pin="P$4" pad="P$1"/>
 <connect gate="G$1" pin="P$5" pad="P$5 P$6"/>
 </connects>
 <technologies>
