@@ -222,8 +222,12 @@ class Core(object):
             self.phone.run_test()
 
         if self.time_limit:
+            def countdown(limit):
+                while limit > 0:
+                    time.sleep(1)
+                    limit -= 1
             logger.info('Time limit is set %s sec', self.time_limit)
-            timer = threading.Timer(self.time_limit, self.end_test)
+            timer = threading.Thread(target=countdown, args=(self.time_limit,), daemon=True)
             timer.start()
             timer.join()
             self.post_process()
