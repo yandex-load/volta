@@ -83,6 +83,11 @@ static void MX_TIM3_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+void delay(int t)
+{
+  while(t--) __asm("nop");
+}
+
 uint8_t overSampleCount = 0;
 uint16_t overSampleISum = 0;
 uint16_t overSampleUSum = 0;
@@ -91,41 +96,40 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     HAL_StatusTypeDef status;
     uint8_t receive_buffer[] = { 0x00, 0x00, 0x00, 0x00 };
 
-    //HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_RESET);
-    GPIOA->ODR &= ~SPI1_NSS_Pin;
-    status = HAL_SPI_TransmitReceive(&hspi1, cmd_read_current, receive_buffer,
-        2, HAL_MAX_DELAY);
-    //HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
-    GPIOA->ODR |= SPI1_NSS_Pin;
-    uint16_t current_value = ((uint16_t) receive_buffer[3] << 8)
-        + (uint16_t) receive_buffer[2];
-    //HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_RESET);
-    GPIOA->ODR &= ~SPI1_NSS_Pin;
-    status = HAL_SPI_TransmitReceive(&hspi1, cmd_read_voltage, receive_buffer,
-        2, HAL_MAX_DELAY);
-    //HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
-    GPIOA->ODR |= SPI1_NSS_Pin;
-    uint16_t voltage_value = ((uint16_t) receive_buffer[3] << 8)
-        + (uint16_t) receive_buffer[2];
-
-    //rb_push(&rb, current_value);
-    if(status == HAL_OK)
+    int i;
+    for(i = 0; i < 4; i++)
     {
-      if(overSampleCount < 4)
-      {
-        overSampleISum += current_value;
-        overSampleUSum += voltage_value;
-        overSampleCount++;
-      }
-      else
-      {
-        overSampleCount = 0;
-        rb_push(&rb, overSampleISum);
-        //rb_push(&rb, overSampleUSum);
-        overSampleISum = 0;
-        overSampleUSum = 0;
-      }
+      HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_RESET);
+      //GPIOA->ODR &= ~SPI1_NSS_Pin;
+      //GPIOA->BSRR = SPI1_NSS_Pin << 16;
+      status = HAL_SPI_TransmitReceive(&hspi1, cmd_read_current, receive_buffer,
+          2, HAL_MAX_DELAY);
+      HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
+      //GPIOA->ODR |= SPI1_NSS_Pin;
+      //GPIOA->BSRR = SPI1_NSS_Pin;
+      uint16_t current_value = ((uint16_t) receive_buffer[3] << 8)
+          + (uint16_t) receive_buffer[2];
+      HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_RESET);
+      //GPIOA->ODR &= ~SPI1_NSS_Pin;
+      //GPIOA->BSRR = SPI1_NSS_Pin << 16;
+      status = HAL_SPI_TransmitReceive(&hspi1, cmd_read_voltage, receive_buffer,
+          2, HAL_MAX_DELAY);
+      HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
+      //GPIOA->ODR |= SPI1_NSS_Pin;
+      //GPIOA->BSRR = SPI1_NSS_Pin;
+      uint16_t voltage_value = ((uint16_t) receive_buffer[3] << 8)
+          + (uint16_t) receive_buffer[2];
+
+      overSampleISum += current_value;
+      overSampleUSum += voltage_value;
+      overSampleCount++;
+
+      delay(50);//@72MHz
     }
+    rb_push(&rb, overSampleISum);
+    //rb_push(&rb, overSampleUSum);
+    overSampleISum = 0;
+    overSampleUSum = 0;
   }
 }
 /* USER CODE END 0 */
@@ -282,7 +286,7 @@ static void MX_TIM3_Init(void)
   TIM_MasterConfigTypeDef sMasterConfig;
 
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 179;
+  htim3.Init.Prescaler = 719;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 9;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
