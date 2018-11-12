@@ -221,17 +221,6 @@ class Core(object):
             logger.info('Starting test apps and waiting for finish...')
             self.phone.run_test()
 
-        if self.time_limit:
-            def countdown(limit):
-                while limit > 0:
-                    time.sleep(1)
-                    limit -= 1
-            logger.info('Time limit is set %s sec', self.time_limit)
-            timer = threading.Thread(target=countdown, args=(self.time_limit,), daemon=True)
-            timer.start()
-            timer.join()
-            self.post_process()
-
     def end_test(self):
         """
         Interrupts test: stops grabbers and events parsers

@@ -81,8 +81,15 @@ def perform_test(configs, log):
         logger.info('Starting test... You can interrupt test w/ Ctrl+C or SIGTERM signal')
         core.start_test()
 
-        while True:
-            time.sleep(1)  # infinite loop until SIGTERM
+        if core.time_limit:
+            logger.info('Time limit is set to {} sec'.format(core.time_limit))
+            while core.time_limit > 0:
+                time.sleep(1)
+                core.time_limit -= 1
+            core.end_test()
+        else:
+            while True:
+                time.sleep(1)  # infinite loop until SIGTERM
 
     except KeyboardInterrupt:
         logger.info('Keyboard interrupt, trying graceful shutdown. Do not press interrupt again, '
