@@ -152,8 +152,6 @@ class Core(object):
         if not self.config:
             raise RuntimeError('Empty config')
 
-        self.time_limit = int(self.config.get_option('core', 'time_limit') or 0)
-
         self.factory = Factory()
 
         self._volta = None

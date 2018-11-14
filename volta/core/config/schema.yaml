@@ -10,9 +10,6 @@ core:
     version:
       type: integer
       default: 2
-    time_limit:
-      type: integer
-      default: 0
 volta:
   type: dict
   schema:
