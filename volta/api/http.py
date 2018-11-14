@@ -2,8 +2,6 @@ import tornado.web
 import logging
 import webbrowser
 import yaml
-import time
-from tornado import httpserver
 from tornado import gen
 from tornado.ioloop import IOLoop
 import json
@@ -16,6 +14,7 @@ from volta.core.core import Core
 logger = logging.getLogger(__name__)
 
 active_test = None
+
 
 class StartHandler(tornado.web.RequestHandler):
     def post(self):
