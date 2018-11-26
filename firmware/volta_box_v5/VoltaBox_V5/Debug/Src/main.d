@@ -22,12 +22,25 @@ Src/main.o: ../Src/main.c \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rtc.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rtc_ex.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_sd.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_sdmmc.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_spi.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_usb.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd_ex.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Inc/fatfs.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/Third_Party/FatFs/src/ff.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/Third_Party/FatFs/src/integer.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Inc/ffconf.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Inc/bsp_driver_sd.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/Third_Party/FatFs/src/ff_gen_drv.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/Third_Party/FatFs/src/diskio.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/Third_Party/FatFs/src/ff.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/Third_Party/FatFs/src/drivers/sd_diskio.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Inc/usb_device.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Inc/usbd_conf.h \
@@ -38,7 +51,8 @@ Src/main.o: ../Src/main.c \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_core.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h \
  /home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h \
- /home/slavik763/STM32_workspace/VoltaBox_V5/Inc/buffer.h
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Inc/buffer.h \
+ /home/slavik763/STM32_workspace/VoltaBox_V5/Inc/cp1251.h
 
 /home/slavik763/STM32_workspace/VoltaBox_V5/Inc/main.h:
 
@@ -86,6 +100,14 @@ Src/main.o: ../Src/main.c \
 
 /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h:
 
+/home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rtc.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rtc_ex.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_sd.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_sdmmc.h:
+
 /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_spi.h:
 
 /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h:
@@ -97,6 +119,24 @@ Src/main.o: ../Src/main.c \
 /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_usb.h:
 
 /home/slavik763/STM32_workspace/VoltaBox_V5/Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd_ex.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Inc/fatfs.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/Third_Party/FatFs/src/ff.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/Third_Party/FatFs/src/integer.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Inc/ffconf.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Inc/bsp_driver_sd.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/Third_Party/FatFs/src/ff_gen_drv.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/Third_Party/FatFs/src/diskio.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/Third_Party/FatFs/src/ff.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/Third_Party/FatFs/src/drivers/sd_diskio.h:
 
 /home/slavik763/STM32_workspace/VoltaBox_V5/Inc/usb_device.h:
 
@@ -119,3 +159,5 @@ Src/main.o: ../Src/main.c \
 /home/slavik763/STM32_workspace/VoltaBox_V5/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h:
 
 /home/slavik763/STM32_workspace/VoltaBox_V5/Inc/buffer.h:
+
+/home/slavik763/STM32_workspace/VoltaBox_V5/Inc/cp1251.h:

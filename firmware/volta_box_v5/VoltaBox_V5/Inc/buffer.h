@@ -10,18 +10,20 @@
 
 #include <stdint.h>
 
-#define RINGBUF_SIZE 32
+//#define RINGBUF_SIZE 4096
+//#define RINGBUF_SIZE 32
 
 struct ringbuf_t {
-	uint16_t buf_[RINGBUF_SIZE];
+	uint16_t *buf_;//[RINGBUF_SIZE];
 	uint16_t *wp_;
 	uint16_t *rp_;
 	uint16_t *tail_;
 	uint16_t remain_;
+	uint16_t size;
 };
 
 
-void rb_init(struct ringbuf_t *rb);
+void rb_init(struct ringbuf_t *rb, uint16_t size);
 
 void rb_push(struct ringbuf_t *rb, uint16_t value);
 

@@ -61,6 +61,16 @@
 
 #define SPI2_NSS_Pin GPIO_PIN_12
 #define SPI2_NSS_GPIO_Port GPIOB
+#define OLED_CS_Pin GPIO_PIN_15
+#define OLED_CS_GPIO_Port GPIOA
+#define OLED_SCK_Pin GPIO_PIN_3
+#define OLED_SCK_GPIO_Port GPIOB
+#define OLED_RS_Pin GPIO_PIN_4
+#define OLED_RS_GPIO_Port GPIOB
+#define OLED_MOSI_Pin GPIO_PIN_5
+#define OLED_MOSI_GPIO_Port GPIOB
+#define OLED_DC_Pin GPIO_PIN_6
+#define OLED_DC_GPIO_Port GPIOB
 
 /* ########################## Assert Selection ############################## */
 /**

@@ -7,15 +7,17 @@
 
 #include "buffer.h"
 
-void rb_init(struct ringbuf_t *rb) {
+void rb_init(struct ringbuf_t *rb, uint16_t size) {
+	rb->size = size;
+	rb->buf_ = realloc(rb->buf_, size*(sizeof(uint16_t)));
 	rb->wp_ = rb->buf_;
 	rb->rp_ = rb->buf_;
-	rb->tail_ = rb->buf_ + RINGBUF_SIZE;
+	rb->tail_ = rb->buf_ + size;
 	rb->remain_ = 0;
 }
 
 void rb_push(struct ringbuf_t *rb, uint16_t value) {
-	if (rb->remain_ == RINGBUF_SIZE) rb_pop(rb);
+	if (rb->remain_ == rb->size) rb_pop(rb);
 	*(rb->wp_++) = value;
 	rb->remain_++;
 	if (rb->wp_ == rb->tail_)
