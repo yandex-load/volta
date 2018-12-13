@@ -114,7 +114,7 @@ class AndroidPhone(Phone):
                 'source': 'phone'
             }
         )
-        for key, value in self.shellexec_metrics.items():
+        for key, value in list(self.shellexec_metrics.items()):
             self.my_metrics[key] = self.core.data_session.new_metric(
                 {
                     'type': 'metrics',
@@ -279,7 +279,7 @@ class AndroidPhone(Phone):
 
     def __shell_executor(self):
         while not self.closed:
-            for key, value in self.shellexec_metrics.items():
+            for key, value in list(self.shellexec_metrics.items()):
                 try:
                     if not self.shellexec_metrics[key].get('last_ts') \
                             or self.shellexec_metrics[key]['last_ts'] < int(time.time()) * 10**6:
