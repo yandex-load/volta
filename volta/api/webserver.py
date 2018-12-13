@@ -106,7 +106,7 @@ class StopHandler(APIHandler):  # pylint: disable=R0904
         except KeyError:
             self.reply_reason(404, 'No session with this ID.')
             return
-        if session_id in list(self.srv.running_sessions.keys()):
+        if session_id in self.srv.running_sessions:
             self.srv.cmd({'cmd': 'stop', 'session': session_id})
             self.reply_reason(200, 'Will try to stop test process.')
             return
