@@ -128,8 +128,8 @@ class AndroidPhone(Phone):
         def read_process_queues_and_report(outs_q, errs_q):
             outputs = get_nowait_from_queue(outs_q)
             for chunk in outputs:
-                logger.debug('Command output: %s', chunk.strip('\n'.encode('utf-8')))
-                if chunk.strip('\n'.encode('utf-8')) == 'unknown':
+                logger.debug('Command output: %s', chunk.strip())
+                if chunk.strip() == 'unknown':
                     worker.close()
                     raise RuntimeError(
                         'Phone "%s" has an unknown state. Please check device authorization and state' % self.source
@@ -160,10 +160,10 @@ class AndroidPhone(Phone):
         def read_process_queues_and_report(outs_q, errs_q):
             outputs = get_nowait_from_queue(outs_q)
             for chunk in outputs:
-                logger.debug('Command \'%s\' output: %s', cmd, chunk.strip('\n'))
+                logger.debug('Command \'%s\' output: %s', cmd, chunk.strip())
             errors = get_nowait_from_queue(errs_q)
             for err_chunk in errors:
-                logger.warning('Errors in command \'%s\' output: %s', cmd, err_chunk.strip('\n'))
+                logger.warning('Errors in command \'%s\' output: %s', cmd, err_chunk.strip())
         worker = Executioner(cmd)
         outs_q, errs_q = worker.execute()
         while worker.is_finished() is None:
@@ -311,4 +311,4 @@ class AndroidPhone(Phone):
     def __execute_shellexec_metric(cmd):
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         (stdout, stderr) = proc.communicate()
-        return stdout.strip('\n')
+        return stdout.strip()
