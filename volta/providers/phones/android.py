@@ -128,8 +128,8 @@ class AndroidPhone(Phone):
         def read_process_queues_and_report(outs_q, errs_q):
             outputs = get_nowait_from_queue(outs_q)
             for chunk in outputs:
-                logger.debug('Command output: %s', chunk.strip('\n'))
-                if chunk.strip('\n') == 'unknown':
+                logger.debug('Command output: %s', chunk.strip('\n'.encode('utf-8')))
+                if chunk.strip('\n'.encode('utf-8')) == 'unknown':
                     worker.close()
                     raise RuntimeError(
                         'Phone "%s" has an unknown state. Please check device authorization and state' % self.source
