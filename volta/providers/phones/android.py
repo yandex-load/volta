@@ -15,6 +15,9 @@ from netort.resource import manager as resource
 from volta.common.interfaces import Phone
 from volta.common.util import LogParser, Executioner
 
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)  # pandas sorting warnings
+
 
 logger = logging.getLogger(__name__)
 
