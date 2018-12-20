@@ -13,7 +13,7 @@ yandex package for mobile energy consumption measurements
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
         'tornado',
-        'pandas>=0.18.0',
+        'pandas>=0.23.0',
         'seaborn',
         'numpy>=1.11.0',
         'scipy',

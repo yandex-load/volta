@@ -150,9 +150,10 @@ class LogParser(object):
         if not data:
             time.sleep(1)
         else:
-            data = data.decode('utf-8')  # not sure if this is a good practice
             ready_to_go_chunks = []
             for chunk in data:
+                if isinstance(chunk, bytes):
+                    chunk = chunk.decode('utf-8')  # not sure if this is a good practice
                 match = self.log_fmt_regexp.match(chunk)
                 # we need this for multiline log entries concatenation
                 if match:
