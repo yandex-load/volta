@@ -1,7 +1,6 @@
 import threading
 import pandas as pd
 import numpy as np
-import queue as q
 import logging
 import subprocess
 import shlex
@@ -151,6 +150,7 @@ class LogParser(object):
         if not data:
             time.sleep(1)
         else:
+            data = data.decode('utf-8')  # not sure if this is a good practice
             ready_to_go_chunks = []
             for chunk in data:
                 match = self.log_fmt_regexp.match(chunk)
