@@ -11,6 +11,7 @@ yandex package for mobile energy consumption measurements
     maintainer_email='direvius@yandex-team.ru',
     url='https://github.com/yandex-load/volta',
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
+    python_requires='>=3',
     install_requires=[
         'tornado',
         'pandas>=0.23.0',
