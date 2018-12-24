@@ -1,7 +1,7 @@
 """ Binary Volta box
 """
 import logging
-import queue as queue
+import queue
 import time
 import numpy as np
 import json
