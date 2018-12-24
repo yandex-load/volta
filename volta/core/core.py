@@ -130,7 +130,7 @@ class Core(object):
             clients = [
                 {
                     'type': 'luna',
-                    'api_address': 'https://volta-back.common-int.yandex-team.ru',
+                    'api_address': 'https://volta-back.yandex-team.ru',
                     'user_agent': 'Tank Test',
                 },
                 {
