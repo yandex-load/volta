@@ -6,8 +6,11 @@ import queue as q
 import pkg_resources
 
 from volta.common.interfaces import Phone
-from volta.common.util import execute, Drain, popen, chunk_to_df, LogReader
-from volta.common.resource import manager as resource
+from volta.common.util import LogReader
+
+from netort.resource import manager as resource
+from netort.data_processing import Drain
+from netort.process import execute, popen
 
 
 logger = logging.getLogger(__name__)

@@ -5,43 +5,29 @@ import queue as q
 import time
 
 from volta.common.interfaces import VoltaBox
-from volta.common.util import Drain, TimeChopper, string_to_np
-from volta.common.resource import manager as resource
+from volta.common.util import TimeChopper
 
+from netort.data_processing import Drain
 
 logger = logging.getLogger(__name__)
 
 
 class VoltaBox500Hz(VoltaBox):
-    """ VoltaBox500Hz - works with plain-text 500hz box, grabs data and stores data to queue
+    """ VoltaBox500Hz - works with plain-text 500hz box, grabs data and stores data to queue """
 
-    Attributes:
-        source (string): path to data source, should be able to be opened by resource manager
-            may be url, e.g. 'http://myhost.tld/path/to/file'
-            may be device, e.g. '/dev/cu.wchusbserial1420'
-            may be path to file, e.g. '/home/users/netort/path/to/file.data'
-        sample_rate (int): volta box sample rate - depends on software and which type of volta box you use
-        chop_ratio (int): chop ratio for incoming data, 1 means 1 second (500 for sample_rate 500)
-        baud_rate (int): baud rate for device if device specified in source
-        grab_timeout (int): timeout for grabber
-    """
-
-    def __init__(self, config):
-        VoltaBox.__init__(self, config)
-        self.source = config.get_option('volta', 'source')
-        self.chop_ratio = config.get_option('volta', 'chop_ratio')
+    def __init__(self, config, core):
+        VoltaBox.__init__(self, config, core)
         self.sample_rate = config.get_option('volta', 'sample_rate', 500)
         self.baud_rate = config.get_option('volta', 'baud_rate', 115200)
-        self.grab_timeout = config.get_option('volta', 'grab_timeout')
         # initialize data source
-        self.source_opener = resource.get_opener(self.source)
         self.source_opener.baud_rate = self.baud_rate
         self.source_opener.read_timeout = self.grab_timeout
         self.data_source = self.source_opener()
         logger.debug('Data source initialized: %s', self.data_source)
-        self.pipeline = None
-        self.grabber_q = None
-        self.process_currents = None
+        self.my_metrics = {}
+
+    def __create_my_metrics(self):
+        self.my_metrics['currents'] = self.core.data_session.new_metric()
 
     def start_test(self, results):
         """ Grab stage - starts grabber thread and puts data to results queue
@@ -53,20 +39,23 @@ class VoltaBox500Hz(VoltaBox):
                 make pandas DataFrame ->
                 drain DataFrame to queue `results`
         """
+        logger.info('volta start test')
         self.grabber_q = results
 
         # clean up dirty buffer
         for _ in range(self.sample_rate):
             self.data_source.readline()
 
+        logger.info('reader init?')
         self.reader = BoxPlainTextReader(
             self.data_source, self.sample_rate
         )
+        logger.info('reader init!')
         self.pipeline = Drain(
             TimeChopper(
                 self.reader, self.sample_rate, self.chop_ratio
             ),
-            self.grabber_q
+            self.my_metrics['currents']
         )
         logger.info('Starting grab thread...')
         self.pipeline.start()
@@ -100,12 +89,14 @@ class BoxPlainTextReader(object):
 
     def _read_chunk(self):
         data = self.source.read(self.cache_size)
+        logger.info('Data:%s', data)
         if data:
             parts = data.rsplit('\n', 1)
             if len(parts) > 1:
                 ready_chunk = self.buffer + parts[0] + '\n'
                 self.buffer = parts[1]
-                return string_to_np(ready_chunk, type=float, sep='\n')
+                # FIXME string_to_np(ready_chunk, type=float, sep='\n')
+                #return string_to_np(ready_chunk, type=float, sep='\n')
             else:
                 self.buffer += parts[0]
         else:
@@ -144,6 +135,7 @@ def main():
     logger.info('2nd sample:\n %s', grabber_q.get())
     logger.info('3rd sample:\n %s', grabber_q.get())
     logger.info('test finished')
+
 
 if __name__ == "__main__":
     main()

@@ -24,8 +24,8 @@ volta:
       type: string
       required: true
     chop_ratio:
-      type: integer
-      default: 1
+      type: float
+      default: 1.0
     baud_rate:
       type: integer
     grab_timeout:
@@ -36,6 +36,9 @@ volta:
     slope:
       type: float
       default: 1
+    sample_swap:
+      type: boolean
+      default: false
     precision:
       type: integer
       default: 10
@@ -82,6 +85,9 @@ phone:
       type: string
       nullable: true
       default: null
+    shellexec_metrics:
+      type: dict
+      default: {}
     util:
       type: string
       default: /Applications/Apple\ Configurator\ 2.app/Contents/MacOS/
@@ -135,10 +141,40 @@ uploader:
     ver:
       type: string
       default: set app version via uploader.ver
+    component:
+      type: string
+      default: ''
     meta:
       type: string
       default: null
       nullable: true
+
+data_session:
+  type: dict
+  default: {}
+  schema:
+    enabled:
+      type: boolean
+      default: true
+    clients:
+      type: list
+      default: []
+      schema:
+        type: dict
+        schema:
+          type:
+            type: string
+            required: true
+            nullable: false
+            allowed: [luna, lunapark_volta, local_storage]
+          api_address:
+            type: string
+    meta:
+      type: dict
+    artifacts_base_dir:
+      type: string
+      default: './logs'
+
 console:
   type: dict
   schema:

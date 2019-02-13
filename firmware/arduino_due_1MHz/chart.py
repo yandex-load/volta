@@ -3,7 +3,8 @@
 # from http://forum.arduino.cc/index.php?topic=137635.msg1270996#msg1270996
 
 import pyqtgraph as pg
-import time, threading, sys
+import threading
+import sys
 import serial
 import numpy as np
 
@@ -25,7 +26,6 @@ class SerialReader(threading.Thread):
         self.exitFlag = False
         self.exitMutex = threading.Lock()
         self.dataMutex = threading.Lock()
-
 
     def run(self):
         exitMutex = self.exitMutex

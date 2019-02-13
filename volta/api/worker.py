@@ -8,6 +8,7 @@ import os
 import os.path
 import traceback
 import json
+import yaml
 from volta.core.core import Core as VoltaCore
 
 # Test stage order, internal protocol description, etc...
@@ -22,6 +23,7 @@ class InterruptTest(BaseException):
 
     def __init__(self):
         super(InterruptTest, self).__init__()
+
 
 class StopTest(BaseException):
     """Raised by sigterm handler"""
@@ -48,7 +50,9 @@ class VoltaWorker(object):
         self.retcode = None
         self.locked = False
         self.done_stages = set()
-        self.core = VoltaCore(self.config)
+        self.core = VoltaCore(
+            yaml.safe_load(self.config)
+        )
         self.core.session_id = None
         self.core.status = None
 

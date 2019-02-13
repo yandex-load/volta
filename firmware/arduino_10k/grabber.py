@@ -1,12 +1,11 @@
-from __future__ import print_function
 import serial
-import sys
 import json
 import argparse
 import progressbar
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -50,6 +49,7 @@ def main():
                 for i in range(args.seconds):
                     bar.update(i)
                     out.write(ser.read(sps * 2))
+
 
 if __name__ == '__main__':
     main()
