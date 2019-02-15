@@ -77,8 +77,8 @@ class iPhone(Phone):
         def read_process_queues_and_report(outs_q, errs_q):
             outputs = get_nowait_from_queue(outs_q)
             for chunk in outputs:
-                logger.debug('Command output: %s', chunk.decode('utf-8').strip('\n'))
-                if chunk.decode('utf-8').strip('\n') == 'unknown':
+                logger.debug('Command output: %s', chunk.strip())
+                if chunk.strip() == 'unknown':
                     worker.close()
                     raise RuntimeError(
                         'Phone "%s" has an unknown state. Please check device authorization and state' % self.source
