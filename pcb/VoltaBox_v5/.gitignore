@@ -1,2 +1,4 @@
 *.s#*
 *.b#*
+*.sch.old*
+*.brd.old*
