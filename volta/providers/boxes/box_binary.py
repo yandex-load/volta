@@ -33,8 +33,8 @@ class VoltaBoxBinary(VoltaBox):
             {
                 'type': 'metrics',
                 'name': 'current',
-                'source': 'voltabox'
-                'group': 'current'
+                'source': 'voltabox',
+                'group': 'current',
             }
         )
 
