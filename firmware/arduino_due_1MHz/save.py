@@ -2,7 +2,8 @@
 
 # from http://forum.arduino.cc/index.php?topic=137635.msg1270996#msg1270996
 
-import time, threading, sys
+import time
+import threading
 import serial
 import numpy as np
 

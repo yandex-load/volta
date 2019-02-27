@@ -1,7 +1,7 @@
 """ Binary Volta box
 """
 import logging
-import Queue as queue
+import queue
 import time
 import numpy as np
 import json
@@ -33,7 +33,8 @@ class VoltaBoxBinary(VoltaBox):
             {
                 'type': 'metrics',
                 'name': 'current',
-                'source': 'voltabox'
+                'source': 'voltabox',
+                'group': 'current',
             }
         )
 

@@ -1,6 +1,7 @@
 from netort.resource import SerialOpener
 from volta.providers.boxes.box_binary import BoxBinaryReader
 
+
 def main():
     volta = BoxBinaryReader(
         SerialOpener(
@@ -13,6 +14,7 @@ def main():
     )
     for chunk in volta:
         print(chunk)
+
 
 if __name__ == '__main__':
     main()
