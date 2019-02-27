@@ -26,7 +26,7 @@ yandex package for mobile energy consumption measurements
         'pyyaml',
         'cerberus<1.2',
         'future',
-        'netort>=0.2.8',
+        'netort>=0.3.3',
         'retrying'
     ],
     setup_requires=[
