@@ -30,11 +30,9 @@ class VoltaBoxBinary(VoltaBox):
 
     def __create_my_metrics(self):
         self.my_metrics['current'] = self.core.data_session.new_true_metric(
-            'current',
-            **{
-                'source': 'voltabox',
-                'group': 'current',
-            }
+            name='current',
+            source='voltabox',
+            group='current',
         )
 
     def start_test(self, results):
