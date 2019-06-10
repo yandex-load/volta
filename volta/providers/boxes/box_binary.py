@@ -29,10 +29,9 @@ class VoltaBoxBinary(VoltaBox):
         self.__create_my_metrics()
 
     def __create_my_metrics(self):
-        self.my_metrics['current'] = self.core.data_session.new_metric(
-            {
-                'type': 'metrics',
-                'name': 'current',
+        self.my_metrics['current'] = self.core.data_session.new_true_metric(
+            'current',
+            **{
                 'source': 'voltabox',
                 'group': 'current',
             }
