@@ -54,7 +54,7 @@ class SyncFinder(DataListener):
                 if name == 'sync':
                     self.sync_df = self.sync_df.append(df)
 
-    def put_current(self, incoming_df):
+    def put_current(self, dtype, incoming_df):
         """  Append currents dataframes until search interval won't will be filled up
         """
         if len(self.volta_sync_stage_df) < (self.search_interval * self.sample_rate):
