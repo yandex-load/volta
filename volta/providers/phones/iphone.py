@@ -65,12 +65,10 @@ class iPhone(Phone):
         self.__test_interaction_with_phone()
 
     def __create_my_metrics(self):
-        self.my_metrics['events'] = self.core.data_session.new_metric(
-            {
-                'type': 'events',
-                'name': 'events',
-                'source': 'phone'
-            }
+        self.my_metrics['events'] = self.core.data_session.new_event_metric(
+            name='events',
+            source='phone',
+            **self.config.get_option('phone', 'meta', {})
         )
 
     def __test_interaction_with_phone(self):

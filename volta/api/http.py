@@ -1,6 +1,5 @@
 import tornado.web
 import logging
-import webbrowser
 import yaml
 from tornado import gen
 from tornado.ioloop import IOLoop

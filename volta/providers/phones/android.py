@@ -110,21 +110,16 @@ class AndroidPhone(Phone):
         self.__create_my_metrics()
 
     def __create_my_metrics(self):
-        self.my_metrics['events'] = self.core.data_session.new_metric(
-            {
-                'type': 'events',
-                'name': 'events',
-                'source': 'phone'
-            }
+        self.my_metrics['events'] = self.core.data_session.new_event_metric(
+            name='events',
+            source='phone',
+            **self.config.get_option('phone', 'meta', {})
         )
         for key, value in self.shellexec_metrics.items():
-            self.my_metrics[key] = self.core.data_session.new_metric(
-                {
-                    'type': 'metrics',
-                    'name': key,
-                    'source': 'phone',
-                    '_apply': value.get('apply') if value.get('apply') else '',
-                }
+            self.my_metrics[key] = self.core.data_session.new_true_metric(
+                name='key',
+                source='phone',
+                _apply=value.get('apply') if value.get('apply') else '',
             )
 
     def __test_interaction_with_phone(self):

@@ -91,6 +91,9 @@ phone:
     util:
       type: string
       default: /Applications/Apple\ Configurator\ 2.app/Contents/MacOS/
+    meta:
+      type: dict
+      required: false
 sync:
   type: dict
   schema:
@@ -169,6 +172,9 @@ data_session:
             allowed: [luna, lunapark_volta, local_storage]
           api_address:
             type: string
+          db_name:
+            type: string
+            default: luna
     meta:
       type: dict
     artifacts_base_dir:
