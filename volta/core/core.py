@@ -130,7 +130,7 @@ class Core(object):
             clients = [
                 {
                     'type': 'luna',
-                    'api_address': 'https://volta-back.common-int.yandex-team.ru',
+                    'api_address': 'https://volta-back.yandex-team.ru',
                     'user_agent': 'Tank Test',
                 },
                 {
@@ -273,7 +273,8 @@ class Core(object):
                 task=self.config.get_option('uploader', 'task'),
                 sys_uts_offset=self.sync_points.get('sys_uts_offset', None),
                 log_uts_offset=self.sync_points.get('log_uts_offset', None),
-                sync_sample=self.sync_points.get('sync_sample', None)
+                sync_sample=self.sync_points.get('sync_sample', None),
+                __type='volta'
             )
         self.data_session.update_job(job_meta)
         # setting metric offsets in luna

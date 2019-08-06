@@ -15,6 +15,9 @@ from netort.resource import manager as resource
 from volta.common.interfaces import Phone
 from volta.common.util import LogParser, Executioner
 
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)  # pandas sorting warnings
+
 
 logger = logging.getLogger(__name__)
 
@@ -107,29 +110,24 @@ class AndroidPhone(Phone):
         self.__create_my_metrics()
 
     def __create_my_metrics(self):
-        self.my_metrics['events'] = self.core.data_session.new_metric(
-            {
-                'type': 'events',
-                'name': 'events',
-                'source': 'phone'
-            }
+        self.my_metrics['events'] = self.core.data_session.new_event_metric(
+            name='events',
+            source='phone',
+            **self.config.get_option('phone', 'meta', {})
         )
         for key, value in self.shellexec_metrics.items():
-            self.my_metrics[key] = self.core.data_session.new_metric(
-                {
-                    'type': 'metrics',
-                    'name': key,
-                    'source': 'phone',
-                    '_apply': value.get('apply') if value.get('apply') else '',
-                }
+            self.my_metrics[key] = self.core.data_session.new_true_metric(
+                name='key',
+                source='phone',
+                _apply=value.get('apply') if value.get('apply') else '',
             )
 
     def __test_interaction_with_phone(self):
         def read_process_queues_and_report(outs_q, errs_q):
             outputs = get_nowait_from_queue(outs_q)
             for chunk in outputs:
-                logger.debug('Command output: %s', chunk.strip('\n'))
-                if chunk.strip('\n') == 'unknown':
+                logger.debug('Command output: %s', chunk.strip())
+                if chunk.strip() == 'unknown':
                     worker.close()
                     raise RuntimeError(
                         'Phone "%s" has an unknown state. Please check device authorization and state' % self.source
@@ -160,10 +158,10 @@ class AndroidPhone(Phone):
         def read_process_queues_and_report(outs_q, errs_q):
             outputs = get_nowait_from_queue(outs_q)
             for chunk in outputs:
-                logger.debug('Command \'%s\' output: %s', cmd, chunk.strip('\n'))
+                logger.debug('Command \'%s\' output: %s', cmd, chunk.strip())
             errors = get_nowait_from_queue(errs_q)
             for err_chunk in errors:
-                logger.warning('Errors in command \'%s\' output: %s', cmd, err_chunk.strip('\n'))
+                logger.warning('Errors in command \'%s\' output: %s', cmd, err_chunk.strip())
         worker = Executioner(cmd)
         outs_q, errs_q = worker.execute()
         while worker.is_finished() is None:
@@ -311,4 +309,4 @@ class AndroidPhone(Phone):
     def __execute_shellexec_metric(cmd):
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         (stdout, stderr) = proc.communicate()
-        return stdout.strip('\n')
+        return stdout.strip()

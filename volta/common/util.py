@@ -1,7 +1,6 @@
 import threading
 import pandas as pd
 import numpy as np
-import queue as q
 import logging
 import subprocess
 import shlex
@@ -153,6 +152,8 @@ class LogParser(object):
         else:
             ready_to_go_chunks = []
             for chunk in data:
+                if isinstance(chunk, bytes):
+                    chunk = chunk.decode('utf-8')  # not sure if this is a good practice
                 match = self.log_fmt_regexp.match(chunk)
                 # we need this for multiline log entries concatenation
                 if match:
