@@ -77,8 +77,6 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c2;
 
-RTC_HandleTypeDef hrtc;
-
 SD_HandleTypeDef hsd;
 DMA_HandleTypeDef hdma_sdio;
 
@@ -117,7 +115,6 @@ static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_I2C2_Init(void);
-static void MX_RTC_Init(void);
 static void MX_SDIO_SD_Init(void);
 
 /* USER CODE BEGIN PFP */
@@ -180,14 +177,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 void fSetCurTime(TCHAR* fname)
 {
-  FILINFO fTime;
+  /*FILINFO fTime;
   RTC_TimeTypeDef curTime;
   RTC_DateTypeDef curDate;
   HAL_RTC_GetTime(&hrtc, &curTime, RTC_FORMAT_BIN);
   HAL_RTC_GetDate(&hrtc, &curDate, RTC_FORMAT_BIN);
   fTime.fdate = (WORD)(((curDate.Year - 1980) * 512U) | curDate.Month * 32U | curDate.Date);
   fTime.ftime = (WORD)(curTime.Hours * 2048U | curTime.Minutes * 32U | curTime.Seconds / 2U);
-  f_utime(fname, &fTime);
+  f_utime(fname, &fTime);*/
 }
 
 uint8_t curX=0, curY=0;
@@ -309,7 +306,6 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_TIM3_Init();
   MX_I2C2_Init();
-  MX_RTC_Init();
   MX_SDIO_SD_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
@@ -425,10 +421,11 @@ int main(void)
 
 	  uint8_t status;
 	  if (rb_remain(&rb) > SENDBUF_SIZE) {
-	  	      for (int i = 0; i < SENDBUF_SIZE; i++)
+		  	  int i;
+	  	      for (i = 0; i < SENDBUF_SIZE; i++)
 	  	        buff[i] = rb_pop(&rb);
 	  	      if(!isCardHere){
-	  	    	while (CDC_Transmit_FS((uint8_t*) buff, bufSizeForUSB) == USBD_BUSY);				//WARNING!!!!!!!!!!!!!!!!
+	  	    	while (CDC_Transmit_FS((uint8_t*) buff, bufSizeForUSB) == USBD_BUSY);
 	  	      }
 	  	      else
 	  	      {
@@ -495,10 +492,9 @@ void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
@@ -522,8 +518,7 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_USB;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
@@ -556,54 +551,6 @@ static void MX_I2C2_Init(void)
   hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
   hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
   if (HAL_I2C_Init(&hi2c2) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-}
-
-/* RTC init function */
-static void MX_RTC_Init(void)
-{
-
-  /* USER CODE BEGIN RTC_Init 0 */
-
-  /* USER CODE END RTC_Init 0 */
-
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef DateToUpdate;
-
-  /* USER CODE BEGIN RTC_Init 1 */
-
-  /* USER CODE END RTC_Init 1 */
-
-    /**Initialize RTC Only 
-    */
-  hrtc.Instance = RTC;
-  hrtc.Init.AsynchPrediv = RTC_AUTO_1_SECOND;
-  hrtc.Init.OutPut = RTC_OUTPUTSOURCE_ALARM;
-  if (HAL_RTC_Init(&hrtc) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-    /**Initialize RTC and set the Time and Date 
-    */
-  sTime.Hours = 20;
-  sTime.Minutes = 0;
-  sTime.Seconds = 0;
-
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  DateToUpdate.WeekDay = RTC_WEEKDAY_MONDAY;
-  DateToUpdate.Month = RTC_MONTH_NOVEMBER;
-  DateToUpdate.Date = 14;
-  DateToUpdate.Year = 18;
-
-  if (HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BIN) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }

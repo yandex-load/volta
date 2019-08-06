@@ -280,6 +280,10 @@ UsedLibraryUrn="urn:adsk.eagle:library:527439"
 UsedLibraryUrn="urn:adsk.eagle:library:510"
 UsedLibraryUrn="urn:adsk.eagle:library:474"
 UsedLibraryUrn="urn:adsk.eagle:library:467"
+UsedLibraryUrn="urn:adsk.eagle:library:528"
+UsedLibraryUrn="urn:adsk.eagle:library:526"
+UsedLibraryUrn="urn:adsk.eagle:library:535"
+UsedLibraryUrn="urn:adsk.eagle:library:530"
 UsedLibraryUrn="urn:adsk.eagle:library:113"
 UsedLibraryUrn="urn:adsk.eagle:library:114"
 UsedLibraryUrn="urn:adsk.eagle:library:115"
@@ -351,19 +355,18 @@ UsedLibraryUrn="urn:adsk.eagle:library:174"
 UsedLibraryUrn="urn:adsk.eagle:library:175"
 UsedLibraryUrn="urn:adsk.eagle:library:176"
 UsedLibraryUrn="urn:adsk.eagle:library:177"
+UsedLibrary="/home/slavik763/EAGLE/libraries/1050170001.lbr"
+UsedLibrary="/home/slavik763/EAGLE/libraries/ADUM1401WTRWZ.lbr"
+UsedLibrary="/home/slavik763/EAGLE/libraries/FSMRA6JH.lbr"
+UsedLibrary="/home/slavik763/EAGLE/libraries/LMP92064SD_NOPB.lbr"
 UsedLibrary="/home/slavik763/EAGLE/libraries/MCU-STM32F103RCT6_LQFP64_.lbr"
 UsedLibrary="/home/slavik763/EAGLE/libraries/untitled.lbr"
-UsedLibrary="/home/slavik763/EAGLE/libraries/1050170001.lbr"
 
 [Win_1]
-Type="Control Panel"
-Number=0
-
-[Win_2]
 Type="Schematic Editor"
 Number=1
 File="untitled.sch"
-View="-85.4275 -14.5191 202.552 164.935"
+View="-7.60843 47.8687 131.268 176.514"
 WireWidths=" 0.0762 0.1016 0.127 0.15 0.2 0.2032 0.254 0.3048 0.4064 0.508 0.6096 0.8128 1.016 1.27 2.54 0.1524"
 PadDiameters=" 0.254 0.3048 0.4064 0.6096 0.8128 1.016 1.27 1.4224 1.6764 1.778 1.9304 2.1844 2.54 3.81 6.4516 0"
 PadDrills=" 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.65 0.7 0.75 0.8 0.85 0.9 1 0.6"
@@ -379,7 +382,7 @@ DimensionExtWidths=" 0.127 0.254 0.1 0.13 0.26 0"
 DimensionExtLengths=" 1.27 2.54 1 2 3 0"
 DimensionExtOffsets=" 1.27 2.54 1 2 3 0"
 SmdSizes=" 0.3048 0.1524 0.4064 0.2032 0.6096 0.3048 0.8128 0.4064 1.016 0.508 1.27 0.6604 1.4224 0.7112 1.6764 0.8128 1.778 0.9144 1.9304 0.9652 2.1844 1.0668 2.54 1.27 3.81 1.9304 5.08 2.54 6.4516 3.2512 1.27 0.635"
-WireBend=4
+WireBend=0
 WireBendSet=31
 WireCap=1
 MiterStyle=1
@@ -402,10 +405,59 @@ ArcDirection=0
 AddLevel=2
 PadsSameType=0
 Layer=91
-Views=" 1: -85.4275 -14.5191 202.552 164.935"
+Views=" 1: -7.60843 47.8687 131.268 176.514"
 Sheet="1"
+
+[Win_2]
+Type="Board Editor"
+Number=2
+File="untitled.brd"
+View="-15.7399 31.8938 98.736 35.63"
+WireWidths=" 0.8128 1.016 1.27 2.54 0.1524 2 0.4 1.5 0.5 0.700025 0.2 0.2032 0.7 0.3 0.275 1"
+PadDiameters=" 0.254 0.3048 0.4064 0.6096 0.8128 1.016 1.27 1.4224 1.6764 1.778 1.9304 2.1844 2.54 3.81 6.4516 0"
+PadDrills=" 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.65 0.7 0.75 0.8 0.85 0.9 1 0.6"
+ViaDiameters=" 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1 1.05 1.1 1.15 1.2 1.3 0"
+ViaDrills=" 0.2 0.25 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 1 0.3 0.35"
+HoleDrills=" 0.2 0.25 0.3 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 1 0.35"
+TextSizes=" 0.254 0.3048 0.4064 0.6096 0.8128 1.016 1.27 1.4224 1.6764 1.9304 2.1844 2.54 3.81 5.08 6.4516 1.778"
+PolygonSpacings=" 6.4516 5.08 3.81 2.54 2.1844 1.9304 1.778 1.6764 1.4224 1.016 0.8128 0.6096 0.4064 0.3048 0.254 1.27"
+PolygonIsolates=" 0.254 0.3048 0.4064 0.6096 0.8128 1.016 1.27 1.4224 1.6764 1.778 1.9304 2.1844 2.54 3.81 6.4516 0"
+MiterRadiuss=" 0.254 0.3175 0.635 1.27 2.54 1 2 2.5 5 7.5 10 0"
+DimensionWidths=" 0 0.127 0.254 0.1 0.26 0.13"
+DimensionExtWidths=" 0.127 0.254 0.1 0.13 0.26 0"
+DimensionExtLengths=" 1.27 2.54 1 2 3 0"
+DimensionExtOffsets=" 1.27 2.54 1 2 3 0"
+SmdSizes=" 0.3048 0.1524 0.4064 0.2032 0.6096 0.3048 0.8128 0.4064 1.016 0.508 1.27 0.6604 1.4224 0.7112 1.6764 0.8128 1.778 0.9144 1.9304 0.9652 2.1844 1.0668 2.54 1.27 3.81 1.9304 5.08 2.54 6.4516 3.2512 1.27 0.635"
+WireBend=3
+WireBendSet=0
+WireCap=1
+MiterStyle=1
+PadShape=0
+ViaShape=1
+PolygonPour=0
+PolygonRank=1
+PolygonThermals=0
+PolygonOrphans=0
+TextRatio=8
+DimensionUnit=1
+DimensionPrecision=2
+DimensionShowUnit=0
+PinDirection=3
+PinFunction=0
+PinLength=2
+PinVisible=3
+SwapLevel=0
+ArcDirection=0
+AddLevel=2
+PadsSameType=0
+Layer=1
+
+[Win_3]
+Type="Control Panel"
+Number=0
 
 [Desktop]
 Screen="1920 1080"
 Window="Win_1"
 Window="Win_2"
+Window="Win_3"
