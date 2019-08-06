@@ -57,7 +57,7 @@
 #include "buffer.h"
 #include "cp1251.h"
 
-#define SENDBUF_SIZE rb.size>>1
+#define SENDBUF_SIZE RINGBUF_SIZE/2
 
 #define fontSizeX 5
 #define fontSizeY 8
@@ -69,13 +69,12 @@
 #define lNum scrSizeY/fontSizeY
 
 #define printClearL	1
-
-#define bufSizeForUSB	32
-#define bufSizeForCard	4096
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c2;
+
+RTC_HandleTypeDef hrtc;
 
 SD_HandleTypeDef hsd;
 DMA_HandleTypeDef hdma_sdio;
@@ -115,6 +114,7 @@ static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_I2C2_Init(void);
+static void MX_RTC_Init(void);
 static void MX_SDIO_SD_Init(void);
 
 /* USER CODE BEGIN PFP */
@@ -139,16 +139,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	  int i;
 	  for(i = 0; i < 4 * (~isCardHere&0b1) + isCardHere; i++)
 	  {
-		  HAL_GPIO_WritePin(SPI2_NSS_GPIO_Port, SPI2_NSS_Pin, GPIO_PIN_RESET);
-		  HAL_SPI_TransmitReceive(&hspi2, cmd_read_current, receive_buffer,	2, HAL_MAX_DELAY);
-		  HAL_GPIO_WritePin(SPI2_NSS_GPIO_Port, SPI2_NSS_Pin, GPIO_PIN_SET);
-		  uint16_t current_value = ((uint16_t) receive_buffer[3] << 8) + (uint16_t) receive_buffer[2];
-		  HAL_GPIO_WritePin(SPI2_NSS_GPIO_Port, SPI2_NSS_Pin, GPIO_PIN_RESET);
-		  HAL_SPI_TransmitReceive(&hspi2, cmd_read_voltage, receive_buffer, 2, HAL_MAX_DELAY);
-		  HAL_GPIO_WritePin(SPI2_NSS_GPIO_Port, SPI2_NSS_Pin, GPIO_PIN_SET);
-		  uint16_t voltage_value = ((uint16_t) receive_buffer[3] << 8) + (uint16_t) receive_buffer[2];
-		  overSampleISum += current_value;
-		  overSampleUSum += voltage_value;
+			HAL_GPIO_WritePin(SPI2_NSS_GPIO_Port, SPI2_NSS_Pin, GPIO_PIN_RESET);
+			HAL_SPI_TransmitReceive(&hspi2, cmd_read_current, receive_buffer, 2, HAL_MAX_DELAY);
+			HAL_GPIO_WritePin(SPI2_NSS_GPIO_Port, SPI2_NSS_Pin, GPIO_PIN_SET);
+			uint16_t current_value = ((uint16_t) receive_buffer[3] << 8) + (uint16_t) receive_buffer[2];
+			HAL_GPIO_WritePin(SPI2_NSS_GPIO_Port, SPI2_NSS_Pin, GPIO_PIN_RESET);
+			HAL_SPI_TransmitReceive(&hspi2, cmd_read_voltage, receive_buffer, 2, HAL_MAX_DELAY);
+			HAL_GPIO_WritePin(SPI2_NSS_GPIO_Port, SPI2_NSS_Pin, GPIO_PIN_SET);
+			uint16_t voltage_value = ((uint16_t) receive_buffer[3] << 8) + (uint16_t) receive_buffer[2];
+			overSampleISum += current_value;
+			overSampleUSum += voltage_value;
 		//delay(50);//@72MHz
 	  }
 	  rb_push(&rb, overSampleISum);
@@ -177,14 +177,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 void fSetCurTime(TCHAR* fname)
 {
-  /*FILINFO fTime;
+  FILINFO fTime;
   RTC_TimeTypeDef curTime;
   RTC_DateTypeDef curDate;
   HAL_RTC_GetTime(&hrtc, &curTime, RTC_FORMAT_BIN);
   HAL_RTC_GetDate(&hrtc, &curDate, RTC_FORMAT_BIN);
   fTime.fdate = (WORD)(((curDate.Year - 1980) * 512U) | curDate.Month * 32U | curDate.Date);
   fTime.ftime = (WORD)(curTime.Hours * 2048U | curTime.Minutes * 32U | curTime.Seconds / 2U);
-  f_utime(fname, &fTime);*/
+  f_utime(fname, &fTime);
 }
 
 uint8_t curX=0, curY=0;
@@ -259,14 +259,6 @@ void testScr(uint8_t *screen)
 		scr[i]=0x55;
 	}
 }
-
-void clrScreen(uint8_t *screen)
-{
-	int i;
-	for(i = 0; i < 1024; i++)
-		screen[i] = 0x00;
-}
-
 /* USER CODE END 0 */
 
 /**
@@ -277,8 +269,8 @@ void clrScreen(uint8_t *screen)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	  uint16_t *buff;// = (uint16_t*)malloc(bufSizeForCard);
-
+	  uint16_t buff[RINGBUF_SIZE/2];//16
+	  rb_init(&rb);
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -306,15 +298,11 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_TIM3_Init();
   MX_I2C2_Init();
+  MX_RTC_Init();
   MX_SDIO_SD_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
   oledInit();
-  clrScreen(scr);
-  print("VoltaBox_v5", 5, 2, scr, 0);
-  //priint("14bit/10kHz in USB", 0, 3, scr, 0);
-  oledUpdate(scr);
-
   FATFS sdFiles;
   FIL test;
   FIL measureStat;
@@ -355,12 +343,14 @@ int main(void)
 		  sprintf(tmp, "%s created!", fname);
 		  toLog(tmp);
 		  oledUpdate(scr);
-		  //f_write(&measureStat, "Start\n", 6, &writtenCount);//TODO: d4$
-		  //f_sync(&measureStat);
-		  //f_write(&measureStat, "Test\n", 5, &writtenCount);
-		  //f_sync(&measureStat);
+		  f_write(&measureStat, "Start\n", 6, &writtenCount);//TODO: d4$
+		  f_sync(&measureStat);
+		  f_write(&measureStat, "Test\n", 5, &writtenCount);
+		  f_sync(&measureStat);
 
 		  isCardHere = 1;
+		  htim3.Init.Prescaler = 719;//																TODO добавить 9-ку.
+		  HAL_TIM_Base_Init(&htim3);
 	  }
   }
   else
@@ -377,19 +367,9 @@ int main(void)
   //oledUpdate(scr);
   HAL_TIM_Base_Start_IT(&htim3);
   if(!isCardHere)
-  {
-	  rb_init(&rb, bufSizeForUSB);
-	  buff = (uint16_t*)malloc(bufSizeForUSB);
 	  toLog("USB mode. TIM3 started.");
-  }
   else
-  {
-	  rb_init(&rb, bufSizeForCard);
-	  buff = (uint16_t*)malloc(bufSizeForCard);
-	  //htim3.Init.Prescaler = 719;//																TODO добавить 9-ку.
-	  //HAL_TIM_Base_Init(&htim3);
 	  toLog("SD mode. TIM3 started.");
-  }
   oledUpdate(scr);
 
  // uint32_t gpioPattern[8]={SPI2_NSS_Pin, SPI2_NSS_Pin << 16, SPI2_NSS_Pin, SPI2_NSS_Pin << 16, SPI2_NSS_Pin, SPI2_NSS_Pin << 16, SPI2_NSS_Pin, SPI2_NSS_Pin << 16};
@@ -411,7 +391,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  uint16_t syncTimer = 0, sCount = 0, eCount = 0;
+  uint16_t sendTimer = 0, sCount = 0, eCount = 0;
   while (1)
   {
 
@@ -421,24 +401,24 @@ int main(void)
 
 	  uint8_t status;
 	  if (rb_remain(&rb) > SENDBUF_SIZE) {
-		  	  int i;
-	  	      for (i = 0; i < SENDBUF_SIZE; i++)
+	  	      for (int i = 0; i < SENDBUF_SIZE; i++)
 	  	        buff[i] = rb_pop(&rb);
 	  	      if(!isCardHere){
-	  	    	while (CDC_Transmit_FS((uint8_t*) buff, bufSizeForUSB) == USBD_BUSY);
+	  	    	while (CDC_Transmit_FS((uint8_t*) buff, sizeof(buff)) == USBD_BUSY);
 	  	      }
 	  	      else
 	  	      {
-	  	    	status = f_write(&measureStat, (uint8_t*) buff, bufSizeForCard, &writtenCount);
+	  	    	status = f_write(&measureStat, (uint8_t*) buff, sizeof(buff), &writtenCount);
 	  	    	if(status !=FR_OK)
 	  	    	{
 	  	    		toLog("Something happened:");
 					toLog("f_write returned:");
 					toLog(errMsg[status]);
-	  	    		status = f_write(&measureStat + writtenCount, (uint8_t*) buff, bufSizeForCard - writtenCount, &writtenCount);
+	  	    		f_sync(&measureStat);
+	  	    		status = f_write(&measureStat, (uint8_t*) buff, sizeof(buff), &writtenCount);
 	  	    		if(status!=FR_OK)
 					{
-	  	    			toLog("Retrying");
+						toLog("f_sync can't help.");
 						toLog("f_write returned:");
 						toLog(errMsg[status]);
 						HAL_TIM_Base_Stop(&htim3);
@@ -448,9 +428,12 @@ int main(void)
 						sprintf(tmp, "Errors = %d", eCount);
 						toLog(tmp);
 					}
+	  	    		else
+	  	    			status = f_write(&measureStat, (uint8_t*) buff, sizeof(buff), &writtenCount);
 	  	    		oledUpdate(scr);
 	  	    	}
-	  	    	if(syncTimer == 16)
+	  	    	//f_write(&measureStat, "Test\n", 5, &writtenCount);
+	  	    	if(sendTimer == 4)
 	  	    	{
 	  	    		status = f_sync(&measureStat);
 	  	    		char tmp[25];
@@ -468,10 +451,10 @@ int main(void)
 						toLog(tmp);
 	  	    		}
 	  	    		oledUpdate(scr);
-	  	    		syncTimer = 0;
+	  	    		sendTimer = 0;
 	  	    	}
 	  	    	else
-	  	    		syncTimer++;
+	  	    		sendTimer++;
 	  	      }
 	  }
   }
@@ -492,9 +475,10 @@ void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
@@ -518,7 +502,8 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_USB;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
@@ -557,6 +542,54 @@ static void MX_I2C2_Init(void)
 
 }
 
+/* RTC init function */
+static void MX_RTC_Init(void)
+{
+
+  /* USER CODE BEGIN RTC_Init 0 */
+
+  /* USER CODE END RTC_Init 0 */
+
+  RTC_TimeTypeDef sTime;
+  RTC_DateTypeDef DateToUpdate;
+
+  /* USER CODE BEGIN RTC_Init 1 */
+
+  /* USER CODE END RTC_Init 1 */
+
+    /**Initialize RTC Only 
+    */
+  hrtc.Instance = RTC;
+  hrtc.Init.AsynchPrediv = RTC_AUTO_1_SECOND;
+  hrtc.Init.OutPut = RTC_OUTPUTSOURCE_ALARM;
+  if (HAL_RTC_Init(&hrtc) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+    /**Initialize RTC and set the Time and Date 
+    */
+  sTime.Hours = 20;
+  sTime.Minutes = 0;
+  sTime.Seconds = 0;
+
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  DateToUpdate.WeekDay = RTC_WEEKDAY_MONDAY;
+  DateToUpdate.Month = RTC_MONTH_NOVEMBER;
+  DateToUpdate.Date = 14;
+  DateToUpdate.Year = 18;
+
+  if (HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BIN) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
 /* SDIO init function */
 static void MX_SDIO_SD_Init(void)
 {
@@ -567,7 +600,7 @@ static void MX_SDIO_SD_Init(void)
   hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
   hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
   hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd.Init.ClockDiv = 16;
+  hsd.Init.ClockDiv = 10;
 
 }
 
